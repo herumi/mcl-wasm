@@ -23,12 +23,9 @@
   const MCLBN_G2_SIZE = MCLBN_FP_SIZE * 6
   const MCLBN_GT_SIZE = MCLBN_FP_SIZE * 12
 
-  let capi = {}
-  exports.capi = capi
   let mod = exports.mod
 
   exports.init = (curveType = MCLBN_CURVE_FP254BNB) => {
-    console.log('init')
     if (!isNodeJs) {
       fetch('mcl_c.wasm')
         .then(response => response.arrayBuffer())
@@ -37,24 +34,10 @@
     }
     return new Promise((resolve) => {
       mod.onRuntimeInitialized = () => {
-        const f = (exportedFuncs) => {
-          exportedFuncs.forEach(func => {
-            capi[func.exportName] = mod.cwrap(func.name, func.returns, func.args)
-          })
-          define_extra_functions(mod)
-          let r = capi._mclBn_init(MCLBN_CURVE_FP254BNB, MCLBN_FP_UNIT_SIZE)
-          console.log('finished ' + r)
-          resolve()
-        }
-        if (isNodeJs) {
-          const fs = require('fs')
-          const jsonStr = fs.readFileSync('./exported-mcl.json')
-          f(JSON.parse(jsonStr))
-        } else {
-          fetch('exported-mcl.json')
-            .then(response => response.json())
-            .then(exportedFuncs => f(exportedFuncs))
-        }
+        define_extra_functions(mod)
+        const r = mod._mclBn_init(MCLBN_CURVE_FP254BNB, MCLBN_FP_UNIT_SIZE)
+        if (r) throw('_mclBn_init err ' + r)
+        resolve()
       }
     })
   }
@@ -171,47 +154,74 @@
     mod._free(pos)
     return s
   }
+  // y = func(x)
+  const callOp1 = function(func, cstr, x) {
+    const y = new cstr()
+    const stack = mod.Runtime.stackSave()
+    const xPos = mod.Runtime.stackAlloc(x.length * 4)
+    const yPos = mod.Runtime.stackAlloc(y.a_.length * 4)
+    copyFromUint32Array(xPos, x);
+    func(yPos, xPos)
+    copyToUint32Array(y.a_, yPos)
+    mod.Runtime.stackRestore(stack)
+    return y
+  }
+  // z = func(x, y)
+  const callOp2 = function(func, cstr, x, y) {
+    const z = new cstr()
+    const stack = mod.Runtime.stackSave()
+    const xPos = mod.Runtime.stackAlloc(x.length * 4)
+    const yPos = mod.Runtime.stackAlloc(y.length * 4)
+    const zPos = mod.Runtime.stackAlloc(z.a_.length * 4)
+    copyFromUint32Array(xPos, x);
+    copyFromUint32Array(yPos, y);
+    func(zPos, xPos, yPos)
+    copyToUint32Array(z.a_, zPos)
+    mod.Runtime.stackRestore(stack)
+    return z
+  }
   const define_extra_functions = function(mod) {
-    capi.mclBnFr_malloc = function() {
+    mod.mclBnFr_malloc = function() {
       return mod._malloc(MCLBN_FP_SIZE)
     }
-    capi.mcl_free = function(x) {
+    mod.free = function(x) {
       mod._free(x)
     }
-    capi.mclBnFr_deserialize = wrap_input(capi._mclBnFr_deserialize, 1)
-    capi.mclBnFr_setLittleEndian = wrap_input(capi._mclBnFr_setLittleEndian, 1)
-    capi.mclBnFr_setStr = wrap_input(capi._mclBnFr_setStr, 1)
-    capi.mclBnFr_getStr = wrap_outputString(capi._mclBnFr_getStr)
-    capi.mclBnFr_setHashOf = wrap_input(capi._mclBnFr_setHashOf, 1)
+    mod.mclBnFr_setLittleEndian = wrap_input(mod._mclBnFr_setLittleEndian, 1)
+    mod.mclBnFr_setStr = wrap_input(mod._mclBnFr_setStr, 1)
+    mod.mclBnFr_getStr = wrap_outputString(mod._mclBnFr_getStr)
+    mod.mclBnFr_deserialize = wrap_input(mod._mclBnFr_deserialize, 1)
+    mod.mclBnFr_serialize = wrap_outputArray(mod._mclBnFr_serialize)
+    mod.mclBnFr_setHashOf = wrap_input(mod._mclBnFr_setHashOf, 1)
 
     ///////////////////////////////////////////////////////////////
-    capi.mclBnG1_malloc = function() {
+    mod.mclBnG1_malloc = function() {
       return mod._malloc(MCLBN_G1_SIZE)
     }
-    capi.mclBnG1_setStr = wrap_input(capi._mclBnG1_setStr, 1)
-    capi.mclBnG1_getStr = wrap_outputString(capi._mclBnG1_getStr)
-    capi.mclBnG1_deserialize = wrap_input(capi._mclBnG1_deserialize, 1)
-    capi.mclBnG1_serialize = wrap_outputArray(capi._mclBnG1_serialize)
-    capi.mclBnG1_hashAndMapTo = wrap_input(capi._mclBnG1_hashAndMapTo, 1)
+    mod.mclBnG1_setStr = wrap_input(mod._mclBnG1_setStr, 1)
+    mod.mclBnG1_getStr = wrap_outputString(mod._mclBnG1_getStr)
+    mod.mclBnG1_deserialize = wrap_input(mod._mclBnG1_deserialize, 1)
+    mod.mclBnG1_serialize = wrap_outputArray(mod._mclBnG1_serialize)
+    mod.mclBnG1_hashAndMapTo = wrap_input(mod._mclBnG1_hashAndMapTo, 1)
 
     ///////////////////////////////////////////////////////////////
-    capi.mclBnG2_malloc = function() {
+    mod.mclBnG2_malloc = function() {
       return mod._malloc(MCLBN_G2_SIZE)
     }
-    capi.mclBnG2_setStr = wrap_input(capi._mclBnG2_setStr, 1)
-    capi.mclBnG2_getStr = wrap_outputString(capi._mclBnG2_getStr)
-    capi.mclBnG2_deserialize = wrap_input(capi._mclBnG2_deserialize, 1)
-    capi.mclBnG2_serialize = wrap_outputArray(capi._mclBnG2_serialize)
-    capi.mclBnG2_hashAndMapTo = wrap_input(capi._mclBnG2_hashAndMapTo, 1)
+    mod.mclBnG2_setStr = wrap_input(mod._mclBnG2_setStr, 1)
+    mod.mclBnG2_getStr = wrap_outputString(mod._mclBnG2_getStr)
+    mod.mclBnG2_deserialize = wrap_input(mod._mclBnG2_deserialize, 1)
+    mod.mclBnG2_serialize = wrap_outputArray(mod._mclBnG2_serialize)
+    mod.mclBnG2_hashAndMapTo = wrap_input(mod._mclBnG2_hashAndMapTo, 1)
 
     ///////////////////////////////////////////////////////////////
-    capi.mclBnGT_malloc = function() {
+    mod.mclBnGT_malloc = function() {
       return mod._malloc(MCLBN_GT_SIZE)
     }
-    capi.mclBnGT_deserialize = wrap_input(capi._mclBnGT_deserialize, 1)
-    capi.mclBnGT_serialize = wrap_outputArray(capi._mclBnGT_serialize)
-    capi.mclBnGT_setStr = wrap_input(capi._mclBnGT_setStr, 1)
-    capi.mclBnGT_getStr = wrap_outputString(capi._mclBnGT_getStr)
+    mod.mclBnGT_deserialize = wrap_input(mod._mclBnGT_deserialize, 1)
+    mod.mclBnGT_serialize = wrap_outputArray(mod._mclBnGT_serialize)
+    mod.mclBnGT_setStr = wrap_input(mod._mclBnGT_setStr, 1)
+    mod.mclBnGT_getStr = wrap_outputString(mod._mclBnGT_getStr)
     ///////////////////////////////////////////////////////////////
 
     class Common {
@@ -227,6 +237,192 @@
       dump(msg = '') {
         console.log(msg + this.toHexStr())
       }
+    }
+    exports.Fr = class extends Common {
+      constructor() {
+        super(MCLBN_FP_SIZE)
+      }
+      setInt(x) {
+        callSetter(mod._mclBnFr_setInt32, this.a_, x)
+      }
+      deserialize(s) {
+        callSetter(mod.mclBnFr_deserialize, this.a_, s)
+      }
+      serialize() {
+        return callGetter(mod.mclBnFr_serialize, this.a_)
+      }
+      setStr(s, base = 10) {
+        callSetter(mod.mclBnFr_setStr, this.a_, s, base)
+      }
+      getStr(base = 10) {
+        return callGetter(mod.mclBnFr_getStr, this.a_, base)
+      }
+      setLittleEndian(s) {
+        callSetter(mod.mclBnFr_setLittleEndian, this.a_, s)
+      }
+      setByCSPRNG() {
+        let a = new Uint8Array(MCLBN_FP_SIZE)
+        crypto.getRandomValues(a)
+        this.setLittleEndian(a)
+      }
+    }
+    exports.G1 = class extends Common {
+      constructor() {
+        super(MCLBN_G1_SIZE)
+      }
+      deserialize(s) {
+        callSetter(mod.mclBnG1_deserialize, this.a_, s)
+      }
+      serialize() {
+        return callGetter(mod.mclBnG1_serialize, this.a_)
+      }
+    }
+    exports.G2 = class extends Common {
+      constructor() {
+        super(MCLBN_G2_SIZE)
+      }
+      deserialize(s) {
+        callSetter(mod.mclBnG2_deserialize, this.a_, s)
+      }
+      serialize() {
+        return callGetter(mod.mclBnG2_serialize, this.a_)
+      }
+    }
+    exports.GT = class extends Common {
+      constructor() {
+        super(MCLBN_GT_SIZE)
+      }
+      setInt(x) {
+        callSetter(mod._mclBnGT_setInt32, this.a_, x)
+      }
+      deserialize(s) {
+        callSetter(mod.mclBnGT_deserialize, this.a_, s)
+      }
+      serialize() {
+        return callGetter(mod.mclBnGT_serialize, this.a_)
+      }
+    }
+    exports.neg = function(x) {
+      let f = null
+      let cstr = null
+      if (x instanceof exports.Fr) {
+        f = mod._mclBnFr_neg
+        cstr = exports.Fr
+      } else
+      if (x instanceof exports.G1) {
+        f = mod._mclBnG1_neg
+        cstr = exports.G1
+      } else
+      if (x instanceof exports.G2) {
+        f = mod._mclBnG2_neg
+        cstr = exports.G2
+      } else
+      if (x instanceof exports.GT) {
+        f = mod._mclBnGT_neg
+        cstr = exports.GT
+      }
+      return callOp1(f, cstr, x.a_)
+    }
+    exports.inv = function(x) {
+      let f = null
+      let cstr = null
+      if (x instanceof exports.Fr) {
+        f = mod._mclBnFr_inv
+        cstr = exports.Fr
+      } else
+      if (x instanceof exports.GT) {
+        f = mod._mclBnGT_inv
+        cstr = exports.GT
+      }
+      return callOp1(f, cstr, x.a_)
+    }
+    exports.add = function(x, y) {
+      if (x.constructor != y.constructor) throw('add:bad type')
+      let f = null
+      let cstr = null
+      if (x instanceof exports.Fr) {
+        f = mod._mclBnFr_add
+        cstr = exports.Fr
+      } else
+      if (x instanceof exports.G1) {
+        f = mod._mclBnG1_add
+        cstr = exports.G1
+      } else
+      if (x instanceof exports.G2) {
+        f = mod._mclBnG2_add
+        cstr = exports.G2
+      } else
+      if (x instanceof exports.GT) {
+        f = mod._mclBnGT_add
+        cstr = exports.GT
+      }
+      return callOp2(f, cstr, x.a_, y.a_)
+    }
+    exports.sub = function(x, y) {
+      if (x.constructor != y.constructor) throw('sub:bad type')
+      let f = null
+      let cstr = null
+      if (x instanceof exports.Fr) {
+        f = mod._mclBnFr_sub
+        cstr = exports.Fr
+      } else
+      if (x instanceof exports.G1) {
+        f = mod._mclBnG1_sub
+        cstr = exports.G1
+      } else
+      if (x instanceof exports.G2) {
+        f = mod._mclBnG2_sub
+        cstr = exports.G2
+      } else
+      if (x instanceof exports.GT) {
+        f = mod._mclBnGT_sub
+        cstr = exports.GT
+      }
+      return callOp2(f, cstr, x.a_, y.a_)
+    }
+    /*
+      Fr * Fr
+      G1 * Fr ; scalar mul
+      G2 * Fr ; scalar mul
+      GT * GT
+    */
+    exports.mul = function(x, y) {
+      let f = null
+      let cstr = null
+      if (x instanceof exports.Fr && y instanceof exports.Fr) {
+        f = mod._mclBnFr_mul
+        cstr = exports.Fr
+      } else
+      if (x instanceof exports.G1 && y instanceof exports.Fr) {
+        f = mod._mclBnG1_mul
+        cstr = exports.G1
+      } else
+      if (x instanceof exports.G2 && y instanceof exports.Fr) {
+        f = mod._mclBnG2_mul
+        cstr = exports.G2
+      } else
+      if (x instanceof exports.GT && y instanceof exports.GT) {
+        f = mod._mclBnGT_mul
+        cstr = exports.GT
+      } else
+      {
+        throw('mul:bad type')
+      }
+      return callOp2(f, cstr, x.a_, y.a_)
+    }
+    exports.div = function(x, y) {
+      if (x.constructor != y.constructor) throw('div:bad type')
+      let f = null
+      let cstr = null
+      if (x instanceof exports.Fr) {
+        f = mod._mclBnFr_div
+        cstr = exports.Fr
+      } else
+      if (x instanceof exports.GT) {
+        f = mod._mclBnGT_div
+        cstr = exports.GT
+      }
+      return callOp2(f, cstr, x.a_, y.a_)
     }
   }
   return exports
