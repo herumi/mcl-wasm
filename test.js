@@ -7,6 +7,7 @@ mcl.init()
     G1Test()
     G2Test()
     GTTest()
+    IDbasedEncryptionTest()
     PairingTest()
     PairingCapiTest()
     console.log('all ok')
@@ -126,22 +127,64 @@ function GTTest() {
 function PairingTest() {
   const a = new mcl.Fr()
   const b = new mcl.Fr()
-  const P = new mcl.G1()
-  const Q = new mcl.G2()
 
   a.setStr('123')
   b.setStr('456')
   const ab = mcl.mul(a, b)
   assert.equal(ab.getStr(), 123 * 456)
 
-  P.setHashOf('aaa')
-  Q.setHashOf('bbb')
+  const P = mcl.hashAndMapToG1('aaa')
+  const Q = mcl.hashAndMapToG2('bbb')
   const aP = mcl.mul(P, a)
   const bQ = mcl.mul(Q, b)
 
   const e1 = mcl.pairing(P, Q)
   const e2 = mcl.pairing(aP, bQ)
   assert(mcl.pow(e1, ab).isEqual(e2))
+}
+
+// Enc(m) = [r P, m + h(e(r mpk, H(id)))]
+function IDenc(id, P, mpk, m) {
+  const r = new mcl.Fr()
+  r.setByCSPRNG()
+  const Q = mcl.hashAndMapToG2(id)
+  const e = mcl.pairing(mcl.mul(mpk, r), Q)
+  return [mcl.mul(P, r), mcl.add(m, mcl.hashToFr(e.serialize()))]
+}
+
+// Dec([U, v]) = v - h(e(U, sk))
+function IDdec(c, sk) {
+  const [U, v] = c
+  const e = mcl.pairing(U, sk)
+  return mcl.sub(v, mcl.hashToFr(e.serialize()))
+}
+
+function IDbasedEncryptionTest() {
+  // system parameter
+  const P = mcl.hashAndMapToG1('1')
+  /*
+    KeyGen
+    msk in Fr ; master secret key
+    mpk = msk P in G1 ; master public key
+  */
+  const msk = new mcl.Fr()
+  msk.setByCSPRNG()
+  const mpk = mcl.mul(P, msk)
+
+  /*
+    user KeyGen
+    sk = msk H(id) in G2 ; secret key
+  */
+  const id = '@herumi'
+  const sk = mcl.mul(mcl.hashAndMapToG2(id), msk)
+
+  // encrypt
+  const m = new mcl.Fr()
+  m.setInt(123)
+  const c = IDenc(id, P, mpk, m)
+  // decrypt
+  const d = IDdec(c, sk)
+  assert(d.isEqual(m))
 }
 
 function PairingCapiTest() {
@@ -195,14 +238,12 @@ function bench(label, count, func) {
 function benchPairing() {
   console.log('class')
   const a = new mcl.Fr()
-  const P = new mcl.G1()
-  const Q = new mcl.G2()
 
   const msg = 'hello wasm'
 
   a.setByCSPRNG()
-  P.setHashOf('abc')
-  Q.setHashOf('abc')
+  const P = mcl.hashAndMapToG1('abc')
+  const Q = mcl.hashAndMapToG2('abc')
   bench('time_pairing', 50, () => mcl.pairing(P, Q))
   bench('time_g1mul', 50, () => mcl.mul(P, a))
   bench('time_g2mul', 50, () => mcl.mul(Q, a))

@@ -536,6 +536,21 @@
       }
       return callOp1(f, cstr, x.a_)
     }
+    exports.hashToFr = function(s) {
+      const x = new exports.Fr()
+      x.setHashOf(s)
+      return x
+    }
+    exports.hashAndMapToG1 = function(s) {
+      const x = new exports.G1()
+      x.setHashOf(s)
+      return x
+    }
+    exports.hashAndMapToG2 = function(s) {
+      const x = new exports.G2()
+      x.setHashOf(s)
+      return x
+    }
     // pow(GT x, Fr y)
     exports.pow = function(x, y) {
       if (x instanceof exports.GT && y instanceof exports.Fr) {
