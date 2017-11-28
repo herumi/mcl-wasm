@@ -16,7 +16,7 @@
   const MCLBN_CURVE_FP382_1 = 1
   const MCLBN_CURVE_FP382_2 = 2
 
-  const MCLBN_FP_UNIT_SIZE = 4
+  const MCLBN_FP_UNIT_SIZE = 4 // set 6 if you want to use MCLBN_CURVE_FP382_1
 
   const MCLBN_FP_SIZE = MCLBN_FP_UNIT_SIZE * 8
   const MCLBN_G1_SIZE = MCLBN_FP_SIZE * 3
@@ -142,10 +142,25 @@
     }
   }
   const callSetter = function(func, a, p1, p2) {
-    let pos = mod._malloc(a.length * 4)
-    func(pos, p1, p2) // p1, p2 may be undefined
-    copyToUint32Array(a, pos)
-    mod._free(pos)
+    const xPos = mod._malloc(a.length * 4)
+    const r = func(xPos, p1, p2) // p1, p2 may be undefined
+    copyToUint32Array(a, xPos)
+    mod._free(xPos)
+    if (r) throw('callSeeter err')
+  }
+  const callState = function(func, x) {
+    const xPos = x._getPtr()
+    const r = func(xPos)
+    mod._free(xPos)
+    return r
+  }
+  const callIsEqual = function(func, x, y) {
+    const xPos = x._getPtr()
+    const yPos = y._getPtr()
+    const r = func(xPos, yPos)
+    mod._free(yPos)
+    mod._free(xPos)
+    return r == 1
   }
   const callGetter = function(func, a, p1, p2) {
     let pos = mod._malloc(a.length * 4)
@@ -180,11 +195,18 @@
     mod.Runtime.stackRestore(stack)
     return z
   }
+  const callSetHashOf = function(func, x, s) {
+    const pos = x._getFreshPtr()
+    const r = func(pos, s)
+    x._save(pos)
+    mod._free(pos)
+    if (r) throw('callSetHashOf')
+  }
   const define_extra_functions = function(mod) {
     mod.mclBnFr_malloc = function() {
       return mod._malloc(MCLBN_FP_SIZE)
     }
-    mod.free = function(x) {
+    exports.free = function(x) {
       mod._free(x)
     }
     mod.mclBnFr_setLittleEndian = wrap_input(mod._mclBnFr_setLittleEndian, 1)
@@ -237,6 +259,23 @@
       dump(msg = '') {
         console.log(msg + this.toHexStr())
       }
+      clear() {
+        this.a_.fill(0)
+      }
+      // get fresh ptr
+      _getFreshPtr() {
+        return mod._malloc(this.a_.length * 4)
+      }
+      // get copied ptr
+      _getPtr() {
+        const pos = mod._malloc(this.a_.length * 4)
+        mod.HEAP32.set(this.a_, pos / 4)
+        return pos
+      }
+      // copy to this
+      _save(pos) {
+        copyToUint32Array(this.a_, pos)
+      }
     }
     exports.Fr = class extends Common {
       constructor() {
@@ -257,6 +296,15 @@
       getStr(base = 10) {
         return callGetter(mod.mclBnFr_getStr, this.a_, base)
       }
+      isZero() {
+        return callState(mod._mclBnFr_isZero, this) == 1
+      }
+      isOne() {
+        return callState(mod._mclBnFr_isOne, this) == 1
+      }
+      isEqual(rhs) {
+        return callIsEqual(mod._mclBnFr_isEqual, this, rhs)
+      }
       setLittleEndian(s) {
         callSetter(mod.mclBnFr_setLittleEndian, this.a_, s)
       }
@@ -264,6 +312,9 @@
         let a = new Uint8Array(MCLBN_FP_SIZE)
         crypto.getRandomValues(a)
         this.setLittleEndian(a)
+      }
+      setHashOf(s) {
+        callSetHashOf(mod.mclBnFr_setHashOf, this, s)
       }
     }
     exports.G1 = class extends Common {
@@ -276,6 +327,21 @@
       serialize() {
         return callGetter(mod.mclBnG1_serialize, this.a_)
       }
+      setStr(s, base = 10) {
+        callSetter(mod.mclBnG1_setStr, this.a_, s, base)
+      }
+      getStr(base = 10) {
+        return callGetter(mod.mclBnG1_getStr, this.a_, base)
+      }
+      isZero() {
+        return callState(mod._mclBnG1_isZero, this) == 1
+      }
+      isEqual(rhs) {
+        return callIsEqual(mod._mclBnG1_isEqual, this, rhs)
+      }
+      setHashOf(s) {
+        callSetHashOf(mod.mclBnG1_hashAndMapTo, this, s)
+      }
     }
     exports.G2 = class extends Common {
       constructor() {
@@ -286,6 +352,21 @@
       }
       serialize() {
         return callGetter(mod.mclBnG2_serialize, this.a_)
+      }
+      setStr(s, base = 10) {
+        callSetter(mod.mclBnG2_setStr, this.a_, s, base)
+      }
+      getStr(base = 10) {
+        return callGetter(mod.mclBnG2_getStr, this.a_, base)
+      }
+      isZero() {
+        return callState(mod._mclBnG2_isZero, this) == 1
+      }
+      isEqual(rhs) {
+        return callIsEqual(mod._mclBnG2_isEqual, this, rhs)
+      }
+      setHashOf(s) {
+        callSetHashOf(mod.mclBnG2_hashAndMapTo, this, s)
       }
     }
     exports.GT = class extends Common {
@@ -300,6 +381,21 @@
       }
       serialize() {
         return callGetter(mod.mclBnGT_serialize, this.a_)
+      }
+      setStr(s, base = 10) {
+        callSetter(mod.mclBnGT_setStr, this.a_, s, base)
+      }
+      getStr(base = 10) {
+        return callGetter(mod.mclBnGT_getStr, this.a_, base)
+      }
+      isZero() {
+        return callState(mod._mclBnGT_isZero, this) == 1
+      }
+      isOne() {
+        return callState(mod._mclBnGT_isOne, this) == 1
+      }
+      isEqual(rhs) {
+        return callIsEqual(mod._mclBnGT_isEqual, this, rhs)
       }
     }
     exports.neg = function(x) {
@@ -423,6 +519,36 @@
         cstr = exports.GT
       }
       return callOp2(f, cstr, x.a_, y.a_)
+    }
+    exports.dbl = function(x) {
+      let f = null
+      let cstr = null
+      if (x instanceof exports.G1) {
+        f = mod._mclBnG1_dbl
+        cstr = exports.G1
+      } else
+      if (x instanceof exports.G2) {
+        f = mod._mclBnG2_dbl
+        cstr = exports.G2
+      } else
+      {
+        throw('dbl:bad type')
+      }
+      return callOp1(f, cstr, x.a_)
+    }
+    // pow(GT x, Fr y)
+    exports.pow = function(x, y) {
+      if (x instanceof exports.GT && y instanceof exports.Fr) {
+        return callOp2(mod._mclBnGT_pow, exports.GT, x.a_, y.a_)
+      }
+      throw('exports.pow:bad type')
+    }
+    // pairing(G1 x, G2 y)
+    exports.pairing = function(x, y) {
+      if (x instanceof exports.G1 && y instanceof exports.G2) {
+        return callOp2(mod._mclBn_pairing, exports.GT, x.a_, y.a_)
+      }
+      throw('exports.pairing:bad type')
     }
   }
   return exports

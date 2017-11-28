@@ -4,7 +4,11 @@ const assert = require('assert')
 mcl.init()
   .then(() => {
     FrTest()
-    pairingTest()
+    G1Test()
+    G2Test()
+    GTTest()
+    PairingTest()
+    PairingCapiTest()
     console.log('all ok')
     benchAll()
   })
@@ -34,9 +38,113 @@ function FrTest() {
   a.setInt(-123)
   assert.equal(mcl.neg(a).getStr(), '123')
   assert.equal(mcl.mul(a, mcl.inv(a)).getStr(), '1')
+
+  a.setInt(3)
+  assert(!a.isZero())
+  assert(!a.isOne())
+  a.setInt(1)
+  assert(!a.isZero())
+  assert(a.isOne())
+  a.setInt(0)
+  assert(a.isZero())
+  assert(!a.isOne())
+  a.setInt(5)
+  b.setInt(3)
+  assert(!a.isEqual(b))
+  b.setInt(5)
+  assert(a.isEqual(b))
+
+  a.setHashOf('abc')
+  a.dump()
+  b.setHashOf([97, 98, 99])
+  assert(a.isEqual(b))
 }
 
-function pairingTest() {
+function G1Test() {
+  const P = new mcl.G1()
+  assert(P.isZero())
+  P.clear()
+  assert(P.isZero())
+  P.setHashOf('abc')
+  const Q = new mcl.G1()
+  Q.setHashOf('abc')
+  assert(P.isEqual(Q))
+  Q.setHashOf('abcd')
+  assert(!P.isEqual(Q))
+  let R1 = mcl.add(P, Q)
+  let R2 = mcl.add(Q, P)
+  assert(R1.isEqual(R2))
+  R1 = mcl.sub(R1, R2)
+  assert(R1.isZero())
+  R1 = mcl.add(P, P) // 3P
+  R1 = mcl.add(R1, P)
+  const r = new mcl.Fr()
+  r.setInt(3)
+  R2 = mcl.mul(P, r) // 3P
+  assert(R1.isEqual(R2))
+  R1 = mcl.dbl(P)
+  R2 = mcl.add(P, P)
+  assert(R1.isEqual(R2))
+}
+
+function G2Test() {
+  const P = new mcl.G2()
+  assert(P.isZero())
+  P.clear()
+  assert(P.isZero())
+  P.setHashOf('abc')
+  const Q = new mcl.G2()
+  Q.setHashOf('abc')
+  assert(P.isEqual(Q))
+  Q.setHashOf('abcd')
+  assert(!P.isEqual(Q))
+  let R1 = mcl.add(P, Q)
+  let R2 = mcl.add(Q, P)
+  assert(R1.isEqual(R2))
+  R1 = mcl.sub(R1, R2)
+  assert(R1.isZero())
+  R1 = mcl.add(P, P) // 3P
+  R1 = mcl.add(R1, P)
+  const r = new mcl.Fr()
+  r.setInt(3)
+  R2 = mcl.mul(P, r) // 3P
+  assert(R1.isEqual(R2))
+  R1 = mcl.dbl(P)
+  R2 = mcl.add(P, P)
+  assert(R1.isEqual(R2))
+}
+
+function GTTest() {
+  const x = new mcl.GT()
+  const y = new mcl.Fr()
+  x.setInt(2)
+  y.setInt(100)
+  const z = mcl.pow(x, y)
+  assert.equal(z.getStr(), '1267650600228229401496703205376 0 0 0 0 0 0 0 0 0 0 0')
+}
+
+function PairingTest() {
+  const a = new mcl.Fr()
+  const b = new mcl.Fr()
+  const P = new mcl.G1()
+  const Q = new mcl.G2()
+
+  a.setStr('123')
+  b.setStr('456')
+  const ab = mcl.mul(a, b)
+  assert.equal(ab.getStr(), 123 * 456)
+
+  P.setHashOf('aaa')
+  Q.setHashOf('bbb')
+  const aP = mcl.mul(P, a)
+  const bQ = mcl.mul(Q, b)
+
+  const e1 = mcl.pairing(P, Q)
+  const e2 = mcl.pairing(aP, bQ)
+  assert(mcl.pow(e1, ab).isEqual(e2))
+}
+
+function PairingCapiTest() {
   const mod = mcl.mod
   const a = mod.mclBnFr_malloc()
   const b = mod.mclBnFr_malloc()
@@ -63,15 +171,15 @@ function pairingTest() {
   mod._mclBnGT_pow(e1, e1, ab)
   assert(mod._mclBnGT_isEqual(e1, e2), 'e(aP, bQ) == e(P, Q)^ab')
 
-  mod.free(e2)
-  mod.free(e1)
-  mod.free(bQ)
-  mod.free(Q)
-  mod.free(aP)
-  mod.free(P)
-  mod.free(ab)
-  mod.free(b)
-  mod.free(a)
+  mcl.free(e2)
+  mcl.free(e1)
+  mcl.free(bQ)
+  mcl.free(Q)
+  mcl.free(aP)
+  mcl.free(P)
+  mcl.free(ab)
+  mcl.free(b)
+  mcl.free(a)
 }
 
 function bench(label, count, func) {
@@ -85,6 +193,24 @@ function bench(label, count, func) {
 }
 
 function benchPairing() {
+  console.log('class')
+  const a = new mcl.Fr()
+  const P = new mcl.G1()
+  const Q = new mcl.G2()
+
+  const msg = 'hello wasm'
+
+  a.setByCSPRNG()
+  P.setHashOf('abc')
+  Q.setHashOf('abc')
+  bench('time_pairing', 50, () => mcl.pairing(P, Q))
+  bench('time_g1mul', 50, () => mcl.mul(P, a))
+  bench('time_g2mul', 50, () => mcl.mul(Q, a))
+  bench('time_mapToG1', 50, () => P.setHashOf(msg))
+}
+
+function benchPairingCapi() {
+  console.log('c api')
   const mod = mcl.mod
   const a = mod.mclBnFr_malloc()
   const P = mod.mclBnG1_malloc()
@@ -101,12 +227,13 @@ function benchPairing() {
   bench('time_g2mul', 50, () => mod._mclBnG2_mulCT(Q, Q, a))
   bench('time_mapToG1', 50, () => mod.mclBnG1_hashAndMapTo(P, msg))
 
-  mod.free(e)
-  mod.free(Q)
-  mod.free(P)
+  mcl.free(e)
+  mcl.free(Q)
+  mcl.free(P)
 }
 
 function benchAll() {
   benchPairing()
+  benchPairingCapi()
 }
 
