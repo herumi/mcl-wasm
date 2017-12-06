@@ -233,14 +233,14 @@
       constructor(size) {
         this.a_ = new Uint32Array(size / 4)
       }
-      fromHexStr(s) {
+      deserializeHexStr(s) {
         this.deserialize(exports.fromHexStr(s))
       }
-      toHexStr() {
+      serializeToHexStr() {
         return exports.toHexStr(this.serialize())
       }
       dump(msg = '') {
-        console.log(msg + this.toHexStr())
+        console.log(msg + this.serializeToHexStr())
       }
       clear() {
         this.a_.fill(0)
@@ -300,6 +300,11 @@
         callSetHashOf(mod.mclBnFr_setHashOf, this, s)
       }
     }
+    exports.deserializeHexStrToFr = function(s) {
+      r = new exports.Fr()
+      r.deserializeHexStr(s)
+      return r
+    }
     exports.G1 = class extends Common {
       constructor() {
         super(MCLBN_G1_SIZE)
@@ -326,6 +331,11 @@
         callSetHashOf(mod.mclBnG1_hashAndMapTo, this, s)
       }
     }
+    exports.deserializeHexStrToG1 = function(s) {
+      r = new exports.G1()
+      r.deserializeHexStr(s)
+      return r
+    }
     exports.G2 = class extends Common {
       constructor() {
         super(MCLBN_G2_SIZE)
@@ -351,6 +361,11 @@
       setHashOf(s) {
         callSetHashOf(mod.mclBnG2_hashAndMapTo, this, s)
       }
+    }
+    exports.deserializeHexStrToG2 = function(s) {
+      r = new exports.G2()
+      r.deserializeHexStr(s)
+      return r
     }
     exports.GT = class extends Common {
       constructor() {
@@ -380,6 +395,11 @@
       isEqual(rhs) {
         return callIsEqual(mod._mclBnGT_isEqual, this, rhs)
       }
+    }
+    exports.deserializeHexStrToGT = function(s) {
+      r = new exports.GT()
+      r.deserializeHexStr(s)
+      return r
     }
     exports.neg = function(x) {
       let f = null

@@ -29,16 +29,16 @@ function onClickIBE() {
   // keyGen
   const msk = new mcl.Fr()
   msk.setByCSPRNG()
-  setText('msk', msk.toHexStr())
+  setText('msk', msk.serializeToHexStr())
   // mpk = msk P
   const mpk = mcl.mul(P, msk)
-  setText('mpk', mpk.toHexStr())
+  setText('mpk', mpk.serializeToHexStr())
 
   // user KeyGen
   const id = getText('id')
   // sk = msk H(id)
   const sk = mcl.mul(mcl.hashAndMapToG2(id), msk)
-  setText('sk', sk.toHexStr())
+  setText('sk', sk.serializeToHexStr())
 
   const m = new mcl.Fr()
   const msg = getValue('msg')
@@ -47,7 +47,7 @@ function onClickIBE() {
 
   // encrypt
   const c = IDenc(id, P, mpk, m)
-  setText('enc', c[0].toHexStr() + ' ' + c[1].toHexStr())
+  setText('enc', c[0].serializeToHexStr() + ' ' + c[1].serializeToHexStr())
   // decrypt
   const d = IDdec(c, sk)
   setText('dec', d.getStr())
