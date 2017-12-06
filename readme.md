@@ -7,6 +7,9 @@ see [mcl](https://github.com/herumi/mcl)
 ## for Node.js
 node test.js
 
+## browser demo
+[ID-based encryption](https://herumi.github.io/mcl-wasm/ibe-demo.html)
+
 # License
 
 modified new BSD License

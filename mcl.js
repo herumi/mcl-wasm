@@ -1,13 +1,12 @@
+"use strict";
 (function(generator) {
   if (typeof exports === 'object') {
     const crypto = require('crypto')
     crypto.getRandomValues = crypto.randomFillSync
-    exports.mod = require('./mcl_c.js')
     generator(exports, crypto, true)
   } else {
     const crypto = window.crypto || window.msCrypto
-    let exports = {}
-    exports.mod = {}
+    const exports = {}
     window.mcl = generator(exports, crypto, false)
   }
 })(function(exports, crypto, isNodeJs) {
@@ -23,186 +22,170 @@
   const MCLBN_G2_SIZE = MCLBN_FP_SIZE * 6
   const MCLBN_GT_SIZE = MCLBN_FP_SIZE * 12
 
-  let mod = exports.mod
+  const setup = function(exports, curveType) {
+    const mod = exports.mod
 
-  exports.init = (curveType = MCLBN_CURVE_FP254BNB) => {
-    if (!isNodeJs) {
-      fetch('mcl_c.wasm')
-        .then(response => response.arrayBuffer())
-        .then(buffer => new Uint8Array(buffer))
-        .then(binary => { Module(mod) })
-    }
-    return new Promise((resolve) => {
-      mod.onRuntimeInitialized = () => {
-        define_extra_functions(mod)
-        const r = mod._mclBn_init(MCLBN_CURVE_FP254BNB, MCLBN_FP_UNIT_SIZE)
-        if (r) throw('_mclBn_init err ' + r)
-        resolve()
+    const ptrToStr = function(pos, n) {
+      let s = ''
+        for (let i = 0; i < n; i++) {
+        s += String.fromCharCode(mod.HEAP8[pos + i])
       }
-    })
-  }
-
-  const ptrToStr = function(pos, n) {
-    let s = ''
-      for (let i = 0; i < n; i++) {
-      s += String.fromCharCode(mod.HEAP8[pos + i])
+      return s
     }
-    return s
-  }
-  const Uint8ArrayToMem = function(pos, buf) {
-    for (let i = 0; i < buf.length; i++) {
-      mod.HEAP8[pos + i] = buf[i]
+    const Uint8ArrayToMem = function(pos, buf) {
+      for (let i = 0; i < buf.length; i++) {
+        mod.HEAP8[pos + i] = buf[i]
+      }
     }
-  }
-  const AsciiStrToMem = function(pos, s) {
-    for (let i = 0; i < s.length; i++) {
-      mod.HEAP8[pos + i] = s.charCodeAt(i)
+    const AsciiStrToMem = function(pos, s) {
+      for (let i = 0; i < s.length; i++) {
+        mod.HEAP8[pos + i] = s.charCodeAt(i)
+      }
     }
-  }
-  const copyToUint32Array = function(a, pos) {
-    a.set(mod.HEAP32.subarray(pos / 4, pos / 4 + a.length))
+    const copyToUint32Array = function(a, pos) {
+      a.set(mod.HEAP32.subarray(pos / 4, pos / 4 + a.length))
 //    for (let i = 0; i < a.length; i++) {
 //      a[i] = mod.HEAP32[pos / 4 + i]
 //    }
-  }
-  const copyFromUint32Array = function(pos, a) {
-    for (let i = 0; i < a.length; i++) {
-      mod.HEAP32[pos / 4 + i] = a[i]
     }
-  }
-  exports.toHex = function(a, start, n) {
-    let s = ''
-    for (let i = 0; i < n; i++) {
-      s += ('0' + a[start + i].toString(16)).slice(-2)
+    const copyFromUint32Array = function(pos, a) {
+      for (let i = 0; i < a.length; i++) {
+        mod.HEAP32[pos / 4 + i] = a[i]
+      }
     }
-    return s
-  }
-  // Uint8Array to hex string
-  exports.toHexStr = function(a) {
-    return exports.toHex(a, 0, a.length)
-  }
-  // hex string to Uint8Array
-  exports.fromHexStr = function(s) {
-    if (s.length & 1) throw('fromHexStr:length must be even ' + s.length)
-    let n = s.length / 2
-    let a = new Uint8Array(n)
-    for (let i = 0; i < n; i++) {
-      a[i] = parseInt(s.slice(i * 2, i * 2 + 2), 16)
+    exports.toHex = function(a, start, n) {
+      let s = ''
+      for (let i = 0; i < n; i++) {
+        s += ('0' + a[start + i].toString(16)).slice(-2)
+      }
+      return s
     }
-    return a
-  }
+    // Uint8Array to hex string
+    exports.toHexStr = function(a) {
+      return exports.toHex(a, 0, a.length)
+    }
+    // hex string to Uint8Array
+    exports.fromHexStr = function(s) {
+      if (s.length & 1) throw('fromHexStr:length must be even ' + s.length)
+      let n = s.length / 2
+      let a = new Uint8Array(n)
+      for (let i = 0; i < n; i++) {
+        a[i] = parseInt(s.slice(i * 2, i * 2 + 2), 16)
+      }
+      return a
+    }
 
-  const wrap_outputString = function(func, doesReturnString = true) {
-    return function(x, ioMode = 0) {
-      let maxBufSize = 2048
-      let stack = mod.Runtime.stackSave()
-      let pos = mod.Runtime.stackAlloc(maxBufSize)
-      let n = func(pos, maxBufSize, x, ioMode)
-      if (n < 0) {
-        throw('err gen_str:' + x)
-      }
-      if (doesReturnString) {
-        let s = ptrToStr(pos, n)
-        mod.Runtime.stackRestore(stack)
-        return s
-      } else {
-        let a = new Uint8Array(n)
-        for (let i = 0; i < n; i++) {
-          a[i] = mod.HEAP8[pos + i]
+    const wrap_outputString = function(func, doesReturnString = true) {
+      return function(x, ioMode = 0) {
+        let maxBufSize = 2048
+        let stack = mod.Runtime.stackSave()
+        let pos = mod.Runtime.stackAlloc(maxBufSize)
+        let n = func(pos, maxBufSize, x, ioMode)
+        if (n < 0) {
+          throw('err gen_str:' + x)
         }
+        if (doesReturnString) {
+          let s = ptrToStr(pos, n)
+          mod.Runtime.stackRestore(stack)
+          return s
+        } else {
+          let a = new Uint8Array(n)
+          for (let i = 0; i < n; i++) {
+            a[i] = mod.HEAP8[pos + i]
+          }
+          mod.Runtime.stackRestore(stack)
+          return a
+        }
+      }
+    }
+    const wrap_outputArray = function(func) {
+      return wrap_outputString(func, false)
+    }
+    /*
+      argNum : n
+      func(x0, ..., x_(n-1), buf, ioMode)
+      => func(x0, ..., x_(n-1), pos, buf.length, ioMode)
+    */
+    const wrap_input = function(func, argNum, returnValue = false) {
+      return function() {
+        const args = [...arguments]
+        let buf = args[argNum]
+        let ioMode = args[argNum + 1] // may undefined
+        let stack = mod.Runtime.stackSave()
+        let pos = mod.Runtime.stackAlloc(buf.length)
+        if (typeof(buf) == "string") {
+          AsciiStrToMem(pos, buf)
+        } else {
+          Uint8ArrayToMem(pos, buf)
+        }
+        let r = func(...args.slice(0, argNum), pos, buf.length, ioMode)
         mod.Runtime.stackRestore(stack)
-        return a
+        if (returnValue) return r
+        if (r) throw('err wrap_input ' + buf)
       }
     }
-  }
-  const wrap_outputArray = function(func) {
-    return wrap_outputString(func, false)
-  }
-  /*
-    argNum : n
-    func(x0, ..., x_(n-1), buf, ioMode)
-    => func(x0, ..., x_(n-1), pos, buf.length, ioMode)
-  */
-  const wrap_input = function(func, argNum, returnValue = false) {
-    return function() {
-      const args = [...arguments]
-      let buf = args[argNum]
-      let ioMode = args[argNum + 1] // may undefined
-      let stack = mod.Runtime.stackSave()
-      let pos = mod.Runtime.stackAlloc(buf.length)
-      if (typeof(buf) == "string") {
-        AsciiStrToMem(pos, buf)
-      } else {
-        Uint8ArrayToMem(pos, buf)
-      }
-      let r = func(...args.slice(0, argNum), pos, buf.length, ioMode)
+    const callSetter = function(func, a, p1, p2) {
+      const xPos = mod._malloc(a.length * 4)
+      const r = func(xPos, p1, p2) // p1, p2 may be undefined
+      copyToUint32Array(a, xPos)
+      mod._free(xPos)
+      if (r) throw('callSeeter err')
+    }
+    const callState = function(func, x) {
+      const xPos = x._getPtr()
+      const r = func(xPos)
+      mod._free(xPos)
+      return r
+    }
+    const callIsEqual = function(func, x, y) {
+      const xPos = x._getPtr()
+      const yPos = y._getPtr()
+      const r = func(xPos, yPos)
+      mod._free(yPos)
+      mod._free(xPos)
+      return r == 1
+    }
+    const callGetter = function(func, a, p1, p2) {
+      let pos = mod._malloc(a.length * 4)
+      mod.HEAP32.set(a, pos / 4)
+      let s = func(pos, p1, p2)
+      mod._free(pos)
+      return s
+    }
+    // y = func(x)
+    const callOp1 = function(func, cstr, x) {
+      const y = new cstr()
+      const stack = mod.Runtime.stackSave()
+      const xPos = mod.Runtime.stackAlloc(x.length * 4)
+      const yPos = mod.Runtime.stackAlloc(y.a_.length * 4)
+      copyFromUint32Array(xPos, x);
+      func(yPos, xPos)
+      copyToUint32Array(y.a_, yPos)
       mod.Runtime.stackRestore(stack)
-      if (returnValue) return r
-      if (r) throw('err wrap_input ' + buf)
+      return y
     }
-  }
-  const callSetter = function(func, a, p1, p2) {
-    const xPos = mod._malloc(a.length * 4)
-    const r = func(xPos, p1, p2) // p1, p2 may be undefined
-    copyToUint32Array(a, xPos)
-    mod._free(xPos)
-    if (r) throw('callSeeter err')
-  }
-  const callState = function(func, x) {
-    const xPos = x._getPtr()
-    const r = func(xPos)
-    mod._free(xPos)
-    return r
-  }
-  const callIsEqual = function(func, x, y) {
-    const xPos = x._getPtr()
-    const yPos = y._getPtr()
-    const r = func(xPos, yPos)
-    mod._free(yPos)
-    mod._free(xPos)
-    return r == 1
-  }
-  const callGetter = function(func, a, p1, p2) {
-    let pos = mod._malloc(a.length * 4)
-    mod.HEAP32.set(a, pos / 4)
-    let s = func(pos, p1, p2)
-    mod._free(pos)
-    return s
-  }
-  // y = func(x)
-  const callOp1 = function(func, cstr, x) {
-    const y = new cstr()
-    const stack = mod.Runtime.stackSave()
-    const xPos = mod.Runtime.stackAlloc(x.length * 4)
-    const yPos = mod.Runtime.stackAlloc(y.a_.length * 4)
-    copyFromUint32Array(xPos, x);
-    func(yPos, xPos)
-    copyToUint32Array(y.a_, yPos)
-    mod.Runtime.stackRestore(stack)
-    return y
-  }
-  // z = func(x, y)
-  const callOp2 = function(func, cstr, x, y) {
-    const z = new cstr()
-    const stack = mod.Runtime.stackSave()
-    const xPos = mod.Runtime.stackAlloc(x.length * 4)
-    const yPos = mod.Runtime.stackAlloc(y.length * 4)
-    const zPos = mod.Runtime.stackAlloc(z.a_.length * 4)
-    copyFromUint32Array(xPos, x);
-    copyFromUint32Array(yPos, y);
-    func(zPos, xPos, yPos)
-    copyToUint32Array(z.a_, zPos)
-    mod.Runtime.stackRestore(stack)
-    return z
-  }
-  const callSetHashOf = function(func, x, s) {
-    const pos = x._getFreshPtr()
-    const r = func(pos, s)
-    x._save(pos)
-    mod._free(pos)
-    if (r) throw('callSetHashOf')
-  }
-  const define_extra_functions = function(mod) {
+    // z = func(x, y)
+    const callOp2 = function(func, cstr, x, y) {
+      const z = new cstr()
+      const stack = mod.Runtime.stackSave()
+      const xPos = mod.Runtime.stackAlloc(x.length * 4)
+      const yPos = mod.Runtime.stackAlloc(y.length * 4)
+      const zPos = mod.Runtime.stackAlloc(z.a_.length * 4)
+      copyFromUint32Array(xPos, x);
+      copyFromUint32Array(yPos, y);
+      func(zPos, xPos, yPos)
+      copyToUint32Array(z.a_, zPos)
+      mod.Runtime.stackRestore(stack)
+      return z
+    }
+    const callSetHashOf = function(func, x, s) {
+      const pos = x._getFreshPtr()
+      const r = func(pos, s)
+      x._save(pos)
+      mod._free(pos)
+      if (r) throw('callSetHashOf')
+    }
+
     mod.mclBnFr_malloc = function() {
       return mod._malloc(MCLBN_FP_SIZE)
     }
@@ -565,6 +548,37 @@
       }
       throw('exports.pairing:bad type')
     }
+    const r = mod._mclBn_init(curveType, MCLBN_FP_UNIT_SIZE)
+    if (r) throw('_mclBn_init err ' + r)
+  } // setup()
+  exports.init = (curveType = MCLBN_CURVE_FP254BNB) => {
+    console.log('init')
+    const name = 'mcl_c'
+    return new Promise((resolve) => {
+      if (isNodeJs) {
+        const js = require(`./${name}.js`)
+        const Module = {
+          wasmBinaryFile : __dirname + `/${name}.wasm`
+        }
+        js(Module)
+          .then(_mod => {
+            exports.mod = _mod
+            setup(exports, curveType)
+            resolve()
+          })
+      } else {
+        fetch(`./${name}.wasm`)
+          .then(response => response.arrayBuffer())
+          .then(buffer => new Uint8Array(buffer))
+          .then(() => {
+            exports.mod = Module()
+            exports.mod.onRuntimeInitialized = () => {
+              setup(exports, curveType)
+              resolve()
+            }
+          })
+      }
+    })
   }
   return exports
 })
