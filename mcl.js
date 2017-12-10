@@ -101,6 +101,16 @@
     const wrap_outputArray = function(func) {
       return wrap_outputString(func, false)
     }
+    const wrap_deserialize = function(func) {
+      return function(x, buf) {
+        const stack = mod.Runtime.stackSave()
+        const pos = mod.Runtime.stackAlloc(buf.length)
+        Uint8ArrayToMem(pos, buf)
+        const r = func(x, pos, buf.length)
+        mod.Runtime.stackRestore(stack)
+        if (r == 0) throw('err wrap_deserialize', buf)
+      }
+    }
     /*
       argNum : n
       func(x0, ..., x_(n-1), buf, ioMode)
@@ -195,7 +205,7 @@
     mod.mclBnFr_setLittleEndian = wrap_input(mod._mclBnFr_setLittleEndian, 1)
     mod.mclBnFr_setStr = wrap_input(mod._mclBnFr_setStr, 1)
     mod.mclBnFr_getStr = wrap_outputString(mod._mclBnFr_getStr)
-    mod.mclBnFr_deserialize = wrap_input(mod._mclBnFr_deserialize, 1)
+    mod.mclBnFr_deserialize = wrap_deserialize(mod._mclBnFr_deserialize)
     mod.mclBnFr_serialize = wrap_outputArray(mod._mclBnFr_serialize)
     mod.mclBnFr_setHashOf = wrap_input(mod._mclBnFr_setHashOf, 1)
 
@@ -205,7 +215,7 @@
     }
     mod.mclBnG1_setStr = wrap_input(mod._mclBnG1_setStr, 1)
     mod.mclBnG1_getStr = wrap_outputString(mod._mclBnG1_getStr)
-    mod.mclBnG1_deserialize = wrap_input(mod._mclBnG1_deserialize, 1)
+    mod.mclBnG1_deserialize = wrap_deserialize(mod._mclBnG1_deserialize)
     mod.mclBnG1_serialize = wrap_outputArray(mod._mclBnG1_serialize)
     mod.mclBnG1_hashAndMapTo = wrap_input(mod._mclBnG1_hashAndMapTo, 1)
 
@@ -215,7 +225,7 @@
     }
     mod.mclBnG2_setStr = wrap_input(mod._mclBnG2_setStr, 1)
     mod.mclBnG2_getStr = wrap_outputString(mod._mclBnG2_getStr)
-    mod.mclBnG2_deserialize = wrap_input(mod._mclBnG2_deserialize, 1)
+    mod.mclBnG2_deserialize = wrap_deserialize(mod._mclBnG2_deserialize)
     mod.mclBnG2_serialize = wrap_outputArray(mod._mclBnG2_serialize)
     mod.mclBnG2_hashAndMapTo = wrap_input(mod._mclBnG2_hashAndMapTo, 1)
 
@@ -223,7 +233,7 @@
     mod.mclBnGT_malloc = function() {
       return mod._malloc(MCLBN_GT_SIZE)
     }
-    mod.mclBnGT_deserialize = wrap_input(mod._mclBnGT_deserialize, 1)
+    mod.mclBnGT_deserialize = wrap_deserialize(mod._mclBnGT_deserialize)
     mod.mclBnGT_serialize = wrap_outputArray(mod._mclBnGT_serialize)
     mod.mclBnGT_setStr = wrap_input(mod._mclBnGT_setStr, 1)
     mod.mclBnGT_getStr = wrap_outputString(mod._mclBnGT_getStr)
