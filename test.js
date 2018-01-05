@@ -7,6 +7,7 @@ mcl.init()
     G1Test()
     G2Test()
     GTTest()
+    serializeTest()
     IDbasedEncryptionTest()
     PairingTest()
     PairingCapiTest()
@@ -223,6 +224,30 @@ function PairingCapiTest() {
   mcl.free(ab)
   mcl.free(b)
   mcl.free(a)
+}
+
+function serializeSubTest(Cstr, x, newDeserializeHexStr) {
+  const y = new Cstr()
+  y.deserialize(x.serialize())
+  assert(y.isEqual(x))
+  y.clear()
+  const s = x.serializeToHexStr()
+  y.deserializeHexStr(s)
+  assert(y.isEqual(x))
+  const z = newDeserializeHexStr(s)
+  assert(z.isEqual(x))
+}
+
+function serializeTest() {
+  const a = new mcl.Fr()
+  a.setStr('12345678')
+  serializeSubTest(mcl.Fr, a, mcl.deserializeHexStrToFr)
+  const P = mcl.hashAndMapToG1('abc')
+  serializeSubTest(mcl.G1, P, mcl.deserializeHexStrToG1)
+  const Q = mcl.hashAndMapToG2('abc')
+  serializeSubTest(mcl.G2, Q, mcl.deserializeHexStrToG2)
+  const e = mcl.pairing(P, Q)
+  serializeSubTest(mcl.GT, e, mcl.deserializeHexStrToGT)
 }
 
 function bench(label, count, func) {
