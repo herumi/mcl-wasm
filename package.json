@@ -26,6 +26,6 @@
   },
   "homepage": "https://github.com/herumi/mcl-wasm#readme",
   "devDependencies": {
-    "standard": "*"
+    "standard": "^10.0.3"
   }
 }

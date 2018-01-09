@@ -15,7 +15,7 @@ mcl.init()
     benchAll()
   })
 
-function FrTest() {
+function FrTest () {
   const a = new mcl.Fr()
   a.setInt(5)
   assert.equal(a.getStr(), '5')
@@ -62,7 +62,7 @@ function FrTest() {
   assert(a.isEqual(b))
 }
 
-function G1Test() {
+function G1Test () {
   const P = new mcl.G1()
   assert(P.isZero())
   P.clear()
@@ -89,7 +89,7 @@ function G1Test() {
   assert(R1.isEqual(R2))
 }
 
-function G2Test() {
+function G2Test () {
   const P = new mcl.G2()
   assert(P.isZero())
   P.clear()
@@ -116,7 +116,7 @@ function G2Test() {
   assert(R1.isEqual(R2))
 }
 
-function GTTest() {
+function GTTest () {
   const x = new mcl.GT()
   const y = new mcl.Fr()
   x.setInt(2)
@@ -125,7 +125,7 @@ function GTTest() {
   assert.equal(z.getStr(), '1267650600228229401496703205376 0 0 0 0 0 0 0 0 0 0 0')
 }
 
-function PairingTest() {
+function PairingTest () {
   const a = new mcl.Fr()
   const b = new mcl.Fr()
 
@@ -145,7 +145,7 @@ function PairingTest() {
 }
 
 // Enc(m) = [r P, m + h(e(r mpk, H(id)))]
-function IDenc(id, P, mpk, m) {
+function IDenc (id, P, mpk, m) {
   const r = new mcl.Fr()
   r.setByCSPRNG()
   const Q = mcl.hashAndMapToG2(id)
@@ -154,13 +154,13 @@ function IDenc(id, P, mpk, m) {
 }
 
 // Dec([U, v]) = v - h(e(U, sk))
-function IDdec(c, sk) {
+function IDdec (c, sk) {
   const [U, v] = c
   const e = mcl.pairing(U, sk)
   return mcl.sub(v, mcl.hashToFr(e.serialize()))
 }
 
-function IDbasedEncryptionTest() {
+function IDbasedEncryptionTest () {
   // system parameter
   const P = mcl.hashAndMapToG1('1')
   /*
@@ -188,7 +188,7 @@ function IDbasedEncryptionTest() {
   assert(d.isEqual(m))
 }
 
-function PairingCapiTest() {
+function PairingCapiTest () {
   const mod = mcl.mod
   const a = mod.mclBnFr_malloc()
   const b = mod.mclBnFr_malloc()
@@ -210,8 +210,8 @@ function PairingCapiTest() {
   mod._mclBnG1_mul(aP, P, a)
   mod._mclBnG2_mul(bQ, Q, b)
 
-  mod._mclBn_pairing(e1, P, Q);
-  mod._mclBn_pairing(e2, aP, bQ);
+  mod._mclBn_pairing(e1, P, Q)
+  mod._mclBn_pairing(e2, aP, bQ)
   mod._mclBnGT_pow(e1, e1, ab)
   assert(mod._mclBnGT_isEqual(e1, e2), 'e(aP, bQ) == e(P, Q)^ab')
 
@@ -226,7 +226,7 @@ function PairingCapiTest() {
   mcl.free(a)
 }
 
-function serializeSubTest(Cstr, x, newDeserializeHexStr) {
+function serializeSubTest (Cstr, x, newDeserializeHexStr) {
   const y = new Cstr()
   y.deserialize(x.serialize())
   assert(y.isEqual(x))
@@ -238,7 +238,7 @@ function serializeSubTest(Cstr, x, newDeserializeHexStr) {
   assert(z.isEqual(x))
 }
 
-function serializeTest() {
+function serializeTest () {
   const a = new mcl.Fr()
   a.setStr('12345678')
   serializeSubTest(mcl.Fr, a, mcl.deserializeHexStrToFr)
@@ -250,7 +250,7 @@ function serializeTest() {
   serializeSubTest(mcl.GT, e, mcl.deserializeHexStrToGT)
 }
 
-function bench(label, count, func) {
+function bench (label, count, func) {
   const start = Date.now()
   for (let i = 0; i < count; i++) {
     func()
@@ -260,7 +260,7 @@ function bench(label, count, func) {
   console.log(label + ' ' + t)
 }
 
-function benchPairing() {
+function benchPairing () {
   console.log('class')
   const a = new mcl.Fr()
 
@@ -275,7 +275,7 @@ function benchPairing() {
   bench('time_mapToG1', 50, () => P.setHashOf(msg))
 }
 
-function benchPairingCapi() {
+function benchPairingCapi () {
   console.log('c api')
   const mod = mcl.mod
   const a = mod.mclBnFr_malloc()
@@ -298,8 +298,7 @@ function benchPairingCapi() {
   mcl.free(P)
 }
 
-function benchAll() {
+function benchAll () {
   benchPairing()
   benchPairingCapi()
 }
-
