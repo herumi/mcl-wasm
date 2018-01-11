@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.org/herumi/mcl-wasm.png)](https://travis-ci.org/herumi/mcl-wasm)
 # A generic and fast pairing-based cryptography library for Node.js by WebAssembly
 
 # Abstract
