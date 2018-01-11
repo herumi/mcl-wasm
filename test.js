@@ -87,6 +87,8 @@ function G1Test () {
   R1 = mcl.dbl(P)
   R2 = mcl.add(P, P)
   assert(R1.isEqual(R2))
+  const R3 = mcl.normalize(R1)
+  assert(R1.isEqual(R3))
 }
 
 function G2Test () {
@@ -114,6 +116,8 @@ function G2Test () {
   R1 = mcl.dbl(P)
   R2 = mcl.add(P, P)
   assert(R1.isEqual(R2))
+  const R3 = mcl.normalize(R1)
+  assert(R1.isEqual(R3))
 }
 
 function GTTest () {
