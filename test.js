@@ -1,19 +1,30 @@
 const mcl = require('./mcl.js')
 const assert = require('assert')
 
-mcl.init()
-  .then(() => {
-    FrTest()
-    G1Test()
-    G2Test()
-    GTTest()
-    serializeTest()
-    IDbasedEncryptionTest()
-    PairingTest()
-    PairingCapiTest()
-    console.log('all ok')
-    benchAll()
-  })
+const curveTest = (curveType, name) => {
+  mcl.init(curveType)
+    .then(() => {
+      console.log(`name=${name}`)
+      FrTest()
+      G1Test()
+      G2Test()
+      GTTest()
+      serializeTest()
+      IDbasedEncryptionTest()
+      PairingTest()
+      PairingCapiTest()
+      console.log('all ok')
+      benchAll()
+    })
+}
+
+async function curveTestAll () {
+  await curveTest(0, 'FP254BNB')
+  await curveTest(1, 'FP382_1')
+  await curveTest(3, 'FP462')
+}
+
+curveTestAll()
 
 function FrTest () {
   const a = new mcl.Fr()

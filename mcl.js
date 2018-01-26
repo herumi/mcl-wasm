@@ -10,21 +10,35 @@
     window.mcl = generator(exports, crypto, false)
   }
 })((exports, crypto, isNodeJs) => {
-  const MCLBN_FP_UNIT_SIZE = 4 // set 6 if you want to use MCLBN_CURVE_FP382_1
-
   /* eslint-disable */
-  const MCLBN_CURVE_FP254BNB = 0
-  const MCLBN_CURVE_FP382_1 = 1
-  const MCLBN_CURVE_FP382_2 = 2
+  const CURVE_FP254BNB = 0
+  const CURVE_FP382_1 = 1
+  const CURVE_FP382_2 = 2
+  const CURVE_FP462 = 3
+  const CURVE_SNARK1 = 4
   /* eslint-disable */
-
-  const MCLBN_FP_SIZE = MCLBN_FP_UNIT_SIZE * 8
-  const MCLBN_G1_SIZE = MCLBN_FP_SIZE * 3
-  const MCLBN_G2_SIZE = MCLBN_FP_SIZE * 6
-  const MCLBN_GT_SIZE = MCLBN_FP_SIZE * 12
+  const getUnitSize = curveType => {
+    switch (curveType) {
+    case CURVE_FP254BNB:
+    case CURVE_SNARK1:
+      return 4; /* use mcl_c.js */
+    case CURVE_FP382_1:
+    case CURVE_FP382_2:
+    case CURVE_FP462:
+      return 8; /* use mcl_c512.js */
+    default:
+      throw new Error(`bad curveType=${curveType}`)
+    }
+  }
 
   const setup = (exports, curveType) => {
     const mod = exports.mod
+    const MCLBN_FP_UNIT_SIZE = getUnitSize(curveType)
+    const MCLBN_FP_SIZE = MCLBN_FP_UNIT_SIZE * 8
+    const MCLBN_G1_SIZE = MCLBN_FP_SIZE * 3
+    const MCLBN_G2_SIZE = MCLBN_FP_SIZE * 6
+    const MCLBN_GT_SIZE = MCLBN_FP_SIZE * 12
+
     const _free = pos => {
       mod._free(pos)
     }
@@ -514,10 +528,10 @@
     const r = mod._mclBn_init(curveType, MCLBN_FP_UNIT_SIZE)
     if (r) throw new Error('_mclBn_init err ' + r)
   } // setup()
-  exports.init = (curveType = MCLBN_CURVE_FP254BNB) => {
-    console.log('init')
-    const name = 'mcl_c'
-    return new Promise((resolve) => {
+  exports.init = (curveType = CURVE_FP254BNB) => {
+    console.log(`init curveType=${curveType}`)
+    const name = getUnitSize(curveType) == 4 ? 'mcl_c' : 'mcl_c512'
+    return new Promise(resolve => {
       if (isNodeJs) {
         const path = require('path')
         const js = require(`./${name}.js`)

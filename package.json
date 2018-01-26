@@ -1,6 +1,6 @@
 {
   "name": "mcl-wasm",
-  "version": "0.0.8",
+  "version": "0.1.0",
   "description": "mcl ; A generic and fast pairing-based cryptography library for Node.js by WebAssembly",
   "main": "mcl.js",
   "scripts": {
@@ -26,6 +26,11 @@
   },
   "homepage": "https://github.com/herumi/mcl-wasm#readme",
   "devDependencies": {
+    "coveralls": "^3.0.0",
+    "istanbul": "^0.4.5",
     "standard": "^10.0.3"
+  },
+  "dependencies": {
+    "nyc": "^11.4.1"
   }
 }
