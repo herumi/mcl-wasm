@@ -391,6 +391,24 @@
       r.deserializeHexStr(s)
       return r
     }
+    exports.PrecomputedG2 = class {
+      constructor (Q) {
+        if (!(Q instanceof exports.G2)) throw new Error('PrecomputedG2:bad type')
+        const byteSize = mod._mclBn_getUint64NumToPrecompute() * 8
+        this.p = mod._malloc(byteSize)
+        const Qpos = Q._allocAndCopy()
+        mod._mclBn_precomputeG2(this.p, Qpos)
+        _free(Qpos)
+      }
+      /*
+        call destroy if PrecomputedG2 is not necessary
+        to avoid memory leak
+      */
+      destroy () {
+        mod._free(this.p)
+        this.p = null
+      }
+    }
     exports.neg = x => {
       if (x instanceof exports.Fr) {
         return x._op1(mod._mclBnFr_neg)
@@ -518,12 +536,35 @@
       }
       throw new Error('pow:bad type')
     }
-    // pairing(G1 x, G2 y)
-    exports.pairing = (x, y) => {
-      if (x instanceof exports.G1 && y instanceof exports.G2) {
-        return x._op2(mod._mclBn_pairing, y, exports.GT)
+    // pairing(G1 P, G2 Q)
+    exports.pairing = (P, Q) => {
+      if (P instanceof exports.G1 && Q instanceof exports.G2) {
+        return P._op2(mod._mclBn_pairing, Q, exports.GT)
       }
       throw new Error('exports.pairing:bad type')
+    }
+    // millerLoop(G1 P, G2 Q)
+    exports.millerLoop = (P, Q) => {
+      if (P instanceof exports.G1 && Q instanceof exports.G2) {
+        return P._op2(mod._mclBn_millerLoop, Q, exports.GT)
+      }
+      throw new Error('exports.millerLoop:bad type')
+    }
+    exports.precomputedMillerLoop = (P, Qcoeff) => {
+      if (!(P instanceof exports.G1 && Qcoeff instanceof exports.PrecomputedG2)) throw new Error('exports.precomputedMillerLoop:bad type')
+      const e = new exports.GT()
+      const PPos = P._allocAndCopy()
+      const ePos = e._alloc()
+      mod._mclBn_precomputedMillerLoop(ePos, PPos, Qcoeff.p)
+      e._saveAndFree(ePos)
+      _free(PPos)
+      return e
+    }
+    exports.finalExp = x => {
+      if (x instanceof exports.GT) {
+        return x._op1(mod._mclBn_finalExp)
+      }
+      throw new Error('finalExp:bad type')
     }
     const r = mod._mclBn_init(curveType, MCLBN_FP_UNIT_SIZE)
     if (r) throw new Error('_mclBn_init err ' + r)

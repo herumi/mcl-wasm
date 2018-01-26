@@ -154,9 +154,26 @@ function PairingTest () {
   const aP = mcl.mul(P, a)
   const bQ = mcl.mul(Q, b)
 
-  const e1 = mcl.pairing(P, Q)
-  const e2 = mcl.pairing(aP, bQ)
-  assert(mcl.pow(e1, ab).isEqual(e2))
+  const ePQ = mcl.pairing(P, Q)
+  {
+    const e2 = mcl.pairing(aP, bQ)
+    assert(mcl.pow(ePQ, ab).isEqual(e2))
+  }
+
+  // pairing = millerLoop + finalExp
+  {
+    const e2 = mcl.millerLoop(P, Q)
+    const e3 = mcl.finalExp(e2)
+    assert(ePQ.isEqual(e3))
+  }
+  // precompute Q for fixed G2 point
+  {
+    const Qcoeff = new mcl.PrecomputedG2(Q)
+    const e2 = mcl.precomputedMillerLoop(P, Qcoeff)
+    const e3 = mcl.finalExp(e2)
+    assert(ePQ.isEqual(e3))
+    Qcoeff.destroy() // call this function to avoid memory leak
+  }
 }
 
 // Enc(m) = [r P, m + h(e(r mpk, H(id)))]
@@ -284,12 +301,24 @@ function benchPairing () {
   a.setByCSPRNG()
   const P = mcl.hashAndMapToG1('abc')
   const Q = mcl.hashAndMapToG2('abc')
-  bench('time_pairing', 50, () => mcl.pairing(P, Q))
-  bench('time_g1mul', 50, () => mcl.mul(P, a))
-  bench('time_g2mul', 50, () => mcl.mul(Q, a))
-  bench('time_mapToG1', 50, () => P.setHashOf(msg))
+  const Qcoeff = new mcl.PrecomputedG2(Q)
+  const e = mcl.pairing(P, Q)
+
+  console.log('benchmark')
+  const C = 100
+  bench('Fr.setByCSPRNG', C, () => a.setByCSPRNG())
+  bench('pairing', C, () => mcl.pairing(P, Q))
+  bench('millerLoop', C, () => mcl.millerLoop(P, Q))
+  bench('finalExp', C, () => mcl.finalExp(e))
+  bench('precomputedMillerLoop', C, () => mcl.precomputedMillerLoop(P, Qcoeff))
+  bench('G1::mul', C, () => mcl.mul(P, a))
+  bench('G2::mul', C, () => mcl.mul(Q, a))
+  bench('mapToG1', C, () => P.setHashOf(msg))
+
+  Qcoeff.destroy()
 }
 
+/*
 function benchPairingCapi () {
   console.log('c api')
   const mod = mcl.mod
@@ -312,8 +341,9 @@ function benchPairingCapi () {
   mcl.free(Q)
   mcl.free(P)
 }
+*/
 
 function benchAll () {
   benchPairing()
-  benchPairingCapi()
+//  benchPairingCapi()
 }
