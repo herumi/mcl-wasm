@@ -3,10 +3,44 @@ function setValue(name, val) { document.getElementsByName(name)[0].value = val }
 function getText(name) { return document.getElementsByName(name)[0].innerText }
 function setText(name, val) { document.getElementsByName(name)[0].innerText = val }
 
-mcl.init()
-  .then(() => {
+function loadScript(url, callback) {
+  const script = document.createElement('script')
+  script.type = 'text/javascript'
+  script.src = url
+  if (script.readyState) {
+    script.onreadystatechange = () => {
+      if (script.readyState === 'loaded' || script.readyState === 'complete') {
+        script.onreadystatechange = null
+        callback()
+      }
+    }
+  } else {
+    script.onload = () => callback()
+  }
+  document.getElementsByTagName('head')[0].appendChild(script)
+}
+
+let prevSelectedCurve = 0
+loadScript('./mcl_c.js', () => {
+  mcl.init(prevSelectedCurve).then(() => {
     setText('status', 'ok')
   })
+})
+
+function onChangeSelectCurve() {
+  const obj = document.selectCurve.curveType
+  const idx = obj.selectedIndex
+  const curveType = obj.options[idx].value | 0
+  if (curveType == prevSelectedCurve) return
+  prevSelectedCurve = curveType
+  const srcName = curveType == 0 ? './mcl_c.js' : './mcl_c512.js'
+  console.log(`srcName=${srcName}`)
+  loadScript(srcName, () => {
+    mcl.init(curveType).then(() => {
+      setText('status', `curveType=${curveType} status ok`)
+    })
+  })
+}
 
 // Enc(m) = [r P, m + h(e(r mpk, H(id)))]
 function IDenc(id, P, mpk, m) {

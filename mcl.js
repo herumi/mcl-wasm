@@ -27,7 +27,7 @@
     case CURVE_FP462:
       return 8; /* use mcl_c512.js */
     default:
-      throw new Error(`bad curveType=${curveType}`)
+      throw new Error(`QQQ bad curveType=${curveType}`)
     }
   }
 

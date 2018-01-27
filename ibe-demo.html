@@ -4,15 +4,19 @@
 	<meta charset="UTF-8">
 	<title>ID based encryption demo</title>
 	<link rel="stylesheet" type="text/css">
-	<script src="./mcl_c.js"></script>
 	<script src="./mcl.js"></script>
 	<script src="./ibe-demo.js"></script>
 	</script>
 </head>
 <body>
-<p>
+<form name="selectCurve">
+pairing parameter : <select name="curveType" onChange="onChangeSelectCurve()">
+<option value="0" selected>Fp254BNb</option>
+<option value="1">Fp382_1</option>
+<option value="3">Fp462</option>
+</select>
 library status <span name="status">initializing...</span>
-</p>
+</form>
 <button type="text" id="testIBE" onclick="onClickIBE()">test IBE</button>
 <div>
 master secret key : <span name="msk"></span><br>
