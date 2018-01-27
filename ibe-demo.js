@@ -1,9 +1,9 @@
-function getValue(name) { return document.getElementsByName(name)[0].value }
-function setValue(name, val) { document.getElementsByName(name)[0].value = val }
-function getText(name) { return document.getElementsByName(name)[0].innerText }
-function setText(name, val) { document.getElementsByName(name)[0].innerText = val }
+function getValue (name) { return document.getElementsByName(name)[0].value }
+function setValue (name, val) { document.getElementsByName(name)[0].value = val }
+function getText (name) { return document.getElementsByName(name)[0].innerText }
+function setText (name, val) { document.getElementsByName(name)[0].innerText = val }
 
-function loadScript(url, callback) {
+function loadScript (url, callback) {
   const script = document.createElement('script')
   script.type = 'text/javascript'
   script.src = url
@@ -22,18 +22,19 @@ function loadScript(url, callback) {
 
 let prevSelectedCurve = 0
 loadScript('./mcl_c.js', () => {
+  setText('browser', navigator.userAgent)
   mcl.init(prevSelectedCurve).then(() => {
     setText('status', 'ok')
   })
 })
 
-function onChangeSelectCurve() {
+function onChangeSelectCurve () {
   const obj = document.selectCurve.curveType
   const idx = obj.selectedIndex
   const curveType = obj.options[idx].value | 0
-  if (curveType == prevSelectedCurve) return
+  if (curveType === prevSelectedCurve) return
   prevSelectedCurve = curveType
-  const srcName = curveType == 0 ? './mcl_c.js' : './mcl_c512.js'
+  const srcName = curveType === 0 ? './mcl_c.js' : './mcl_c512.js'
   console.log(`srcName=${srcName}`)
   loadScript(srcName, () => {
     mcl.init(curveType).then(() => {
@@ -43,7 +44,7 @@ function onChangeSelectCurve() {
 }
 
 // Enc(m) = [r P, m + h(e(r mpk, H(id)))]
-function IDenc(id, P, mpk, m) {
+function IDenc (id, P, mpk, m) {
   const r = new mcl.Fr()
   r.setByCSPRNG()
   const Q = mcl.hashAndMapToG2(id)
@@ -52,13 +53,13 @@ function IDenc(id, P, mpk, m) {
 }
 
 // Dec([U, v]) = v - h(e(U, sk))
-function IDdec(c, sk) {
+function IDdec (c, sk) {
   const [U, v] = c
   const e = mcl.pairing(U, sk)
   return mcl.sub(v, mcl.hashToFr(e.serialize()))
 }
 
-function onClickIBE() {
+function onClickIBE () {
   const P = mcl.hashAndMapToG1('1')
   // keyGen
   const msk = new mcl.Fr()
@@ -85,4 +86,46 @@ function onClickIBE() {
   // decrypt
   const d = IDdec(c, sk)
   setText('dec', d.getStr())
+}
+
+function bench (label, count, func) {
+  const start = Date.now()
+  for (let i = 0; i < count; i++) {
+    func()
+  }
+  const end = Date.now()
+  const t = (end - start) / count
+  setText(label, t)
+}
+
+function benchAll () {
+  const a = new mcl.Fr()
+
+  const msg = 'hello wasm'
+
+  a.setByCSPRNG()
+  let P = mcl.hashAndMapToG1('abc')
+  let Q = mcl.hashAndMapToG2('abc')
+  const P2 = mcl.hashAndMapToG1('abce')
+  const Q2 = mcl.hashAndMapToG2('abce')
+  const Qcoeff = new mcl.PrecomputedG2(Q)
+  const e = mcl.pairing(P, Q)
+
+  console.log('benchmark')
+  const C = 100
+  bench('T_Fr::setByCSPRNG', C, () => a.setByCSPRNG())
+  bench('T_pairing', C, () => mcl.pairing(P, Q))
+  bench('T_millerLoop', C, () => mcl.millerLoop(P, Q))
+  bench('T_finalExp', C, () => mcl.finalExp(e))
+  bench('T_precomputedMillerLoop', C, () => mcl.precomputedMillerLoop(P, Qcoeff))
+  bench('T_G1::add', C, () => { P = mcl.add(P, P2) })
+  bench('T_G1::dbl', C, () => { P = mcl.dbl(P) })
+  bench('T_G1::mul', C, () => { P = mcl.mul(P, a) })
+  bench('T_G2::add', C, () => { Q = mcl.add(Q, Q2) })
+  bench('T_G2::dbl', C, () => { Q = mcl.dbl(Q) })
+  bench('T_G2::mul', C, () => { Q = mcl.mul(Q, a) })
+  bench('T_hashAndMapToG1', C, () => mcl.hashAndMapToG1(msg))
+  bench('T_hashAndMapToG2', C, () => mcl.hashAndMapToG2(msg))
+
+  Qcoeff.destroy()
 }

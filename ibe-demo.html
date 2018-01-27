@@ -9,6 +9,8 @@
 	</script>
 </head>
 <body>
+<h1>ID based encryption demo</h1>
+browser <span name="browser"></span>
 <form name="selectCurve">
 pairing parameter : <select name="curveType" onChange="onChangeSelectCurve()">
 <option value="0" selected>Fp254BNb</option>
@@ -17,6 +19,7 @@ pairing parameter : <select name="curveType" onChange="onChangeSelectCurve()">
 </select>
 library status <span name="status">initializing...</span>
 </form>
+<h2>test of IBE</h2>
 <button type="text" id="testIBE" onclick="onClickIBE()">test IBE</button>
 <div>
 master secret key : <span name="msk"></span><br>
@@ -27,5 +30,24 @@ msg(only decimal number) : <input type="text" name="msg" value="123"><br>
 c = Enc(msg) : <span name="enc"></span><br>
 Dec(msg) : <span name="dec"></span><br>
 </div>
+<h2>benchmark</h2>
+<button type="button" onclick="benchAll()">benchAll</button><br>
+
+<table border=1 id="benchAll" summary="benchAll">
+<tr><th>op<th>msec
+<tr><th>Fr::setByCSPRNG<th><span name="T_Fr::setByCSPRNG">0</span>
+<tr><th>pairing<th><span name="T_pairing">0</span>
+<tr><th>millerLoop<th><span name="T_millerLoop">0</span>
+<tr><th>finalExp<th><span name="T_finalExp">0</span>
+<tr><th>precomputedMillerLoop<th><span name="T_precomputedMillerLoop">0</span>
+<tr><th>G1::add<th><span name="T_G1::add">0</span>
+<tr><th>G1::dbl<th><span name="T_G1::dbl">0</span>
+<tr><th>G1::mul<th><span name="T_G1::mul">0</span>
+<tr><th>G2::add<th><span name="T_G2::add">0</span>
+<tr><th>G2::dbl<th><span name="T_G2::dbl">0</span>
+<tr><th>G2::mul<th><span name="T_G2::mul">0</span>
+<tr><th>hashAndMapToG1<th><span name="T_hashAndMapToG1">0</span>
+<tr><th>hashAndMapToG2<th><span name="T_hashAndMapToG2">0</span>
+</table>
 </body>
 </html>
