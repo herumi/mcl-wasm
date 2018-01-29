@@ -51,6 +51,8 @@ function FrTest () {
   a.setInt(-123)
   assert.equal(mcl.neg(a).getStr(), '123')
   assert.equal(mcl.mul(a, mcl.inv(a)).getStr(), '1')
+  a.setInt(123459)
+  assert(mcl.mul(a, a).isEqual(mcl.sqr(a)))
 
   a.setInt(3)
   assert(!a.isZero())
@@ -138,6 +140,7 @@ function GTTest () {
   y.setInt(100)
   const z = mcl.pow(x, y)
   assert.equal(z.getStr(), '1267650600228229401496703205376 0 0 0 0 0 0 0 0 0 0 0')
+  assert(mcl.sqr(z).isEqual(mcl.mul(z, z)))
 }
 
 function PairingTest () {

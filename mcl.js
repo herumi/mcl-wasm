@@ -424,6 +424,15 @@
       }
       throw new Error('neg:bad type')
     }
+    exports.sqr = x => {
+      if (x instanceof exports.Fr) {
+        return x._op1(mod._mclBnFr_sqr)
+      }
+      if (x instanceof exports.GT) {
+        return x._op1(mod._mclBnGT_sqr)
+      }
+      throw new Error('sqr:bad type')
+    }
     exports.inv = x => {
       if (x instanceof exports.Fr) {
         return x._op1(mod._mclBnFr_inv)
