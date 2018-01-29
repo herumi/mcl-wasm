@@ -1,5 +1,6 @@
 const mcl = require('./mcl.js')
 const assert = require('assert')
+const { performance } = require('perf_hooks')
 
 const curveTest = (curveType, name) => {
   mcl.init(curveType)
@@ -286,13 +287,14 @@ function serializeTest () {
 }
 
 function bench (label, count, func) {
-  const start = Date.now()
+  const start = performance.now()
   for (let i = 0; i < count; i++) {
     func()
   }
-  const end = Date.now()
+  const end = performance.now()
   const t = (end - start) / count
-  console.log(label + ' ' + t)
+  const roundTime = (Math.round(t * 1000)) / 1000
+  console.log(label + ' ' + roundTime)
 }
 
 function benchAll () {
@@ -365,4 +367,3 @@ function benchPairingCapi () {
   mcl.free(P)
 }
 */
-

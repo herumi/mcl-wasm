@@ -89,13 +89,14 @@ function onClickIBE () {
 }
 
 function bench (label, count, func) {
-  const start = Date.now()
+  const start = performance.now()
   for (let i = 0; i < count; i++) {
     func()
   }
-  const end = Date.now()
+  const end = performance.now()
   const t = (end - start) / count
-  setText(label, t)
+  const roundTime = (Math.round(t * 1000)) / 1000
+  setText(label, roundTime)
 }
 
 function benchAll () {
