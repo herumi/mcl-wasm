@@ -127,5 +127,18 @@ function benchAll () {
   bench('T_hashAndMapToG1', C, () => mcl.hashAndMapToG1(msg))
   bench('T_hashAndMapToG2', C, () => mcl.hashAndMapToG2(msg))
 
+  let b = new mcl.Fr()
+  b.setByCSPRNG()
+  bench('T_Fr::add', C, () => { b = mcl.add(b, a) })
+  bench('T_Fr::mul', C, () => { b = mcl.mul(b, a) })
+  bench('T_Fr::sqr', C, () => { b = mcl.sqr(b) })
+  bench('T_Fr::inv', C, () => { b = mcl.inv(b) })
+
+  let e2 = mcl.pairing(P, Q)
+  bench('T_GT::add', C, () => { e2 = mcl.add(e2, e) })
+  bench('T_GT::mul', C, () => { e2 = mcl.mul(e2, e) })
+  bench('T_GT::sqr', C, () => { e2 = mcl.sqr(e2) })
+  bench('T_GT::inv', C, () => { e2 = mcl.inv(e2) })
+
   Qcoeff.destroy()
 }
