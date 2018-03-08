@@ -5,17 +5,21 @@ const { performance } = require('perf_hooks')
 const curveTest = (curveType, name) => {
   mcl.init(curveType)
     .then(() => {
-      console.log(`name=${name}`)
-      FrTest()
-      G1Test()
-      G2Test()
-      GTTest()
-      serializeTest()
-      IDbasedEncryptionTest()
-      PairingTest()
-      PairingCapiTest()
-      console.log('all ok')
-      benchAll()
+      try {
+        console.log(`name=${name}`)
+        FrTest()
+        G1Test()
+        G2Test()
+        GTTest()
+        serializeTest()
+        IDbasedEncryptionTest()
+        PairingTest()
+        PairingCapiTest()
+        console.log('all ok')
+        benchAll()
+      } catch (e) {
+        console.log(`e=${e}`)
+      }
     })
 }
 
