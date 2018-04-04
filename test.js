@@ -1,3 +1,4 @@
+'use strict'
 const mcl = require('./mcl.js')
 const assert = require('assert')
 const { performance } = require('perf_hooks')
@@ -24,6 +25,7 @@ const curveTest = (curveType, name) => {
 }
 
 async function curveTestAll () {
+  // can't parallel
   await curveTest(0, 'FP254BNB')
   await curveTest(1, 'FP382_1')
   await curveTest(5, 'BLS12_381')

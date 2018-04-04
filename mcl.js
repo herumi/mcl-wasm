@@ -284,7 +284,7 @@
         this._setter(mod.mclBnFr_setLittleEndian, s)
       }
       setByCSPRNG () {
-        let a = new Uint8Array(MCLBN_FP_SIZE)
+        const a = new Uint8Array(MCLBN_FP_SIZE)
         crypto.getRandomValues(a)
         this.setLittleEndian(a)
       }
