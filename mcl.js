@@ -11,20 +11,22 @@
   }
 })((exports, crypto, isNodeJs) => {
   /* eslint-disable */
-  const CURVE_FP254BNB = 0
-  const CURVE_FP382_1 = 1
-  const CURVE_FP382_2 = 2
-  const CURVE_FP462 = 3
-  const CURVE_SNARK1 = 4
+  const MCL_BN254BNb = 0
+  const MCL_BN382_1 = 1
+  const MCL_BN382_2 = 2
+  const MCL_BN462 = 3
+  const MCL_BN_SNARK1 = 4
+  const MCL_BLS12_381 = 5
   /* eslint-disable */
   const getUnitSize = curveType => {
     switch (curveType) {
-    case CURVE_FP254BNB:
-    case CURVE_SNARK1:
+    case MCL_BN254BNb:
+    case MCL_BN_SNARK1:
       return 4; /* use mcl_c.js */
-    case CURVE_FP382_1:
-    case CURVE_FP382_2:
-    case CURVE_FP462:
+    case MCL_BN382_1:
+    case MCL_BN382_2:
+    case MCL_BLS12_381:
+    case MCL_BN462:
       return 8; /* use mcl_c512.js */
     default:
       throw new Error(`QQQ bad curveType=${curveType}`)
@@ -578,7 +580,7 @@
     const r = mod._mclBn_init(curveType, MCLBN_FP_UNIT_SIZE)
     if (r) throw new Error('_mclBn_init err ' + r)
   } // setup()
-  exports.init = (curveType = CURVE_FP254BNB) => {
+  exports.init = (curveType = MCL_BN254BNb) => {
     console.log(`init curveType=${curveType}`)
     const name = getUnitSize(curveType) == 4 ? 'mcl_c' : 'mcl_c512'
     return new Promise(resolve => {

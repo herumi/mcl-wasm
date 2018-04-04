@@ -26,6 +26,7 @@ const curveTest = (curveType, name) => {
 async function curveTestAll () {
   await curveTest(0, 'FP254BNB')
   await curveTest(1, 'FP382_1')
+  await curveTest(5, 'BLS12_381')
   await curveTest(3, 'FP462')
 }
 
