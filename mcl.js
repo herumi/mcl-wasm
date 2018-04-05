@@ -597,7 +597,7 @@
             resolve()
           })
       } else {
-        fetch(`./${name}.wasm`) // eslint-disable-line
+        fetch(`${name}.wasm`) // eslint-disable-line
           .then(response => response.arrayBuffer())
           .then(buffer => new Uint8Array(buffer))
           .then(() => {
