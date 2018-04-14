@@ -588,7 +588,7 @@
         const path = require('path')
         const js = require(`./${name}.js`)
         const Module = {
-          wasmBinaryFile: path.join(__dirname, `/${name}.wasm`)
+          locateFile: baseName => { return path.join(__dirname, baseName) }
         }
         js(Module)
           .then(_mod => {
