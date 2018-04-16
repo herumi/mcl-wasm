@@ -27,10 +27,10 @@ const curveTest = (curveType, name) => {
 
 async function curveTestAll () {
   // can't parallel
-  await curveTest(0, 'BN254')
-  await curveTest(1, 'BN381_1')
-  await curveTest(5, 'BLS12_381')
-  await curveTest(3, 'BN462')
+  await curveTest(mcl.BN254, 'BN254')
+  await curveTest(mcl.BN381_1, 'BN381_1')
+  await curveTest(mcl.BLS12_381, 'BLS12_381')
+  await curveTest(mcl.BN462, 'BN462')
 }
 
 curveTestAll()
