@@ -117,9 +117,13 @@
       return function () {
         const args = [...arguments]
         const buf = args[argNum]
+        const typeStr = Object.prototype.toString.apply(buf)
+        if (['[object String]', '[object Uint8Array]', '[object Array]'].indexOf(typeStr) < 0) {
+          throw new Error(`err bad type:"${typeStr}". Use String or Uint8Array.`)
+        }
         const ioMode = args[argNum + 1] // may undefined
         const pos = mod._malloc(buf.length)
-        if (typeof (buf) === 'string') {
+        if (typeStr === '[object String]') {
           asciiStrToPtr(pos, buf)
         } else {
           mod.HEAP8.set(buf, pos)
