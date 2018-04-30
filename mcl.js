@@ -80,10 +80,10 @@
 
     const _wrapGetStr = (func, returnAsStr = true) => {
       return (x, ioMode = 0) => {
-        const maxBufSize = 2048
+        const maxBufSize = 3096
         const pos = mod._malloc(maxBufSize)
         const n = func(pos, maxBufSize, x, ioMode)
-        if (n < 0) {
+        if (n <= 0) {
           throw new Error('err gen_str:' + x)
         }
         let s = null
