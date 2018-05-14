@@ -584,6 +584,13 @@
     const r = mod._mclBn_init(curveType, MCLBN_FP_UNIT_SIZE)
     if (r) throw new Error('_mclBn_init err ' + r)
   } // setup()
+  const _cryptoGetRandomValues = function(p, n) {
+    const a = new Uint8Array(n)
+    crypto.getRandomValues(a)
+    for (let i = 0; i < n; i++) {
+      exports.mod.HEAP8[p + i] = a[i]
+    }
+  }
   exports.init = (curveType = exports.BN254) => {
     exports.curveType = curveType
     const name = getUnitSize(curveType) == 4 ? 'mcl_c' : 'mcl_c512'
@@ -592,6 +599,7 @@
         const path = require('path')
         const js = require(`./${name}.js`)
         const Module = {
+          cryptoGetRandomValues : _cryptoGetRandomValues,
           locateFile: baseName => { return path.join(__dirname, baseName) }
         }
         js(Module)
@@ -606,6 +614,7 @@
           .then(buffer => new Uint8Array(buffer))
           .then(() => {
             exports.mod = Module() // eslint-disable-line
+            exports.mod.cryptoGetRandomValues = _cryptoGetRandomValues
             exports.mod.onRuntimeInitialized = () => {
               setup(exports, curveType)
               resolve()
