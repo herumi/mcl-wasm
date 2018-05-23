@@ -42,7 +42,7 @@
     const MCLBN_GT_SIZE = MCLBN_FP_SIZE * 12
 
     const _free = pos => {
-      mod._free(pos)
+      mod._mclBnFree(pos)
     }
     const ptrToAsciiStr = (pos, n) => {
       let s = ''
@@ -137,7 +137,7 @@
       return mod._malloc(MCLBN_FP_SIZE)
     }
     exports.free = x => {
-      mod._free(x)
+      _free(x)
     }
     mod.mclBnFr_setLittleEndian = _wrapInput(mod._mclBnFr_setLittleEndian, 1)
     mod.mclBnFr_setStr = _wrapInput(mod._mclBnFr_setStr, 1)
@@ -411,7 +411,7 @@
         to avoid memory leak
       */
       destroy () {
-        mod._free(this.p)
+        _free(this.p)
         this.p = null
       }
     }
