@@ -1,3 +1,5 @@
 ibe-demo.html
 ibe-demo.js
+.nyc_output/
+coverage/
 
