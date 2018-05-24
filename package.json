@@ -1,6 +1,6 @@
 {
   "name": "mcl-wasm",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "mcl ; A portable and fast pairing-based cryptography library for Node.js by WebAssembly",
   "main": "mcl.js",
   "scripts": {
