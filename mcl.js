@@ -41,6 +41,9 @@
     const MCLBN_G2_SIZE = MCLBN_FP_SIZE * 6
     const MCLBN_GT_SIZE = MCLBN_FP_SIZE * 12
 
+    const _malloc = size => {
+      return mod._mclBnMalloc(size)
+    }
     const _free = pos => {
       mod._mclBnFree(pos)
     }
@@ -81,7 +84,7 @@
     const _wrapGetStr = (func, returnAsStr = true) => {
       return (x, ioMode = 0) => {
         const maxBufSize = 3096
-        const pos = mod._malloc(maxBufSize)
+        const pos = _malloc(maxBufSize)
         const n = func(pos, maxBufSize, x, ioMode)
         if (n <= 0) {
           throw new Error('err gen_str:' + x)
@@ -101,7 +104,7 @@
     }
     const _wrapDeserialize = func => {
       return (x, buf) => {
-        const pos = mod._malloc(buf.length)
+        const pos = _malloc(buf.length)
         mod.HEAP8.set(buf, pos)
         const r = func(x, pos, buf.length)
         _free(pos)
@@ -122,7 +125,7 @@
           throw new Error(`err bad type:"${typeStr}". Use String or Uint8Array.`)
         }
         const ioMode = args[argNum + 1] // may undefined
-        const pos = mod._malloc(buf.length)
+        const pos = _malloc(buf.length)
         if (typeStr === '[object String]') {
           asciiStrToPtr(pos, buf)
         } else {
@@ -134,7 +137,7 @@
       }
     }
     mod.mclBnFr_malloc = () => {
-      return mod._malloc(MCLBN_FP_SIZE)
+      return _malloc(MCLBN_FP_SIZE)
     }
     exports.free = x => {
       _free(x)
@@ -148,7 +151,7 @@
 
     /// ////////////////////////////////////////////////////////////
     mod.mclBnG1_malloc = () => {
-      return mod._malloc(MCLBN_G1_SIZE)
+      return _malloc(MCLBN_G1_SIZE)
     }
     mod.mclBnG1_setStr = _wrapInput(mod._mclBnG1_setStr, 1)
     mod.mclBnG1_getStr = _wrapGetStr(mod._mclBnG1_getStr)
@@ -158,7 +161,7 @@
 
     /// ////////////////////////////////////////////////////////////
     mod.mclBnG2_malloc = () => {
-      return mod._malloc(MCLBN_G2_SIZE)
+      return _malloc(MCLBN_G2_SIZE)
     }
     mod.mclBnG2_setStr = _wrapInput(mod._mclBnG2_setStr, 1)
     mod.mclBnG2_getStr = _wrapGetStr(mod._mclBnG2_getStr)
@@ -168,7 +171,7 @@
 
     /// ////////////////////////////////////////////////////////////
     mod.mclBnGT_malloc = () => {
-      return mod._malloc(MCLBN_GT_SIZE)
+      return _malloc(MCLBN_GT_SIZE)
     }
     mod.mclBnGT_deserialize = _wrapDeserialize(mod._mclBnGT_deserialize)
     mod.mclBnGT_serialize = _wrapSerialize(mod._mclBnGT_serialize)
@@ -194,7 +197,7 @@
       }
       // alloc new array
       _alloc () {
-        return mod._malloc(this.a_.length * 4)
+        return _malloc(this.a_.length * 4)
       }
       // alloc and copy a_ to mod.HEAP32[pos / 4]
       _allocAndCopy () {
@@ -401,7 +404,7 @@
       constructor (Q) {
         if (!(Q instanceof exports.G2)) throw new Error('PrecomputedG2:bad type')
         const byteSize = mod._mclBn_getUint64NumToPrecompute() * 8
-        this.p = mod._malloc(byteSize)
+        this.p = _malloc(byteSize)
         const Qpos = Q._allocAndCopy()
         mod._mclBn_precomputeG2(this.p, Qpos)
         _free(Qpos)
