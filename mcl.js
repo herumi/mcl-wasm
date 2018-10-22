@@ -36,6 +36,8 @@
   const setup = (exports, curveType) => {
     const mod = exports.mod
     const MCLBN_FP_UNIT_SIZE = getUnitSize(curveType)
+    const MCLBN_FR_UNIT_SIZE = MCLBN_FP_UNIT_SIZE
+    const MCLBN_COMPILED_TIME_VAR = (MCLBN_FR_UNIT_SIZE * 10 + MCLBN_FP_UNIT_SIZE)
     const MCLBN_FP_SIZE = MCLBN_FP_UNIT_SIZE * 8
     const MCLBN_G1_SIZE = MCLBN_FP_SIZE * 3
     const MCLBN_G2_SIZE = MCLBN_FP_SIZE * 6
@@ -584,7 +586,7 @@
       }
       throw new Error('finalExp:bad type')
     }
-    const r = mod._mclBn_init(curveType, MCLBN_FP_UNIT_SIZE)
+    const r = mod._mclBn_init(curveType, MCLBN_COMPILED_TIME_VAR)
     if (r) throw new Error('_mclBn_init err ' + r)
   } // setup()
   const _cryptoGetRandomValues = function(p, n) {
