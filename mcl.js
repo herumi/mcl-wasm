@@ -39,6 +39,7 @@
     const MCLBN_FR_UNIT_SIZE = MCLBN_FP_UNIT_SIZE
     const MCLBN_COMPILED_TIME_VAR = (MCLBN_FR_UNIT_SIZE * 10 + MCLBN_FP_UNIT_SIZE)
     const MCLBN_FP_SIZE = MCLBN_FP_UNIT_SIZE * 8
+    const MCLBN_FR_SIZE = MCLBN_FR_UNIT_SIZE * 8
     const MCLBN_G1_SIZE = MCLBN_FP_SIZE * 3
     const MCLBN_G2_SIZE = MCLBN_FP_SIZE * 6
     const MCLBN_GT_SIZE = MCLBN_FP_SIZE * 12
@@ -139,7 +140,7 @@
       }
     }
     mod.mclBnFr_malloc = () => {
-      return _malloc(MCLBN_FP_SIZE)
+      return _malloc(MCLBN_FR_SIZE)
     }
     exports.free = x => {
       _free(x)
@@ -150,6 +151,14 @@
     mod.mclBnFr_deserialize = _wrapDeserialize(mod._mclBnFr_deserialize)
     mod.mclBnFr_serialize = _wrapSerialize(mod._mclBnFr_serialize)
     mod.mclBnFr_setHashOf = _wrapInput(mod._mclBnFr_setHashOf, 1)
+    /// ////////////////////////////////////////////////////////////
+    mod.mclBnFp_malloc = () => {
+      return _malloc(MCLBN_FP_SIZE)
+    }
+    mod.mclBnFp_setLittleEndian = _wrapInput(mod._mclBnFp_setLittleEndian, 1)
+    mod.mclBnFp_deserialize = _wrapDeserialize(mod._mclBnFp_deserialize)
+    mod.mclBnFp_serialize = _wrapSerialize(mod._mclBnFp_serialize)
+    mod.mclBnFp_setHashOf = _wrapInput(mod._mclBnFp_setHashOf, 1)
 
     /// ////////////////////////////////////////////////////////////
     mod.mclBnG1_malloc = () => {
@@ -263,7 +272,7 @@
     }
     exports.Fr = class extends Common {
       constructor () {
-        super(MCLBN_FP_SIZE)
+        super(MCLBN_FR_SIZE)
       }
       setInt (x) {
         this._setter(mod._mclBnFr_setInt32, x)
@@ -293,7 +302,7 @@
         this._setter(mod.mclBnFr_setLittleEndian, s)
       }
       setByCSPRNG () {
-        const a = new Uint8Array(MCLBN_FP_SIZE)
+        const a = new Uint8Array(MCLBN_FR_SIZE)
         crypto.getRandomValues(a)
         this.setLittleEndian(a)
       }
@@ -303,6 +312,40 @@
     }
     exports.deserializeHexStrToFr = s => {
       const r = new exports.Fr()
+      r.deserializeHexStr(s)
+      return r
+    }
+    exports.Fp = class extends Common {
+      constructor () {
+        super(MCLBN_FP_SIZE)
+      }
+      deserialize (s) {
+        this._setter(mod.mclBnFp_deserialize, s)
+      }
+      serialize () {
+        return this._getter(mod.mclBnFp_serialize)
+      }
+      isEqual (rhs) {
+        return this._isEqual(mod._mclBnFp_isEqual, rhs)
+      }
+      setLittleEndian (s) {
+        this._setter(mod.mclBnFp_setLittleEndian, s)
+      }
+      setHashOf (s) {
+        this._setter(mod.mclBnFp_setHashOf, s)
+      }
+      mapToG1 () {
+        const y = new exports.G1()
+        const xPos = this._allocAndCopy()
+        const yPos = y._alloc()
+        mod._mclBnFp_mapToG1(yPos, xPos)
+        y._saveAndFree(yPos)
+        _free(xPos)
+       return y
+      }
+    }
+    exports.deserializeHexStrToFp = s => {
+      const r = new exports.Fp()
       r.deserializeHexStr(s)
       return r
     }

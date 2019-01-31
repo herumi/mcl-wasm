@@ -12,6 +12,7 @@ const curveTest = (curveType, name) => {
         G1Test()
         G2Test()
         GTTest()
+        FpTest()
         serializeTest()
         IDbasedEncryptionTest()
         PairingTest()
@@ -82,6 +83,26 @@ function FrTest () {
   a.dump()
   b.setHashOf([97, 98, 99])
   assert(a.isEqual(b))
+}
+
+function FpTest () {
+  const a = new mcl.Fp()
+  a.setHashOf('abc')
+  serializeSubTest(mcl.Fp, a, mcl.deserializeHexStrToFp)
+  const b = new Uint8Array(a.serialize().length)
+  for (let i = 0; i < b.length; i++) {
+    b[i] = i
+  }
+  a.setLittleEndian(b)
+  const c = a.serialize()
+  // b[b.length - 1] may be masked
+  for (let i = 0; i < b.length - 1; i++) {
+    assert(b[i] === c[i])
+  }
+  const P1 = mcl.hashAndMapToG1('abc')
+  a.setHashOf('abc')
+  const P2 = a.mapToG1()
+  assert(P1.isEqual(P2))
 }
 
 function G1Test () {

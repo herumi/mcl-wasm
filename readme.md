@@ -16,6 +16,10 @@ node test.js
 modified new BSD License
 http://opensource.org/licenses/BSD-3-Clause
 
+# History
+
+2019/Jan/31 add Fp.mapToG1
+
 # Author
 
 光成滋生 MITSUNARI Shigeo(herumi@nifty.com)
