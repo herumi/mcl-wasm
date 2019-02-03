@@ -160,7 +160,7 @@
     mod.mclBnFp_serialize = _wrapSerialize(mod._mclBnFp_serialize)
     mod.mclBnFp_setHashOf = _wrapInput(mod._mclBnFp_setHashOf, 1)
 
-    mod.mclBnFp_malloc = () => {
+    mod.mclBnFp2_malloc = () => {
       return _malloc(MCLBN_FP_SIZE * 2)
     }
     mod.mclBnFp2_deserialize = _wrapDeserialize(mod._mclBnFp2_deserialize)
