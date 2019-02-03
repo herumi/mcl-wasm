@@ -160,6 +160,12 @@
     mod.mclBnFp_serialize = _wrapSerialize(mod._mclBnFp_serialize)
     mod.mclBnFp_setHashOf = _wrapInput(mod._mclBnFp_setHashOf, 1)
 
+    mod.mclBnFp_malloc = () => {
+      return _malloc(MCLBN_FP_SIZE * 2)
+    }
+    mod.mclBnFp2_deserialize = _wrapDeserialize(mod._mclBnFp2_deserialize)
+    mod.mclBnFp2_serialize = _wrapSerialize(mod._mclBnFp2_serialize)
+
     /// ////////////////////////////////////////////////////////////
     mod.mclBnG1_malloc = () => {
       return _malloc(MCLBN_G1_SIZE)
@@ -346,6 +352,49 @@
     }
     exports.deserializeHexStrToFp = s => {
       const r = new exports.Fp()
+      r.deserializeHexStr(s)
+      return r
+    }
+    exports.Fp2 = class extends Common {
+      constructor () {
+        super(MCLBN_FP_SIZE * 2)
+      }
+      deserialize (s) {
+        this._setter(mod.mclBnFp2_deserialize, s)
+      }
+      serialize () {
+        return this._getter(mod.mclBnFp2_serialize)
+      }
+      isEqual (rhs) {
+        return this._isEqual(mod._mclBnFp2_isEqual, rhs)
+      }
+      /*
+        Fp2 = [a, b] where a, b in Fp
+      */
+      set_a(x) {
+        const n = mod._mclBn_getFpByteSize() / 4
+        for (let i = 0; i < n; i++) {
+          this.a_[i] = x.a_[i]
+        }
+      }
+      set_b(x) {
+        const n = mod._mclBn_getFpByteSize() / 4
+        for (let i = 0; i < n; i++) {
+          this.a_[MCLBN_FP_SIZE / 4 + i] = x.a_[i]
+        }
+      }
+      mapToG2 () {
+        const y = new exports.G2()
+        const xPos = this._allocAndCopy()
+        const yPos = y._alloc()
+        mod._mclBnFp2_mapToG2(yPos, xPos)
+        y._saveAndFree(yPos)
+        _free(xPos)
+       return y
+      }
+    }
+    exports.deserializeHexStrToFp2 = s => {
+      const r = new exports.Fp2()
       r.deserializeHexStr(s)
       return r
     }

@@ -13,6 +13,7 @@ const curveTest = (curveType, name) => {
         G2Test()
         GTTest()
         FpTest()
+        Fp2Test()
         serializeTest()
         IDbasedEncryptionTest()
         PairingTest()
@@ -103,6 +104,42 @@ function FpTest () {
   a.setHashOf('abc')
   const P2 = a.mapToG1()
   assert(P1.isEqual(P2))
+}
+
+function Fp2Test () {
+  const x = new mcl.Fp2()
+  let xs = x.serialize()
+  for (let i = 0; i < xs.length; i++) {
+    assert(xs[i] === 0)
+  }
+  const a = new mcl.Fp()
+  const b = new mcl.Fp()
+  a.setHashOf('abc')
+  b.setHashOf('123')
+  x.set_a(a)
+  x.set_b(b)
+  serializeSubTest(mcl.Fp2, x, mcl.deserializeHexStrToFp2)
+  xs = x.serialize()
+  const as = a.serialize()
+  const bs = b.serialize()
+  for (let i = 0; i < as.length; i++) {
+    assert(xs[i] === as[i])
+  }
+  const n = xs.length / 2
+  for (let i = 0; i < bs.length; i++) {
+    assert(xs[n + i] === bs[i])
+  }
+
+  /*
+    hashAndMapToG2(msg) = [setHashOf(msg), 0].mapToG2()
+  */
+  const Q1 = mcl.hashAndMapToG2('xyz')
+  a.setHashOf('xyz')
+  b.clear()
+  x.set_a(a)
+  x.set_b(b)
+  const Q2 = x.mapToG2()
+  assert(Q1.isEqual(Q2))
 }
 
 function G1Test () {
