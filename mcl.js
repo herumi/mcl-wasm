@@ -289,10 +289,10 @@
       serialize () {
         return this._getter(mod.mclBnFr_serialize)
       }
-      setStr (s, base = 10) {
+      setStr (s, base = 0) {
         this._setter(mod.mclBnFr_setStr, s, base)
       }
-      getStr (base = 10) {
+      getStr (base = 0) {
         return this._getter(mod.mclBnFr_getStr, base)
       }
       isZero () {
@@ -408,10 +408,10 @@
       serialize () {
         return this._getter(mod.mclBnG1_serialize)
       }
-      setStr (s, base = 10) {
+      setStr (s, base = 0) {
         this._setter(mod.mclBnG1_setStr, s, base)
       }
-      getStr (base = 10) {
+      getStr (base = 0) {
         return this._getter(mod.mclBnG1_getStr, base)
       }
       isZero () {
@@ -439,10 +439,10 @@
       serialize () {
         return this._getter(mod.mclBnG2_serialize)
       }
-      setStr (s, base = 10) {
+      setStr (s, base = 0) {
         this._setter(mod.mclBnG2_setStr, s, base)
       }
-      getStr (base = 10) {
+      getStr (base = 0) {
         return this._getter(mod.mclBnG2_getStr, base)
       }
       isZero () {
@@ -473,10 +473,10 @@
       serialize () {
         return this._getter(mod.mclBnGT_serialize)
       }
-      setStr (s, base = 10) {
+      setStr (s, base = 0) {
         this._setter(mod.mclBnGT_setStr, s, base)
       }
-      getStr (base = 10) {
+      getStr (base = 0) {
         return this._getter(mod.mclBnGT_getStr, base)
       }
       isZero () {
