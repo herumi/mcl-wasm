@@ -27,12 +27,44 @@ const curveTest = (curveType, name) => {
     })
 }
 
+const stdCurveTest = (curveType, name) => {
+  mcl.init(curveType)
+    .then(() => {
+      try {
+        console.log(`name=${name}`)
+        arithTest()
+    } catch (e) {
+        console.log(`TEST FAIL ${e}`)
+        assert(false)
+    }
+  })
+}
+
+function arithTest () {
+  const P = mcl.getBasePointG1()
+  console.log(`basePoint=${P.getStr(16)}`)
+  let Q = mcl.add(P, P) // x2
+  Q = mcl.add(Q, Q) // x4
+  Q = mcl.add(Q, Q) // x8
+  Q = mcl.add(Q, P) // x9
+  const r = new mcl.Fr()
+  r.setStr('9')
+  const R = mcl.mul(P, r)
+  assert(R.isEqual(Q))
+}
+
 async function curveTestAll () {
   // can't parallel
   await curveTest(mcl.BN254, 'BN254')
   await curveTest(mcl.BN381_1, 'BN381_1')
   await curveTest(mcl.BLS12_381, 'BLS12_381')
   await curveTest(mcl.BN462, 'BN462')
+
+  await stdCurveTest(mcl.SECP224K1, 'secp224k1')
+  await stdCurveTest(mcl.SECP256K1, 'secp256k1')
+  await stdCurveTest(mcl.SECP384R1, 'secp384r1')
+  await stdCurveTest(mcl.NIST_P192, 'NIST_P192')
+  await stdCurveTest(mcl.NIST_P256, 'NIST_P256')
 }
 
 curveTestAll()

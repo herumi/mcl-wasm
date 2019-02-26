@@ -17,16 +17,29 @@
   exports.BN462 = 3
   exports.BN_SNARK1 = 4
   exports.BLS12_381 = 5
+
+  exports.SECP224K1 = 101
+  exports.SECP256K1 = 102
+  exports.SECP384R1 = 103
+  exports.NIST_P192 = 105
+  exports.NIST_P224 = 106
+  exports.NIST_P256 = 107
   /* eslint-disable */
   const getUnitSize = curveType => {
     switch (curveType) {
     case exports.BN254:
     case exports.BN_SNARK1:
+    case exports.SECP224K1:
+    case exports.SECP256K1:
+    case exports.NIST_P192:
+    case exports.NIST_P224:
+    case exports.NIST_P256:
       return 4; /* use mcl_c.js */
     case exports.BN381_1:
     case exports.BN381_2:
     case exports.BLS12_381:
     case exports.BN462:
+    case exports.SECP384R1:
       return 8; /* use mcl_c512.js */
     default:
       throw new Error(`QQQ bad curveType=${curveType}`)
@@ -428,6 +441,13 @@
       const r = new exports.G1()
       r.deserializeHexStr(s)
       return r
+    }
+    exports.getBasePointG1 = () => {
+      const x = new exports.G1()
+      const xPos = x._alloc()
+      mod._mclBnG1_getBasePoint(xPos)
+      x._saveAndFree(xPos)
+      return x
     }
     exports.G2 = class extends Common {
       constructor () {
