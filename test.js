@@ -18,6 +18,7 @@ const curveTest = (curveType, name) => {
         IDbasedEncryptionTest()
         PairingTest()
         PairingCapiTest()
+        modTest()
         console.log('all ok')
         benchAll()
       } catch (e) {
@@ -385,6 +386,32 @@ function serializeTest () {
   serializeSubTest(mcl.G2, Q, mcl.deserializeHexStrToG2)
   const e = mcl.pairing(P, Q)
   serializeSubTest(mcl.GT, e, mcl.deserializeHexStrToGT)
+}
+
+function shiftAndSetTest (a, b) {
+  a.setStr('1')
+  a = mcl.neg(a)
+  let s = Array.from(a.serialize())
+  s.unshift(0)
+  s.unshift(6) // [<-1>data][0][6] = -65536 + 6 = -65530
+  a.setLittleEndianMod(s)
+  a = mcl.neg(a)
+  b.setStr('65530')
+  assert(a.isEqual(b))
+}
+function modTest () {
+  {
+    const a = new mcl.Fr()
+    const b = new mcl.Fr()
+    shiftAndSetTest(a, b)
+  }
+/* Fp::neg is not yet implemented
+  {
+    const a = new mcl.Fp()
+    const b = new mcl.Fp()
+    shiftAndSetTest(a, b)
+  }
+*/
 }
 
 function bench (label, count, func) {

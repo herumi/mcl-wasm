@@ -159,6 +159,7 @@
       _free(x)
     }
     mod.mclBnFr_setLittleEndian = _wrapInput(mod._mclBnFr_setLittleEndian, 1)
+    mod.mclBnFr_setLittleEndianMod = _wrapInput(mod._mclBnFr_setLittleEndianMod, 1)
     mod.mclBnFr_setStr = _wrapInput(mod._mclBnFr_setStr, 1)
     mod.mclBnFr_getStr = _wrapGetStr(mod._mclBnFr_getStr)
     mod.mclBnFr_deserialize = _wrapDeserialize(mod._mclBnFr_deserialize)
@@ -169,6 +170,9 @@
       return _malloc(MCLBN_FP_SIZE)
     }
     mod.mclBnFp_setLittleEndian = _wrapInput(mod._mclBnFp_setLittleEndian, 1)
+    mod.mclBnFp_setLittleEndianMod = _wrapInput(mod._mclBnFp_setLittleEndianMod, 1)
+    mod.mclBnFp_setStr = _wrapInput(mod._mclBnFp_setStr, 1)
+    mod.mclBnFp_getStr = _wrapGetStr(mod._mclBnFp_getStr)
     mod.mclBnFp_deserialize = _wrapDeserialize(mod._mclBnFp_deserialize)
     mod.mclBnFp_serialize = _wrapSerialize(mod._mclBnFp_serialize)
     mod.mclBnFp_setHashOf = _wrapInput(mod._mclBnFp_setHashOf, 1)
@@ -320,6 +324,9 @@
       setLittleEndian (s) {
         this._setter(mod.mclBnFr_setLittleEndian, s)
       }
+      setLittleEndianMod (s) {
+        this._setter(mod.mclBnFr_setLittleEndianMod, s)
+      }
       setByCSPRNG () {
         const a = new Uint8Array(MCLBN_FR_SIZE)
         crypto.getRandomValues(a)
@@ -344,11 +351,20 @@
       serialize () {
         return this._getter(mod.mclBnFp_serialize)
       }
+      setStr (s, base = 0) {
+        this._setter(mod.mclBnFp_setStr, s, base)
+      }
+      getStr (base = 0) {
+        return this._getter(mod.mclBnFp_getStr, base)
+      }
       isEqual (rhs) {
         return this._isEqual(mod._mclBnFp_isEqual, rhs)
       }
       setLittleEndian (s) {
         this._setter(mod.mclBnFp_setLittleEndian, s)
+      }
+      setLittleEndianMod (s) {
+        this._setter(mod.mclBnFp_setLittleEndianMod, s)
       }
       setHashOf (s) {
         this._setter(mod.mclBnFp_setHashOf, s)
