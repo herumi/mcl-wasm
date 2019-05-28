@@ -5,6 +5,9 @@
 
 see [mcl](https://github.com/herumi/mcl)
 
+## News
+* add mcl.precomputedMillerLoop2 and mcl.precomputedMillerLoop2mixed
+
 ## for Node.js
 node test.js
 

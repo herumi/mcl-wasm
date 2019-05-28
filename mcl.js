@@ -708,6 +708,34 @@
       _free(PPos)
       return e
     }
+    // millerLoop(P1, Q1coeff) * millerLoop(P2, Q2coeff)
+    exports.precomputedMillerLoop2 = (P1, Q1coeff, P2, Q2coeff) => {
+      if (!(P1 instanceof exports.G1 && Q1coeff instanceof exports.PrecomputedG2 && P2 instanceof exports.G1 && Q2coeff instanceof exports.PrecomputedG2)) throw new Error('exports.precomputedMillerLoop2mixed:bad type')
+      const e = new exports.GT()
+      const P1Pos = P1._allocAndCopy()
+      const P2Pos = P2._allocAndCopy()
+      const ePos = e._alloc()
+      mod._mclBn_precomputedMillerLoop2(ePos, P1Pos, Q1coeff.p, P2Pos, Q2coeff.p)
+      e._saveAndFree(ePos)
+      _free(P1Pos)
+      _free(P2Pos)
+      return e
+    }
+    // millerLoop(P1, Q1) * millerLoop(P2, Q2coeff)
+    exports.precomputedMillerLoop2mixed = (P1, Q1, P2, Q2coeff) => {
+      if (!(P1 instanceof exports.G1 && Q1 instanceof exports.G2 && P2 instanceof exports.G1 && Q2coeff instanceof exports.PrecomputedG2)) throw new Error('exports.precomputedMillerLoop2mixed:bad type')
+      const e = new exports.GT()
+      const P1Pos = P1._allocAndCopy()
+      const Q1Pos = Q1._allocAndCopy()
+      const P2Pos = P2._allocAndCopy()
+      const ePos = e._alloc()
+      mod._mclBn_precomputedMillerLoop2mixed(ePos, P1Pos, Q1Pos, P2Pos, Q2coeff.p)
+      e._saveAndFree(ePos)
+      _free(P1Pos)
+      _free(Q1Pos)
+      _free(P2Pos)
+      return e
+    }
     exports.finalExp = x => {
       if (x instanceof exports.GT) {
         return x._op1(mod._mclBn_finalExp)

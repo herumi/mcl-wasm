@@ -280,6 +280,25 @@ function PairingTest () {
     assert(ePQ.isEqual(e3))
     Qcoeff.destroy() // call this function to avoid memory leak
   }
+  const P2 = mcl.hashAndMapToG1('ccc')
+  const Q2 = mcl.hashAndMapToG2('ddd')
+  {
+    const Q1coeff = new mcl.PrecomputedG2(Q)
+    const Q2coeff = new mcl.PrecomputedG2(Q2)
+    const e1 = mcl.mul(mcl.pairing(P, Q), mcl.pairing(P2, Q2))
+    let e2 = mcl.precomputedMillerLoop2(P, Q1coeff, P2, Q2coeff)
+    e2 = mcl.finalExp(e2)
+    let e3 = mcl.precomputedMillerLoop2mixed(P, Q, P2, Q2coeff)
+    e3 = mcl.finalExp(e3)
+    assert(e1.isEqual(e2))
+    assert(e1.isEqual(e3))
+    const C = 100
+    bench('precomputedMillerLoop2', C, () => mcl.precomputedMillerLoop(P, Q1coeff, P2, Q2coeff))
+    bench('precomputedMillerLoop2mixed', C, () => mcl.precomputedMillerLoop2mixed(P, Q, P2, Q2coeff))
+    // call this function to avoid memory leak
+    Q2coeff.destroy()
+    Q1coeff.destroy()
+  }
 }
 
 // Enc(m) = [r P, m + h(e(r mpk, H(id)))]
