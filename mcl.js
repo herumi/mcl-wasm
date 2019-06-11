@@ -458,6 +458,15 @@
       r.deserializeHexStr(s)
       return r
     }
+    exports.setETHserialization = (ETHserialization) => {
+      mod._mclBn_setETHserialization(ETHserialization ? 1 : 0)
+    }
+    exports.verifyOrderG1 = (doVerify) => {
+      mod._mclBn_verifyOrderG1(doVerify ? 1 : 0)
+    }
+    exports.verifyOrderG2 = (doVerify) => {
+      mod._mclBn_verifyOrderG2(doVerify ? 1 : 0)
+    }
     exports.getBasePointG1 = () => {
       const x = new exports.G1()
       const xPos = x._alloc()
