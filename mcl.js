@@ -463,6 +463,9 @@
       const xPos = x._alloc()
       mod._mclBnG1_getBasePoint(xPos)
       x._saveAndFree(xPos)
+      if (x.isZero()) {
+        throw new Error('not supported for pairing curves')
+      }
       return x
     }
     exports.G2 = class extends Common {
