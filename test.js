@@ -237,13 +237,21 @@ function G2Test () {
 }
 
 function GTTest () {
-  const x = new mcl.GT()
-  const y = new mcl.Fr()
-  x.setInt(2)
-  y.setInt(100)
-  const z = mcl.pow(x, y)
-  assert.equal(z.getStr(), '1267650600228229401496703205376 0 0 0 0 0 0 0 0 0 0 0')
-  assert(mcl.sqr(z).isEqual(mcl.mul(z, z)))
+  const P = new mcl.G1()
+  const Q = new mcl.G2()
+  P.setHashOf('abc')
+  Q.setHashOf('abc')
+  const x = mcl.pairing(P, Q)
+  const n = 200
+  let y = x
+  let t = new mcl.Fr()
+  t.setInt(1)
+  for (let i = 0; i < n; i++) {
+    y = mcl.sqr(y)
+    t = mcl.add(t, t)
+  }
+  const z = mcl.pow(x, t)
+  assert(y.isEqual(z))
 }
 
 function PairingTest () {
