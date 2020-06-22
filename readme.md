@@ -6,7 +6,8 @@
 see [mcl](https://github.com/herumi/mcl)
 
 ## News
-* add mcl.precomputedMillerLoop2 and mcl.precomputedMillerLoop2mixed
+- support only BN254, ZKSNARK, BLS12-381 to remove mcl_c512.js
+- add mcl.precomputedMillerLoop2 and mcl.precomputedMillerLoop2mixed
 
 ## for Node.js
 node test.js

@@ -34,11 +34,11 @@ const stdCurveTest = (curveType, name) => {
       try {
         console.log(`name=${name}`)
         arithTest()
-    } catch (e) {
+      } catch (e) {
         console.log(`TEST FAIL ${e}`)
         assert(false)
-    }
-  })
+      }
+    })
 }
 
 function arithTest () {
@@ -57,13 +57,14 @@ function arithTest () {
 async function curveTestAll () {
   // can't parallel
   await curveTest(mcl.BN254, 'BN254')
-  await curveTest(mcl.BN381_1, 'BN381_1')
+  await curveTest(mcl.BN_ZKSNARK1, 'ZKSNARK')
+//  await curveTest(mcl.BN381_1, 'BN381_1')
   await curveTest(mcl.BLS12_381, 'BLS12_381')
-  await curveTest(mcl.BN462, 'BN462')
+//  await curveTest(mcl.BN462, 'BN462')
 
   await stdCurveTest(mcl.SECP224K1, 'secp224k1')
   await stdCurveTest(mcl.SECP256K1, 'secp256k1')
-  await stdCurveTest(mcl.SECP384R1, 'secp384r1')
+//  await stdCurveTest(mcl.SECP384R1, 'secp384r1')
   await stdCurveTest(mcl.NIST_P192, 'NIST_P192')
   await stdCurveTest(mcl.NIST_P256, 'NIST_P256')
 }

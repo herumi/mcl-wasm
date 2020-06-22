@@ -48,8 +48,8 @@
 
   const setup = (exports, curveType) => {
     const mod = exports.mod
-    const MCLBN_FP_UNIT_SIZE = getUnitSize(curveType)
-    const MCLBN_FR_UNIT_SIZE = MCLBN_FP_UNIT_SIZE
+    const MCLBN_FP_UNIT_SIZE = 6
+    const MCLBN_FR_UNIT_SIZE = 4
     const MCLBN_COMPILED_TIME_VAR = (MCLBN_FR_UNIT_SIZE * 10 + MCLBN_FP_UNIT_SIZE)
     const MCLBN_FP_SIZE = MCLBN_FP_UNIT_SIZE * 8
     const MCLBN_FR_SIZE = MCLBN_FR_UNIT_SIZE * 8
@@ -766,7 +766,7 @@
   }
   exports.init = (curveType = exports.BN254) => {
     exports.curveType = curveType
-    const name = getUnitSize(curveType) == 4 ? 'mcl_c' : 'mcl_c512'
+    const name = 'mcl_c384_256'
     return new Promise(resolve => {
       if (isNodeJs) {
         const path = require('path')

@@ -21,7 +21,7 @@ function loadScript (url, callback) {
 }
 
 let prevSelectedCurve = 0
-loadScript('./mcl_c.js', () => {
+loadScript('./mcl_c384_256.js', () => {
   setText('browser', navigator.userAgent)
   mcl.init(prevSelectedCurve).then(() => {
     setText('status', 'ok')
@@ -34,7 +34,7 @@ function onChangeSelectCurve () {
   const curveType = obj.options[idx].value | 0
   if (curveType === prevSelectedCurve) return
   prevSelectedCurve = curveType
-  const srcName = curveType === 0 ? './mcl_c.js' : './mcl_c512.js'
+  const srcName = './mcl_c384_256.js'
   console.log(`srcName=${srcName}`)
   loadScript(srcName, () => {
     mcl.init(curveType).then(() => {
