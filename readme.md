@@ -20,11 +20,15 @@ node test.js
 ## init
 
 ```
+// Ethereum 2.0 spec mode
 mcl.init(mcl.BLS12_381)
   .then(() => {
+    mcl.setETHserialization(true) // Ethereum serialization
+    mcl.setMapToMode(mcl.IRTF) // for G2.setHashOf(msg)
     ...
   })
 ```
+REMARK : G1.setHashOf is not compatible with IRTF now.
 
 ## string conversion
 

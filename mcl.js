@@ -24,6 +24,8 @@
   exports.NIST_P192 = 105
   exports.NIST_P224 = 106
   exports.NIST_P256 = 107
+
+  exports.IRTF = 5 /* MCL_MAP_TO_MODE_HASH_TO_CURVE_07 */
   /* eslint-disable */
   const getUnitSize = curveType => {
     switch (curveType) {
@@ -460,6 +462,10 @@
     }
     exports.setETHserialization = (ETHserialization) => {
       mod._mclBn_setETHserialization(ETHserialization ? 1 : 0)
+    }
+    // mode = mcl.IRTF for Ethereum 2.0 spec
+    exports.setMapToMode = (mode) => {
+      mod._mclBn_setMapToMode(mode)
     }
     exports.verifyOrderG1 = (doVerify) => {
       mod._mclBn_verifyOrderG1(doVerify ? 1 : 0)
