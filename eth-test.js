@@ -10,4 +10,8 @@ mcl.init(mcl.BLS12_381).then(() => {
   mcl.normalize(g2)
   console.log(`g2=${g2.getStr(10)}`)
   console.log(`g2=${g2.serializeToHexStr()}`)
+  let r = new mcl.Fr()
+  const b = mcl.fromHexStr('b3c940fe79b6966489b527955de7599194a9ac69a6ff58b8d99e7b1084f0464e')
+  r.setBigEndianMod(b)
+  console.log(r.getStr(16))
 })
