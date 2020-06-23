@@ -166,6 +166,10 @@ function Fp2Test () {
   for (let i = 0; i < bs.length; i++) {
     assert(xs[n + i] === bs[i])
   }
+  const y = new mcl.Fp2()
+  y.set_a(x.get_a())
+  y.set_b(x.get_b())
+  assert(x.isEqual(y))
 
   /*
     hashAndMapToG2(msg) = [setHashOf(msg), 0].mapToG2()
@@ -206,6 +210,14 @@ function G1Test () {
   assert(R1.isEqual(R2))
   const R3 = mcl.normalize(R1)
   assert(R1.isEqual(R3))
+  const R4 = new mcl.G1()
+  R4.setX(R1.getX())
+  assert(!R4.isValid())
+  R4.setY(R1.getY())
+  assert(!R4.isValid())
+  R4.setZ(R1.getZ())
+  assert(R4.isValid())
+  assert(R1.isEqual(R4))
 }
 
 function G2Test () {
@@ -235,6 +247,14 @@ function G2Test () {
   assert(R1.isEqual(R2))
   const R3 = mcl.normalize(R1)
   assert(R1.isEqual(R3))
+  const R4 = new mcl.G2()
+  R4.setX(R1.getX())
+  assert(!R4.isValid())
+  R4.setY(R1.getY())
+  assert(!R4.isValid())
+  R4.setZ(R1.getZ())
+  assert(R4.isValid())
+  assert(R1.isEqual(R4))
 }
 
 function GTTest () {
