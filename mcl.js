@@ -297,6 +297,16 @@
         _free(xPos)
         return z
       }
+      // devide Uint32Array a into n and chose the idx-th
+      _getSubArray (idx, n) {
+        const d = this.a_.length / n
+        return new Uint32Array(this.a_.buffer, d * idx * 4, d)
+      }
+      // set array lhs to idx
+      _setSubArray (lhs, idx, n) {
+        const d = this.a_.length / n
+        this.a_.set(lhs.a_, d * idx)
+      }
     }
     exports.Fr = class extends Common {
       constructor () {
@@ -409,19 +419,23 @@
         return this._isEqual(mod._mclBnFp2_isEqual, rhs)
       }
       /*
-        Fp2 = [a, b] where a, b in Fp
+        x = a + bi where a, b in Fp and i^2 = -1
       */
-      set_a(x) {
-        const n = mod._mclBn_getFpByteSize() / 4
-        for (let i = 0; i < n; i++) {
-          this.a_[i] = x.a_[i]
-        }
+      get_a () {
+        const r = new exports.Fp()
+        r.a_ = this._getSubArray(0, 2)
+        return r
       }
-      set_b(x) {
-        const n = mod._mclBn_getFpByteSize() / 4
-        for (let i = 0; i < n; i++) {
-          this.a_[MCLBN_FP_SIZE / 4 + i] = x.a_[i]
-        }
+      get_b () {
+        const r = new exports.Fp()
+        r.a_ = this._getSubArray(1, 2)
+        return r
+      }
+      set_a(v) {
+        this._setSubArray(v, 0, 2)
+      }
+      set_b(v) {
+        this._setSubArray(v, 1, 2)
       }
       mapToG2 () {
         const y = new exports.G2()
@@ -453,6 +467,33 @@
       }
       getStr (base = 0) {
         return this._getter(mod.mclBnG1_getStr, base)
+      }
+      normalize () {
+        this.a_ = exports.normalize(this).a_
+      }
+      getX () {
+        const r = new exports.Fp()
+        r.a_ = this._getSubArray(0, 3)
+        return r
+      }
+      getY () {
+        const r = new exports.Fp()
+        r.a_ = this._getSubArray(1, 3)
+        return r
+      }
+      getZ () {
+        const r = new exports.Fp()
+        r.a_ = this._getSubArray(2, 3)
+        return r
+      }
+      setX (v) {
+        this._setSubArray(v, 0, 3)
+      }
+      setY (v) {
+        this._setSubArray(v, 1, 3)
+      }
+      setZ (v) {
+        this._setSubArray(v, 2, 3)
       }
       isZero () {
         return this._getter(mod._mclBnG1_isZero) === 1
@@ -513,6 +554,33 @@
       }
       getStr (base = 0) {
         return this._getter(mod.mclBnG2_getStr, base)
+      }
+      normalize () {
+        this.a_ = exports.normalize(this).a_
+      }
+      getX () {
+        const r = new exports.Fp2()
+        r.a_ = this._getSubArray(0, 3)
+        return r
+      }
+      getY () {
+        const r = new exports.Fp2()
+        r.a_ = this._getSubArray(1, 3)
+        return r
+      }
+      getZ () {
+        const r = new exports.Fp2()
+        r.a_ = this._getSubArray(2, 3)
+        return r
+      }
+      setX (v) {
+        this._setSubArray(v, 0, 3)
+      }
+      setY (v) {
+        this._setSubArray(v, 1, 3)
+      }
+      setZ (v) {
+        this._setSubArray(v, 2, 3)
       }
       isZero () {
         return this._getter(mod._mclBnG2_isZero) === 1
