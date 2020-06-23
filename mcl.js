@@ -457,6 +457,12 @@
       isZero () {
         return this._getter(mod._mclBnG1_isZero) === 1
       }
+      isValid () {
+        return this._getter(mod._mclBnG1_isValid) === 1
+      }
+      isValidOrder () {
+        return this._getter(mod._mclBnG1_isValidOrder) === 1
+      }
       isEqual (rhs) {
         return this._isEqual(mod._mclBnG1_isEqual, rhs)
       }
@@ -510,6 +516,12 @@
       }
       isZero () {
         return this._getter(mod._mclBnG2_isZero) === 1
+      }
+      isValid () {
+        return this._getter(mod._mclBnG2_isValid) === 1
+      }
+      isValidOrder () {
+        return this._getter(mod._mclBnG2_isValidOrder) === 1
       }
       isEqual (rhs) {
         return this._isEqual(mod._mclBnG2_isEqual, rhs)
