@@ -26,6 +26,7 @@
   exports.NIST_P256 = 107
 
   exports.IRTF = 5 /* MCL_MAP_TO_MODE_HASH_TO_CURVE_07 */
+  exports.EC_PROJ = 1024 /* flag for G1/G2.getStr */
   /* eslint-disable */
   const getUnitSize = curveType => {
     switch (curveType) {
