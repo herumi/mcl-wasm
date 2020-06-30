@@ -6,6 +6,7 @@
 see [mcl](https://github.com/herumi/mcl)
 
 ## News
+- G1.setHashOf is compatible with [hash-to-curve-09 BLS12381G1_XMD:SHA-256_SSWU_RO_](https://www.ietf.org/id/draft-irtf-cfrg-hash-to-curve-09.html#name-bls12381g1_xmdsha-256_sswu_)
 - support only BN254, ZKSNARK, BLS12-381 to remove mcl_c512.js
 - add mcl.precomputedMillerLoop2 and mcl.precomputedMillerLoop2mixed
 
@@ -28,7 +29,6 @@ mcl.init(mcl.BLS12_381)
     ...
   })
 ```
-REMARK : G1.setHashOf is not compatible with IRTF now.
 
 ## string conversion
 
