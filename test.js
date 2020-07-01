@@ -357,6 +357,13 @@ function mulVecTest () {
     const z2 = mulVecGeneric(mcl.G2, g2s, xs)
     const w2 = mcl.mulVec(g2s, xs)
     assert(z2.isEqual(w2))
+/*
+    const C = 100
+    bench('mulVecGen', C, () => mulVecGeneric(mcl.G1, g1s, xs))
+    bench('mulVecG1',  C, () => mcl.mulVec(g1s, xs))
+    bench('mulVecGen', C, () => mulVecGeneric(mcl.G2, g2s, xs))
+    bench('mulVecG2',  C, () => mcl.mulVec(g2s, xs))
+*/
   })
 }
 
