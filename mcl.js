@@ -155,6 +155,31 @@
         if (r) throw new Error('err _wrapInput ' + buf)
       }
     }
+    const _mulVec = (func, xVec, yVec, Cstr) => {
+      const n = xVec.length
+      if (n != yVec.length) throw new Error(`err _mulVec bad length ${n}, ${yVec.length}`)
+      const xSize = xVec[0].a_.length
+      const ySize = yVec[0].a_.length
+      const z = new Cstr()
+      const zPos = z._alloc()
+      const xPos = _malloc(xSize * n * 4)
+      const yPos = _malloc(ySize * n * 4)
+      let pos = xPos / 4
+      for (let i = 0; i < n; i++) {
+        mod.HEAP32.set(xVec[i].a_, pos)
+        pos += xSize
+      }
+      pos = yPos / 4
+      for (let i = 0; i < n; i++) {
+        mod.HEAP32.set(yVec[i].a_, pos)
+        pos += ySize
+      }
+      func(zPos, xPos, yPos, n)
+      _free(yPos)
+      _free(xPos)
+      z._saveAndFree(zPos)
+      return z
+    }
     mod.mclBnFr_malloc = () => {
       return _malloc(MCLBN_FR_SIZE)
     }
@@ -749,6 +774,20 @@
         return x._op2(mod._mclBnGT_mul, y)
       }
       throw new Error('mul:mismatch type')
+    }
+    /*
+      sum G1 * Fr ; scalar mul
+      sum G2 * Fr ; scalar mul
+    */
+    exports.mulVec = (xVec, yVec) => {
+      if (xVec.length == 0) throw new Error('mulVec:zero array')
+      if (xVec[0] instanceof exports.G1 && yVec[0] instanceof exports.Fr) {
+        return _mulVec(mod._mclBnG1_mulVec, xVec, yVec, exports.G1)
+      }
+      if (xVec[0] instanceof exports.G2 && yVec[0] instanceof exports.Fr) {
+        return _mulVec(mod._mclBnG2_mulVec, xVec, yVec, exports.G2)
+      }
+      throw new Error('mulVec:mismatch type')
     }
     exports.div = (x, y) => {
       if (x.constructor !== y.constructor) throw new Error('div:mismatch type')

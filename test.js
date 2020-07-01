@@ -14,6 +14,7 @@ const curveTest = (curveType, name) => {
         GTTest()
         FpTest()
         Fp2Test()
+        mulVecTest()
         serializeTest()
         IDbasedEncryptionTest()
         PairingTest()
@@ -328,6 +329,35 @@ function PairingTest () {
     Q2coeff.destroy()
     Q1coeff.destroy()
   }
+}
+
+function mulVecGeneric (Cstr, xVec, yVec) {
+  let z = new Cstr()
+  for (let i = 0; i < xVec.length; i++) {
+    z = mcl.add(z, mcl.mul(xVec[i], yVec[i]))
+  }
+  return z
+}
+
+function mulVecTest () {
+  [1, 2, 3, 15, 30, 100].forEach(n => {
+    let xs = []
+    let g1s = []
+    let g2s = []
+    for (let i = 0; i < n; i++) {
+      let x = new mcl.Fr()
+      x.setByCSPRNG()
+      xs.push(x)
+      g1s.push(mcl.hashAndMapToG1('A'+String(i)))
+      g2s.push(mcl.hashAndMapToG2('A'+String(i)))
+    }
+    const z1 = mulVecGeneric(mcl.G1, g1s, xs)
+    const w1 = mcl.mulVec(g1s, xs)
+    assert(z1.isEqual(w1))
+    const z2 = mulVecGeneric(mcl.G2, g2s, xs)
+    const w2 = mcl.mulVec(g2s, xs)
+    assert(z2.isEqual(w2))
+  })
 }
 
 // Enc(m) = [r P, m + h(e(r mpk, H(id)))]
