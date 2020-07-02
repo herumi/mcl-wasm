@@ -1,14 +1,5 @@
 const mcl = require('./mcl.js')
 
-
-function mulVecG1(xVec, yVec) {
-  let z = new mcl.G1()
-  for (let i = 0; i < xVec.length; i++) {
-    z = mcl.add(z, mcl.mul(xVec[i], yVec[i]))
-  }
-  return z
-}
-
 mcl.init(mcl.BLS12_381).then(() => {
   console.log('ok')
   mcl.setETHserialization(true)
