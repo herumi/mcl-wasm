@@ -33,15 +33,21 @@ function testFpToG1 () {
     */
     let x = new mcl.Fp()
     x.setBigEndianMod(mcl.fromHexStr(vs))
+    const P = x.mapToG1()
     /*
       The test value is the form such as "000...<x>000...<y>".
-      So normalize P and pad zeros to compare it.
     */
-    const P = x.mapToG1()
-    P.normalize()
     const L = 128
-    const s = appendZeroToRight(P.getX().getStr(16), L) + appendZeroToRight(P.getY().getStr(16), L)
-    assert(s === expect)
+    x.setBigEndianMod(mcl.fromHexStr(expect.substr(0, L)))
+    let y = new mcl.Fp()
+    y.setBigEndianMod(mcl.fromHexStr(expect.substr(L, L)))
+    const Q = new mcl.G1()
+    Q.setX(x)
+    Q.setY(y)
+    const one = new mcl.Fp()
+    one.setInt(1)
+    Q.setZ(one)
+    assert(P.isEqual(Q))
   })
 }
 
