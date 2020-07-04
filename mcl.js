@@ -388,6 +388,9 @@
       constructor () {
         super(MCLBN_FP_SIZE)
       }
+      setInt (x) {
+        this._setter(mod._mclBnFp_setInt32, x)
+      }
       deserialize (s) {
         this._setter(mod.mclBnFp_deserialize, s)
       }
