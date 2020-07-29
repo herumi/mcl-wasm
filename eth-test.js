@@ -118,6 +118,82 @@ function testVerifyG1 () {
   }
 }
 
+function Fp2set (s) {
+  let [as, bs] = s.split(' ')
+  let a = new mcl.Fp()
+  let b = new mcl.Fp()
+  a.setStr(as, 16)
+  b.setStr(bs, 16)
+  let ret = new mcl.Fp2()
+  ret.set_a(a)
+  ret.set_b(b)
+  return ret
+}
+
+function testVerifyG2 () {
+  const ok_x = "1400ddb63494b2f3717d8706a834f928323cef590dd1f2bc8edaf857889e82c9b4cf242324526c9045bc8fec05f98fe9 14b38e10fd6d2d63dfe704c3f0b1741474dfeaef88d6cdca4334413320701c74e5df8c7859947f6901c0a3c30dba23c9"
+  const ok_y = "187452296c28d5206880d2a86e8c7fc79df88e20b906a1fc1d5855da6b2b4ae6f8c83a591e2e5350753d2d7fe3c7b4 9c205210f33e9cdaaa4630b3f6fad29744224e5100456973fcaf031cdbce8ad3f71d42af3f7733a3985d3a3d2f4be53"
+
+  const ng_x = "717f18d36bd40d090948f2d4dac2a03f6469d234f4beb75f67e66d51ea5540652189c61d01d1cfe3f5e9318e48bdf8a 13fc0389cb74ad6c8875c34f85e2bb93ca1bed48c14f2dd0f5cd741853014fe278c9551a9ac5850f678a423664f8287f"
+  const ng_y = "5412e6cef6b7189f31810c0cbac6b6350b18691be1fefed131a033f2df393b9c3a423c605666226c1efa833de11363b 101ed6eafbf85be7273ec5aec3471aa2c1018d7463cc48dfe9a7c872a7745e81317c88ce0c89a9086975feb4a2749074"
+
+  let P = new mcl.G2()
+  let Q = new mcl.G2()
+  let x = Fp2set(ok_x)
+  let y = Fp2set(ok_y)
+  let z = Fp2set("1 0")
+
+  P.setX(x)
+  P.setY(y)
+  P.setZ(z)
+
+  // valid point, valid order
+  mcl.verifyOrderG2(false)
+  assert(P.isValid())
+  assert(P.isValidOrder())
+  let buf = P.serialize()
+  Q.deserialize(buf)
+  assert(P.isEqual(Q))
+
+  mcl.verifyOrderG2(true)
+  assert(P.isValid())
+  assert(P.isValidOrder())
+  Q.clear()
+  Q.deserialize(buf)
+  assert(P.isEqual(Q))
+
+  // invalid point
+  z = Fp2set("2 0")
+  P.setZ(z)
+  assert(!P.isValid())
+
+  // valid point, invalid order
+  x = Fp2set(ng_x)
+  y = Fp2set(ng_y)
+  z = Fp2set("1 0")
+  P.setX(x)
+  P.setY(y)
+  P.setZ(z)
+
+  mcl.verifyOrderG2(false)
+  assert(P.isValid())
+  assert(!P.isValidOrder())
+  buf = P.serialize()
+  Q.clear()
+  Q.deserialize(buf)
+  assert(P.isEqual(Q))
+
+  mcl.verifyOrderG2(true)
+  assert(!P.isValid()) // fail because of invalid order
+  Q.clear()
+  try {
+    Q.deserialize(buf)
+    assert(false) // not here
+  } catch (e) {
+    // here
+  }
+}
+
 mcl.init(mcl.BLS12_381).then(() => {
   console.log('ok')
   mcl.setETHserialization(true)
@@ -135,4 +211,5 @@ mcl.init(mcl.BLS12_381).then(() => {
   console.log(`g2.y=${g2.getY().serializeToHexStr()}`)
   testFpToG1()
   testVerifyG1()
+  testVerifyG2()
 })
