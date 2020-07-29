@@ -51,6 +51,73 @@ function testFpToG1 () {
   })
 }
 
+function testVerifyG1 () {
+  const ok_x = "ad50e39253e0de4fad89440f01f1874c8bc91fdcd59ad66162984b10690e51ccf4d95e4222df14549d745d8b971199"
+  const ok_y = "2f76c6f3a006f0bbfb88c02a4643702ff52ff34c1fcb59af611b7f1cf47938ffbf2c68a6e31a40bf668544087374f70"
+
+  const ng_x = "1534fc82e2566c826b195314b32bf47576c24632444450d701de2601cec0c0d6b6090e7227850005e81f54039066602b"
+  const ng_y = "15899715142d265027d1a9fba8f2f10a3f21938071b4bbdb5dce8c5caa0d93588482d33d9a62bcbbd23ab6af6d689710"
+
+  let x = new mcl.Fp()
+  let y = new mcl.Fp()
+  let z = new mcl.Fp()
+  let P = new mcl.G1()
+  let Q = new mcl.G1()
+  x.setStr(ok_x, 16)
+  y.setStr(ok_y, 16)
+  z.setInt(1)
+
+  P.setX(x)
+  P.setY(y)
+  P.setZ(z)
+
+  // valid point, valid order
+  mcl.verifyOrderG1(false)
+  assert(P.isValid())
+  assert(P.isValidOrder())
+  let buf = P.serialize()
+  Q.deserialize(buf)
+  assert(P.isEqual(Q))
+
+  mcl.verifyOrderG1(true)
+  assert(P.isValid())
+  assert(P.isValidOrder())
+  Q.clear()
+  Q.deserialize(buf)
+  assert(P.isEqual(Q))
+
+  // invalid point
+  z.setInt(2)
+  P.setZ(z)
+  assert(!P.isValid())
+
+  // valid point, invalid order
+  x.setStr(ng_x, 16)
+  y.setStr(ng_y, 16)
+  z.setInt(1)
+  P.setX(x)
+  P.setY(y)
+  P.setZ(z)
+
+  mcl.verifyOrderG1(false)
+  assert(P.isValid())
+  assert(!P.isValidOrder())
+  buf = P.serialize()
+  Q.clear()
+  Q.deserialize(buf)
+  assert(P.isEqual(Q))
+
+  mcl.verifyOrderG1(true)
+  assert(!P.isValid()) // fail because of invalid order
+  Q.clear()
+  try {
+    Q.deserialize(buf)
+    assert(false) // not here
+  } catch (e) {
+    // here
+  }
+}
+
 mcl.init(mcl.BLS12_381).then(() => {
   console.log('ok')
   mcl.setETHserialization(true)
@@ -67,4 +134,5 @@ mcl.init(mcl.BLS12_381).then(() => {
   console.log(`g2.x=${g2.getX().serializeToHexStr()}`)
   console.log(`g2.y=${g2.getY().serializeToHexStr()}`)
   testFpToG1()
+  testVerifyG1()
 })
