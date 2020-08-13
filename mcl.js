@@ -1,13 +1,13 @@
 'use strict';
 (generator => {
-  if (typeof exports === 'object') {
-    const crypto = require('crypto')
-    crypto.getRandomValues = crypto.randomFillSync
-    generator(exports, crypto, true)
-  } else {
+  if (typeof window === 'object') {
     const crypto = window.crypto || window.msCrypto
     const exports = {}
     window.mcl = generator(exports, crypto, false)
+  } else {
+    const crypto = require('crypto')
+    crypto.getRandomValues = crypto.randomFillSync
+    generator(exports, crypto, true)
   }
 })((exports, crypto, isNodeJs) => {
   /* eslint-disable */
