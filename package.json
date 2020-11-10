@@ -24,13 +24,5 @@
   "engines": {
     "node": ">=8.9.0"
   },
-  "homepage": "https://github.com/herumi/mcl-wasm#readme",
-  "devDependencies": {
-    "coveralls": "^3.0.1",
-    "istanbul": "^0.4.5",
-    "standard": "^10.0.3"
-  },
-  "dependencies": {
-    "nyc": "^11.8.0"
-  }
+  "homepage": "https://github.com/herumi/mcl-wasm#readme"
 }

@@ -1,4 +1,5 @@
 function mclSetupFactory(createModule, getRandomValues) {
+  const exports = {}
   /* eslint-disable */
   exports.BN254 = 0
   exports.BN381_1 = 1
