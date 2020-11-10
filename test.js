@@ -59,13 +59,13 @@ async function curveTestAll () {
   // can't parallel
   await curveTest(mcl.BN254, 'BN254')
   await curveTest(mcl.BN_ZKSNARK1, 'ZKSNARK')
-//  await curveTest(mcl.BN381_1, 'BN381_1')
+  //  await curveTest(mcl.BN381_1, 'BN381_1')
   await curveTest(mcl.BLS12_381, 'BLS12_381')
-//  await curveTest(mcl.BN462, 'BN462')
+  //  await curveTest(mcl.BN462, 'BN462')
 
   await stdCurveTest(mcl.SECP224K1, 'secp224k1')
   await stdCurveTest(mcl.SECP256K1, 'secp256k1')
-//  await stdCurveTest(mcl.SECP384R1, 'secp384r1')
+  //  await stdCurveTest(mcl.SECP384R1, 'secp384r1')
   await stdCurveTest(mcl.NIST_P192, 'NIST_P192')
   await stdCurveTest(mcl.NIST_P256, 'NIST_P256')
 }
@@ -341,15 +341,15 @@ function mulVecGeneric (Cstr, xVec, yVec) {
 
 function mulVecTest () {
   [1, 2, 3, 15, 30, 100].forEach(n => {
-    let xs = []
-    let g1s = []
-    let g2s = []
+    const xs = []
+    const g1s = []
+    const g2s = []
     for (let i = 0; i < n; i++) {
-      let x = new mcl.Fr()
+      const x = new mcl.Fr()
       x.setByCSPRNG()
       xs.push(x)
-      g1s.push(mcl.hashAndMapToG1('A'+String(i)))
-      g2s.push(mcl.hashAndMapToG2('A'+String(i)))
+      g1s.push(mcl.hashAndMapToG1('A' + String(i)))
+      g2s.push(mcl.hashAndMapToG2('A' + String(i)))
     }
     const z1 = mulVecGeneric(mcl.G1, g1s, xs)
     const w1 = mcl.mulVec(g1s, xs)
@@ -357,7 +357,7 @@ function mulVecTest () {
     const z2 = mulVecGeneric(mcl.G2, g2s, xs)
     const w2 = mcl.mulVec(g2s, xs)
     assert(z2.isEqual(w2))
-/*
+    /*
     const C = 100
     bench('mulVecGen', C, () => mulVecGeneric(mcl.G1, g1s, xs))
     bench('mulVecG1',  C, () => mcl.mulVec(g1s, xs))
@@ -476,7 +476,7 @@ function serializeTest () {
 function shiftAndSetTest (a, b) {
   a.setStr('1')
   a = mcl.neg(a)
-  let s = Array.from(a.serialize())
+  const s = Array.from(a.serialize())
   s.unshift(0)
   s.unshift(6) // [<-1>data][0][6] = -65536 + 6 = -65530
   a.setLittleEndianMod(s)
