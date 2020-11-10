@@ -1,4 +1,4 @@
-const mcl = require('./mcl.js')
+const mcl = require('./index.js')
 const assert = require('assert')
 
 function appendZeroToRight (s, n) {

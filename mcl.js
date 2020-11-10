@@ -1,15 +1,4 @@
-'use strict';
-(generator => {
-  if (typeof window === 'object') {
-    const crypto = window.crypto || window.msCrypto
-    const exports = {}
-    window.mcl = generator(exports, crypto, false)
-  } else {
-    const crypto = require('crypto')
-    crypto.getRandomValues = crypto.randomFillSync
-    generator(exports, crypto, true)
-  }
-})((exports, crypto, isNodeJs) => {
+function mclSetupFactory(createModule, getRandomValues) {
   /* eslint-disable */
   exports.BN254 = 0
   exports.BN381_1 = 1
@@ -372,7 +361,7 @@
       }
       setByCSPRNG () {
         const a = new Uint8Array(MCLBN_FR_SIZE)
-        crypto.getRandomValues(a)
+        exports.getRandomValues(a)
         this.setLittleEndian(a)
       }
       setHashOf (s) {
@@ -896,42 +885,32 @@
   } // setup()
   const _cryptoGetRandomValues = function(p, n) {
     const a = new Uint8Array(n)
-    crypto.getRandomValues(a)
+    exports.getRandomValues(a)
     for (let i = 0; i < n; i++) {
       exports.mod.HEAP8[p + i] = a[i]
     }
   }
-  exports.init = (curveType = exports.BN254) => {
+  exports.init = async (curveType = exports.BN254) => {
     exports.curveType = curveType
-    const name = 'mcl_c384_256'
-    return new Promise(resolve => {
-      if (isNodeJs) {
-        const path = require('path')
-        const js = require(`./${name}.js`)
-        const Module = {
-          cryptoGetRandomValues : _cryptoGetRandomValues,
-          locateFile: baseName => { return path.join(__dirname, baseName) }
-        }
-        js(Module)
-          .then(_mod => {
-            exports.mod = _mod
-            setup(exports, curveType)
-            resolve()
-          })
-      } else {
-        fetch(`./${name}.wasm`) // eslint-disable-line
-          .then(response => response.arrayBuffer())
-          .then(buffer => new Uint8Array(buffer))
-          .then(() => {
-            exports.mod = Module() // eslint-disable-line
-            exports.mod.cryptoGetRandomValues = _cryptoGetRandomValues
-            exports.mod.onRuntimeInitialized = () => {
-              setup(exports, curveType)
-              resolve()
-            }
-          })
-      }
+    exports.getRandomValues = getRandomValues
+    exports.mod = await createModule({
+      cryptoGetRandomValues: _cryptoGetRandomValues,
     })
+    setup(exports, curveType)
   }
   return exports
-})
+}
+
+// NodeJS export
+if (typeof exports === 'object' && typeof module === 'object') {
+  module.exports = mclSetupFactory
+} else if (typeof define === 'function' && define['amd']) {
+  define([], function() { return mclSetupFactory })
+} else if (typeof exports === 'object') {
+  exports["mclSetupFactory"] = mclSetupFactory
+}
+
+// Browser export
+if (typeof window === 'object') {
+  window.mclSetupFactory = mclSetupFactory
+}

@@ -1,3 +1,9 @@
+// Get random source
+const crypto = window.crypto || window.msCrypto
+const getRandomValues = x => crypto.getRandomValues(x)
+// Setup mcl
+const mcl = mclSetupFactory(mclCreateModule, getRandomValues)
+
 function getValue (name) { return document.getElementsByName(name)[0].value }
 function setValue (name, val) { document.getElementsByName(name)[0].value = val }
 function getText (name) { return document.getElementsByName(name)[0].innerText }
