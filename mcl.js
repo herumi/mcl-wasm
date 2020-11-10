@@ -1,4 +1,4 @@
-function mclSetupFactory (createModule, getRandomValues) {
+const _mclSetupFactory = (createModule, getRandomValues) => {
   const exports = {}
   /* eslint-disable */
   exports.BN254 = 0
@@ -904,14 +904,14 @@ function mclSetupFactory (createModule, getRandomValues) {
 
 // NodeJS export
 if (typeof exports === 'object' && typeof module === 'object') {
-  module.exports = mclSetupFactory
+  module.exports = _mclSetupFactory
 } else if (typeof define === 'function' && define['amd']) {
-  define([], function() { return mclSetupFactory })
+  define([], function() { return _mclSetupFactory })
 } else if (typeof exports === 'object') {
-  exports["mclSetupFactory"] = mclSetupFactory
+  exports["mclSetupFactory"] = _mclSetupFactory
 }
 
 // Browser export
 if (typeof window === 'object') {
-  window.mclSetupFactory = mclSetupFactory
+  window.mclSetupFactory = _mclSetupFactory
 }
