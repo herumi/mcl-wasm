@@ -2,5 +2,5 @@ language: node_js
 node_js:
   - "8"
 script:
-  - node test
-  - node eth-test
+  - node test/test.js
+  - node test/eth-test.js

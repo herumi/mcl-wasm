@@ -902,16 +902,4 @@ const _mclSetupFactory = (createModule, getRandomValues) => {
   return exports
 }
 
-// NodeJS export
-if (typeof exports === 'object' && typeof module === 'object') {
-  module.exports = _mclSetupFactory
-} else if (typeof define === 'function' && define['amd']) {
-  define([], function() { return _mclSetupFactory })
-} else if (typeof exports === 'object') {
-  exports["mclSetupFactory"] = _mclSetupFactory
-}
-
-// Browser export
-if (typeof window === 'object') {
-  window.mclSetupFactory = _mclSetupFactory
-}
+module.exports = _mclSetupFactory

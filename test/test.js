@@ -1,5 +1,5 @@
 'use strict'
-const mcl = require('./index.js')
+const mcl = require('../src/index.js')
 const assert = require('assert')
 const { performance } = require('perf_hooks')
 

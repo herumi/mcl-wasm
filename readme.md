@@ -13,10 +13,12 @@ see [mcl](https://github.com/herumi/mcl)
 - add mcl.precomputedMillerLoop2 and mcl.precomputedMillerLoop2mixed
 
 ## for Node.js
-node test.js
+```
+node test/test.js
+```
 
 ## browser demo
-[ID-based encryption](https://herumi.github.io/mcl-wasm/ibe-demo.html)
+[ID-based encryption](https://herumi.github.io/mcl-wasm/browser/demo.html)
 
 # usages
 
@@ -69,7 +71,7 @@ mcl.verifyOrderG1(false)
 mcl.verifyOrderG2(false)
 ```
 
-see [test.js](https://github.com/herumi/mcl-wasm/blob/master/test.js)
+see [test.js](https://github.com/herumi/mcl-wasm/blob/master/test/test.js)
 
 # License
 
@@ -82,4 +84,7 @@ http://opensource.org/licenses/BSD-3-Clause
 
 # Author
 
-光成滋生 MITSUNARI Shigeo(herumi@nifty.com)
+MITSUNARI Shigeo(herumi@nifty.com)
+
+# Sponsors welcome
+[GitHub Sponsor](https://github.com/sponsors/herumi)
