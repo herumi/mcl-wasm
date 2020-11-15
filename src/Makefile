@@ -18,5 +18,5 @@ mcl_c.js:
 clean:
 	rm -rf bls_c.js
 
-.PHONY: clean
+.PHONY: clean mcl_c.js
 
