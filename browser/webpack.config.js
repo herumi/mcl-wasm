@@ -6,6 +6,7 @@ module.exports = {
     libraryTarget: 'umd',
     filename: 'mcl.js'
   },
+/*
   resolve: {
     fallback: {
       path: false,
@@ -13,5 +14,6 @@ module.exports = {
       crypto: false,
     },
   },
+*/
   target: "web"
 };
