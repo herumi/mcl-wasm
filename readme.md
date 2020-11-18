@@ -12,6 +12,13 @@ see [mcl](https://github.com/herumi/mcl)
 - support only BN254, ZKSNARK, BLS12-381 to remove mcl_c512.js
 - add mcl.precomputedMillerLoop2 and mcl.precomputedMillerLoop2mixed
 
+## How to use
+The version `v0.6.0` breaks backward compatibility of the entry point.
+
+- Node.js : `const mcl = require('mcl-wasm')`
+- React : `const mcl = require('mcl-wasm/browser')`
+- HTML : `<script src="https://herumi.github.io/mcl-wasm/browser/mcl.js"></script>`
+
 ## for Node.js
 ```
 node test/test.js
