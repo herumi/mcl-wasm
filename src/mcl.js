@@ -17,27 +17,6 @@ const _mclSetupFactory = (createModule, getRandomValues) => {
 
   exports.IRTF = 5 /* MCL_MAP_TO_MODE_HASH_TO_CURVE_07 */
   exports.EC_PROJ = 1024 /* flag for G1/G2.getStr */
-  /* eslint-disable */
-  const getUnitSize = curveType => {
-    switch (curveType) {
-    case exports.BN254:
-    case exports.BN_SNARK1:
-    case exports.SECP224K1:
-    case exports.SECP256K1:
-    case exports.NIST_P192:
-    case exports.NIST_P224:
-    case exports.NIST_P256:
-      return 4; /* use mcl_c.js */
-    case exports.BN381_1:
-    case exports.BN381_2:
-    case exports.BLS12_381:
-    case exports.BN462:
-    case exports.SECP384R1:
-      return 8; /* use mcl_c512.js */
-    default:
-      throw new Error(`QQQ bad curveType=${curveType}`)
-    }
-  }
 
   const setup = (exports, curveType) => {
     const mod = exports.mod
