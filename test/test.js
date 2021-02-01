@@ -122,6 +122,7 @@ function FrTest () {
   a.dump()
   b.setHashOf([97, 98, 99])
   assert(a.isEqual(b))
+  assert(mcl.sub(a, b).isEqual(mcl.neg(mcl.sub(b, a))))
 }
 
 function FpTest () {
@@ -150,11 +151,14 @@ function FpTest () {
     b.setInt(5)
     c.setInt(8)
     assert(mcl.add(a, b).isEqual(c))
+    assert(mcl.sub(a, b).isEqual(mcl.neg(mcl.sub(b, a))))
     c.setInt(-2)
     assert(mcl.sub(a, b).isEqual(c))
     c.setInt(15)
     assert(mcl.mul(a, b).isEqual(c))
     assert(mcl.div(c, a).isEqual(b))
+    c.setInt(9)
+    assert(mcl.sqr(a).isEqual(c))
   }
 }
 

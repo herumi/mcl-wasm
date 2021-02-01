@@ -661,6 +661,9 @@ const _mclSetupFactory = (createModule, getRandomValues) => {
       if (x instanceof exports.Fr) {
         return x._op1(mod._mclBnFr_neg)
       }
+      if (x instanceof exports.Fp) {
+        return x._op1(mod._mclBnFp_neg)
+      }
       if (x instanceof exports.G1) {
         return x._op1(mod._mclBnG1_neg)
       }
