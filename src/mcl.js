@@ -411,6 +411,13 @@ const _mclSetupFactory = (createModule, getRandomValues) => {
       constructor () {
         super(MCLBN_FP_SIZE * 2)
       }
+      setInt (x, y) {
+        const v = new exports.Fp()
+        v.setInt(x)
+        this.set_a(v)
+        v.setInt(y)
+        this.set_b(v)
+      }
       deserialize (s) {
         this._setter(mod.mclBnFp2_deserialize, s)
       }
@@ -673,6 +680,9 @@ const _mclSetupFactory = (createModule, getRandomValues) => {
       if (x instanceof exports.GT) {
         return x._op1(mod._mclBnGT_neg)
       }
+      if (x instanceof exports.Fp2) {
+        return x._op1(mod._mclBnFp2_neg)
+      }
       throw new Error('neg:bad type')
     }
     exports.sqr = x => {
@@ -685,6 +695,9 @@ const _mclSetupFactory = (createModule, getRandomValues) => {
       if (x instanceof exports.GT) {
         return x._op1(mod._mclBnGT_sqr)
       }
+      if (x instanceof exports.Fp2) {
+        return x._op1(mod._mclBnFp2_sqr)
+      }
       throw new Error('sqr:bad type')
     }
     exports.inv = x => {
@@ -696,6 +709,9 @@ const _mclSetupFactory = (createModule, getRandomValues) => {
       }
       if (x instanceof exports.GT) {
         return x._op1(mod._mclBnGT_inv)
+      }
+      if (x instanceof exports.Fp2) {
+        return x._op1(mod._mclBnFp2_inv)
       }
       throw new Error('inv:bad type')
     }
@@ -725,6 +741,9 @@ const _mclSetupFactory = (createModule, getRandomValues) => {
       if (x instanceof exports.GT) {
         return x._op2(mod._mclBnGT_add, y)
       }
+      if (x instanceof exports.Fp2) {
+        return x._op2(mod._mclBnFp2_add, y)
+      }
       throw new Error('add:bad type')
     }
     exports.sub = (x, y) => {
@@ -743,6 +762,9 @@ const _mclSetupFactory = (createModule, getRandomValues) => {
       }
       if (x instanceof exports.GT) {
         return x._op2(mod._mclBnGT_sub, y)
+      }
+      if (x instanceof exports.Fp2) {
+        return x._op2(mod._mclBnFp2_sub, y)
       }
       throw new Error('sub:bad type')
     }
@@ -767,6 +789,9 @@ const _mclSetupFactory = (createModule, getRandomValues) => {
       }
       if (x instanceof exports.GT && y instanceof exports.GT) {
         return x._op2(mod._mclBnGT_mul, y)
+      }
+      if (x instanceof exports.Fp2 && y instanceof exports.Fp2) {
+        return x._op2(mod._mclBnFp2_mul, y)
       }
       throw new Error('mul:mismatch type')
     }
@@ -794,6 +819,9 @@ const _mclSetupFactory = (createModule, getRandomValues) => {
       }
       if (x instanceof exports.GT) {
         return x._op2(mod._mclBnGT_div, y)
+      }
+      if (x instanceof exports.Fp2) {
+        return x._op2(mod._mclBnFp2_div, y)
       }
       throw new Error('div:bad type')
     }

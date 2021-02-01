@@ -200,6 +200,33 @@ function Fp2Test () {
   x.set_b(b)
   const Q2 = x.mapToG2()
   assert(Q1.isEqual(Q2))
+
+  x.setInt(3, 5)
+  a.setInt(3)
+  assert(x.get_a().isEqual(a))
+  a.setInt(5)
+  assert(x.get_b().isEqual(a))
+  y.setInt(2, 7)
+  const z = new mcl.Fp2()
+  z.setInt(5, 12)
+  assert(mcl.add(x, y).isEqual(z))
+  z.setInt(1, -2)
+  assert(mcl.sub(x, y).isEqual(z))
+  assert(mcl.sub(a, b).isEqual(mcl.neg(mcl.sub(b, a))))
+  // (3 + 5i)(2 + 7i) = (6 - 35) + i(21+10) = -29 + 31i
+  z.setInt(-29, 31)
+  assert(mcl.mul(x, y).isEqual(z))
+  assert(mcl.div(z, x).isEqual(y))
+  // (3 + 5i)^2 = (9 - 25) + 30i = -16 + 30i
+  z.setInt(-16, 30)
+  assert(mcl.sqr(x).isEqual(z))
+  // 1/(3+5i) = (3-5i)/(9+25)
+  a.setInt(3)
+  b.setInt(34)
+  z.set_a(mcl.div(a, b))
+  a.setInt(-5)
+  z.set_b(mcl.div(a, b))
+  assert(mcl.inv(x).isEqual(z))
 }
 
 function G1Test () {
