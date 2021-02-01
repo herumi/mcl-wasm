@@ -514,7 +514,7 @@ function benchAll () {
 
   console.log('benchmark')
   const C = 100
-  const C2 = 1000
+  const C2 = 10000
   bench('T_Fr::setByCSPRNG', C, () => a.setByCSPRNG())
   bench('T_pairing', C, () => mcl.pairing(P, Q))
   bench('T_millerLoop', C, () => mcl.millerLoop(P, Q))
@@ -529,6 +529,16 @@ function benchAll () {
   bench('T_hashAndMapToG1', C, () => mcl.hashAndMapToG1(msg))
   bench('T_hashAndMapToG2', C, () => mcl.hashAndMapToG2(msg))
 
+  {
+    let a = new mcl.Fp()
+    let b = new mcl.Fp()
+    a.setByCSPRNG()
+    b.setByCSPRNG()
+    bench('T_Fp::add', C2, () => { b = mcl.add(b, a) })
+    bench('T_Fp::mul', C2, () => { b = mcl.mul(b, a) })
+    bench('T_Fp::sqr', C2, () => { b = mcl.sqr(b) })
+    bench('T_Fp::inv', C2, () => { b = mcl.inv(b) })
+  }
   let b = new mcl.Fr()
   b.setByCSPRNG()
   bench('T_Fr::add', C2, () => { b = mcl.add(b, a) })

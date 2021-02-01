@@ -384,6 +384,11 @@ const _mclSetupFactory = (createModule, getRandomValues) => {
       setBigEndianMod (s) {
         this._setter(mod.mclBnFp_setBigEndianMod, s)
       }
+      setByCSPRNG () {
+        const a = new Uint8Array(MCLBN_FP_SIZE)
+        exports.getRandomValues(a)
+        this.setLittleEndian(a)
+      }
       setHashOf (s) {
         this._setter(mod.mclBnFp_setHashOf, s)
       }
@@ -668,6 +673,9 @@ const _mclSetupFactory = (createModule, getRandomValues) => {
       throw new Error('neg:bad type')
     }
     exports.sqr = x => {
+      if (x instanceof exports.Fp) {
+        return x._op1(mod._mclBnFp_sqr)
+      }
       if (x instanceof exports.Fr) {
         return x._op1(mod._mclBnFr_sqr)
       }
@@ -677,6 +685,9 @@ const _mclSetupFactory = (createModule, getRandomValues) => {
       throw new Error('sqr:bad type')
     }
     exports.inv = x => {
+      if (x instanceof exports.Fp) {
+        return x._op1(mod._mclBnFp_inv)
+      }
       if (x instanceof exports.Fr) {
         return x._op1(mod._mclBnFr_inv)
       }
@@ -696,6 +707,9 @@ const _mclSetupFactory = (createModule, getRandomValues) => {
     }
     exports.add = (x, y) => {
       if (x.constructor !== y.constructor) throw new Error('add:mismatch type')
+      if (x instanceof exports.Fp) {
+        return x._op2(mod._mclBnFp_add, y)
+      }
       if (x instanceof exports.Fr) {
         return x._op2(mod._mclBnFr_add, y)
       }
@@ -712,6 +726,9 @@ const _mclSetupFactory = (createModule, getRandomValues) => {
     }
     exports.sub = (x, y) => {
       if (x.constructor !== y.constructor) throw new Error('sub:mismatch type')
+      if (x instanceof exports.Fp) {
+        return x._op2(mod._mclBnFp_sub, y)
+      }
       if (x instanceof exports.Fr) {
         return x._op2(mod._mclBnFr_sub, y)
       }
@@ -733,6 +750,9 @@ const _mclSetupFactory = (createModule, getRandomValues) => {
       GT * GT
     */
     exports.mul = (x, y) => {
+      if (x instanceof exports.Fp && y instanceof exports.Fp) {
+        return x._op2(mod._mclBnFp_mul, y)
+      }
       if (x instanceof exports.Fr && y instanceof exports.Fr) {
         return x._op2(mod._mclBnFr_mul, y)
       }
@@ -763,6 +783,9 @@ const _mclSetupFactory = (createModule, getRandomValues) => {
     }
     exports.div = (x, y) => {
       if (x.constructor !== y.constructor) throw new Error('div:mismatch type')
+      if (x instanceof exports.Fp) {
+        return x._op2(mod._mclBnFp_div, y)
+      }
       if (x instanceof exports.Fr) {
         return x._op2(mod._mclBnFr_div, y)
       }

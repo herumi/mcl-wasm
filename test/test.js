@@ -142,6 +142,20 @@ function FpTest () {
   a.setHashOf('abc')
   const P2 = a.mapToG1()
   assert(P1.isEqual(P2))
+
+  {
+    const b = new mcl.Fp()
+    const c = new mcl.Fp()
+    a.setInt(3)
+    b.setInt(5)
+    c.setInt(8)
+    assert(mcl.add(a, b).isEqual(c))
+    c.setInt(-2)
+    assert(mcl.sub(a, b).isEqual(c))
+    c.setInt(15)
+    assert(mcl.mul(a, b).isEqual(c))
+    assert(mcl.div(c, a).isEqual(b))
+  }
 }
 
 function Fp2Test () {
