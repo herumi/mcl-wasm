@@ -521,7 +521,8 @@ function benchCapi () {
     bench('Fr::add', C, () => { mod._mclBnFr_add(a, a, b) })
     bench('Fr::sub', C, () => { mod._mclBnFr_sub(a, a, b) })
     bench('Fr::mul', C, () => { mod._mclBnFr_mul(a, a, b) })
-    bench('Fr::sqr', C, () => { mod._mclBnFr_sqr(a, a, b) })
+    bench('Fr::sqr', C, () => { mod._mclBnFr_sqr(a, a) })
+    bench('Fr::div', C, () => { mod._mclBnFr_div(a, a, b) })
     mcl.free(b)
     mcl.free(a)
   }
@@ -542,7 +543,8 @@ function benchCapi () {
     bench('Fp::add', C, () => { mod._mclBnFp_add(a, a, b) })
     bench('Fp::sub', C, () => { mod._mclBnFp_sub(a, a, b) })
     bench('Fp::mul', C, () => { mod._mclBnFp_mul(a, a, b) })
-    bench('Fp::sqr', C, () => { mod._mclBnFp_sqr(a, a, b) })
+    bench('Fp::sqr', C, () => { mod._mclBnFp_sqr(a, a) })
+    bench('Fp::div', C, () => { mod._mclBnFp_div(a, a, b) })
     mcl.free(b)
     mcl.free(a)
   }
@@ -563,38 +565,12 @@ function benchCapi () {
     bench('Fp2::add', C, () => { mod._mclBnFp2_add(a, a, b) })
     bench('Fp2::sub', C, () => { mod._mclBnFp2_sub(a, a, b) })
     bench('Fp2::mul', C, () => { mod._mclBnFp2_mul(a, a, b) })
-    bench('Fp2::sqr', C, () => { mod._mclBnFp2_sqr(a, a, b) })
+    bench('Fp2::sqr', C, () => { mod._mclBnFp2_sqr(a, a) })
+    bench('Fp2::div', C, () => { mod._mclBnFp2_div(a, a, b) })
     mcl.free(b)
     mcl.free(a)
   }
-/*
-  {
-    const a = new mcl.Fp()
-    let b = new mcl.Fp()
-    a.setByCSPRNG()
-    b.setByCSPRNG()
-    console.log('Fp')
-    bench('Fp::add', C2, () => { b = mcl.add(b, a) })
-    bench('Fp::sub', C2, () => { b = mcl.sub(b, a) })
-    bench('Fp::mul', C2, () => { b = mcl.mul(b, a) })
-    bench('Fp::sqr', C2, () => { b = mcl.sqr(b) })
-    bench('Fp::inv', C2, () => { b = mcl.inv(b) })
-  }
-  {
-    const a = new mcl.Fp2()
-    let b = new mcl.Fp2()
-    a.setInt(3, 4)
-    b.setInt(-3, 9)
-    console.log('Fp2')
-    bench('Fp2::add', C2, () => { b = mcl.add(b, a) })
-    bench('Fp2::sub', C2, () => { b = mcl.sub(b, a) })
-    bench('Fp2::mul', C2, () => { b = mcl.mul(b, a) })
-    bench('Fp2::sqr', C2, () => { b = mcl.sqr(b) })
-    bench('Fp2::inv', C2, () => { b = mcl.inv(b) })
-  }
-*/
 }
-
 
 function benchAll () {
   const a = new mcl.Fr()
