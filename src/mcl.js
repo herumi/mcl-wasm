@@ -228,6 +228,14 @@ const _mclSetupFactory = (createModule, getRandomValues) => {
       clear () {
         this.a_.fill(0)
       }
+      // copy to allocated memory
+      copyToMem (pos) {
+        mod.HEAP32.set(this.a_, pos / 4)
+      }
+      // copy from allocated memory
+      copyFromMem (pos) {
+        this.a_.set(mod.HEAP32.subarray(pos / 4, pos / 4 + this.a_.length))
+      }
       // alloc new array
       _alloc () {
         return _malloc(this.a_.length * 4)
