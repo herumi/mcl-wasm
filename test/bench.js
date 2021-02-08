@@ -21,6 +21,7 @@ const curveTest = (curveType, name) => {
         PairingCapiTest()
         modTest()
         console.log('all ok')
+        benchCapi()
         benchAll()
       } catch (e) {
         console.log(`TEST FAIL ${e}`)
@@ -56,18 +57,7 @@ function arithTest () {
 }
 
 async function curveTestAll () {
-  // can't parallel
-  await curveTest(mcl.BN254, 'BN254')
-  await curveTest(mcl.BN_ZKSNARK1, 'ZKSNARK')
-  //  await curveTest(mcl.BN381_1, 'BN381_1')
   await curveTest(mcl.BLS12_381, 'BLS12_381')
-  //  await curveTest(mcl.BN462, 'BN462')
-
-  await stdCurveTest(mcl.SECP224K1, 'secp224k1')
-  await stdCurveTest(mcl.SECP256K1, 'secp256k1')
-  //  await stdCurveTest(mcl.SECP384R1, 'secp384r1')
-  await stdCurveTest(mcl.NIST_P192, 'NIST_P192')
-  await stdCurveTest(mcl.NIST_P256, 'NIST_P256')
 }
 
 curveTestAll()
@@ -122,7 +112,6 @@ function FrTest () {
   a.dump()
   b.setHashOf([97, 98, 99])
   assert(a.isEqual(b))
-  assert(mcl.sub(a, b).isEqual(mcl.neg(mcl.sub(b, a))))
 }
 
 function FpTest () {
@@ -143,23 +132,6 @@ function FpTest () {
   a.setHashOf('abc')
   const P2 = a.mapToG1()
   assert(P1.isEqual(P2))
-
-  {
-    const b = new mcl.Fp()
-    const c = new mcl.Fp()
-    a.setInt(3)
-    b.setInt(5)
-    c.setInt(8)
-    assert(mcl.add(a, b).isEqual(c))
-    assert(mcl.sub(a, b).isEqual(mcl.neg(mcl.sub(b, a))))
-    c.setInt(-2)
-    assert(mcl.sub(a, b).isEqual(c))
-    c.setInt(15)
-    assert(mcl.mul(a, b).isEqual(c))
-    assert(mcl.div(c, a).isEqual(b))
-    c.setInt(9)
-    assert(mcl.sqr(a).isEqual(c))
-  }
 }
 
 function Fp2Test () {
@@ -200,33 +172,6 @@ function Fp2Test () {
   x.set_b(b)
   const Q2 = x.mapToG2()
   assert(Q1.isEqual(Q2))
-
-  x.setInt(3, 5)
-  a.setInt(3)
-  assert(x.get_a().isEqual(a))
-  a.setInt(5)
-  assert(x.get_b().isEqual(a))
-  y.setInt(2, 7)
-  const z = new mcl.Fp2()
-  z.setInt(5, 12)
-  assert(mcl.add(x, y).isEqual(z))
-  z.setInt(1, -2)
-  assert(mcl.sub(x, y).isEqual(z))
-  assert(mcl.sub(a, b).isEqual(mcl.neg(mcl.sub(b, a))))
-  // (3 + 5i)(2 + 7i) = (6 - 35) + i(21+10) = -29 + 31i
-  z.setInt(-29, 31)
-  assert(mcl.mul(x, y).isEqual(z))
-  assert(mcl.div(z, x).isEqual(y))
-  // (3 + 5i)^2 = (9 - 25) + 30i = -16 + 30i
-  z.setInt(-16, 30)
-  assert(mcl.sqr(x).isEqual(z))
-  // 1/(3+5i) = (3-5i)/(9+25)
-  a.setInt(3)
-  b.setInt(34)
-  z.set_a(mcl.div(a, b))
-  a.setInt(-5)
-  z.set_b(mcl.div(a, b))
-  assert(mcl.inv(x).isEqual(z))
 }
 
 function G1Test () {
@@ -551,8 +496,80 @@ function bench (label, count, func) {
   }
   const end = performance.now()
   const t = (end - start) / count
-  const roundTime = (Math.round(t * 1000)) / 1000
-  console.log(label + ' ' + roundTime)
+  const roundTime = (Math.round(t * 1e6)) / 1000
+  console.log(label + ' ' + roundTime + ' usec')
+}
+
+function benchCapi () {
+  console.log('Capi benchmark')
+  const C = 100000
+  const mod = mcl.mod
+  {
+    let _a = new mcl.Fr()
+    let _b = new mcl.Fr()
+    _a.setByCSPRNG()
+    _b.setByCSPRNG()
+    const a = _a._alloc()
+    const b = _b._alloc()
+    _a.copyToMem(a)
+    _b.copyToMem(b)
+    mod._mclBnFr_add(a, a, b)
+    _a = mcl.add(_a, _b)
+    _b.copyFromMem(a)
+    assert(_a.isEqual(_b))
+    console.log('Fr')
+    bench('Fr::add', C, () => { mod._mclBnFr_add(a, a, b) })
+    bench('Fr::sub', C, () => { mod._mclBnFr_sub(a, a, b) })
+    bench('Fr::mul', C, () => { mod._mclBnFr_mul(a, a, b) })
+    bench('Fr::sqr', C, () => { mod._mclBnFr_sqr(a, a) })
+    bench('Fr::div', C, () => { mod._mclBnFr_div(a, a, b) })
+    mcl.free(b)
+    mcl.free(a)
+  }
+  {
+    let _a = new mcl.Fp()
+    let _b = new mcl.Fp()
+    _a.setByCSPRNG()
+    _b.setByCSPRNG()
+    const a = _a._alloc()
+    const b = _b._alloc()
+    _a.copyToMem(a)
+    _b.copyToMem(b)
+    mod._mclBnFp_add(a, a, b)
+    _a = mcl.add(_a, _b)
+    _b.copyFromMem(a)
+    assert(_a.isEqual(_b))
+    console.log('Fp')
+    bench('Fp::add', C, () => { mod._mclBnFp_add(a, a, b) })
+    bench('Fp::sub', C, () => { mod._mclBnFp_sub(a, a, b) })
+    bench('Fp::mul', C, () => { mod._mclBnFp_mul(a, a, b) })
+    bench('Fp::sqr', C, () => { mod._mclBnFp_sqr(a, a) })
+    bench('Fp::div', C, () => { mod._mclBnFp_div(a, a, b) })
+    mcl.free(b)
+    mcl.free(a)
+  }
+  {
+    let _a = new mcl.Fp2()
+    let _b = new mcl.Fp2()
+    _a.setInt(3, 4)
+    _b.setInt(-3, 9)
+    const a = _a._alloc()
+    const b = _b._alloc()
+    _a.copyToMem(a)
+    _b.copyToMem(b)
+    mod._mclBnFp2_add(a, a, b)
+    _a = mcl.add(_a, _b)
+    _b.copyFromMem(a)
+    assert(_a.isEqual(_b))
+    console.log('Fp2')
+    bench('Fp2::add', C, () => { mod._mclBnFp2_add(a, a, b) })
+    bench('Fp2::sub', C, () => { mod._mclBnFp2_sub(a, a, b) })
+    bench('Fp2::mul', C, () => { mod._mclBnFp2_mul(a, a, b) })
+    bench('Fp2::sqr', C, () => { mod._mclBnFp2_sqr(a, a) })
+    bench('Fp2::div', C, () => { mod._mclBnFp2_div(a, a, b) })
+    mcl.free(b)
+    mcl.free(a)
+  }
 }
 
 function benchAll () {
@@ -570,58 +587,63 @@ function benchAll () {
 
   console.log('benchmark')
   const C = 100
-  const C2 = 1000
-  bench('T_Fr::setByCSPRNG', C, () => a.setByCSPRNG())
-  bench('T_pairing', C, () => mcl.pairing(P, Q))
-  bench('T_millerLoop', C, () => mcl.millerLoop(P, Q))
-  bench('T_finalExp', C, () => mcl.finalExp(e))
-  bench('T_precomputedMillerLoop', C, () => mcl.precomputedMillerLoop(P, Qcoeff))
-  bench('T_G1::add', C2, () => { P = mcl.add(P, P2) })
-  bench('T_G1::dbl', C2, () => { P = mcl.dbl(P) })
-  bench('T_G1::mul', C, () => { P = mcl.mul(P, a) })
-  bench('T_G2::add', C2, () => { Q = mcl.add(Q, Q2) })
-  bench('T_G2::dbl', C2, () => { Q = mcl.dbl(Q) })
-  bench('T_G2::mul', C, () => { Q = mcl.mul(Q, a) })
-  bench('T_hashAndMapToG1', C, () => mcl.hashAndMapToG1(msg))
-  bench('T_hashAndMapToG2', C, () => mcl.hashAndMapToG2(msg))
+  const C2 = 10000
+  bench('Fr::setByCSPRNG', C, () => a.setByCSPRNG())
+  bench('pairing', C, () => mcl.pairing(P, Q))
+  bench('millerLoop', C, () => mcl.millerLoop(P, Q))
+  bench('finalExp', C, () => mcl.finalExp(e))
+  bench('precomputedMillerLoop', C, () => mcl.precomputedMillerLoop(P, Qcoeff))
+  bench('G1::add', C2, () => { P = mcl.add(P, P2) })
+  bench('G1::dbl', C2, () => { P = mcl.dbl(P) })
+  bench('G1::mul', C, () => { P = mcl.mul(P, a) })
+  bench('G2::add', C2, () => { Q = mcl.add(Q, Q2) })
+  bench('G2::dbl', C2, () => { Q = mcl.dbl(Q) })
+  bench('G2::mul', C, () => { Q = mcl.mul(Q, a) })
+  bench('hashAndMapToG1', C, () => mcl.hashAndMapToG1(msg))
+  bench('hashAndMapToG2', C, () => mcl.hashAndMapToG2(msg))
 
-  let b = new mcl.Fr()
-  b.setByCSPRNG()
-  bench('T_Fr::add', C2, () => { b = mcl.add(b, a) })
-  bench('T_Fr::mul', C2, () => { b = mcl.mul(b, a) })
-  bench('T_Fr::sqr', C2, () => { b = mcl.sqr(b) })
-  bench('T_Fr::inv', C2, () => { b = mcl.inv(b) })
+  {
+    const a = new mcl.Fp()
+    let b = new mcl.Fp()
+    a.setByCSPRNG()
+    b.setByCSPRNG()
+    console.log('Fp')
+    bench('Fp::add', C2, () => { b = mcl.add(b, a) })
+    bench('Fp::sub', C2, () => { b = mcl.sub(b, a) })
+    bench('Fp::mul', C2, () => { b = mcl.mul(b, a) })
+    bench('Fp::sqr', C2, () => { b = mcl.sqr(b) })
+    bench('Fp::inv', C2, () => { b = mcl.inv(b) })
+  }
+  {
+    const a = new mcl.Fp2()
+    let b = new mcl.Fp2()
+    a.setInt(3, 4)
+    b.setInt(-3, 9)
+    console.log('Fp2')
+    bench('Fp2::add', C2, () => { b = mcl.add(b, a) })
+    bench('Fp2::sub', C2, () => { b = mcl.sub(b, a) })
+    bench('Fp2::mul', C2, () => { b = mcl.mul(b, a) })
+    bench('Fp2::sqr', C2, () => { b = mcl.sqr(b) })
+    bench('Fp2::inv', C2, () => { b = mcl.inv(b) })
+  }
+  {
+    let b = new mcl.Fr()
+    b.setByCSPRNG()
+    console.log('Fr')
+    bench('Fr::add', C2, () => { b = mcl.add(b, a) })
+    bench('Fr::sub', C2, () => { b = mcl.sub(b, a) })
+    bench('Fr::mul', C2, () => { b = mcl.mul(b, a) })
+    bench('Fr::sqr', C2, () => { b = mcl.sqr(b) })
+    bench('Fr::inv', C2, () => { b = mcl.inv(b) })
+  }
 
-  let e2 = mcl.pairing(P, Q)
-  bench('T_GT::add', C2, () => { e2 = mcl.add(e2, e) })
-  bench('T_GT::mul', C2, () => { e2 = mcl.mul(e2, e) })
-  bench('T_GT::sqr', C2, () => { e2 = mcl.sqr(e2) })
-  bench('T_GT::inv', C, () => { e2 = mcl.inv(e2) })
-
+  {
+    let e2 = mcl.pairing(P, Q)
+    bench('GT::add', C2, () => { e2 = mcl.add(e2, e) })
+    bench('GT::mul', C2, () => { e2 = mcl.mul(e2, e) })
+    bench('GT::sqr', C2, () => { e2 = mcl.sqr(e2) })
+    bench('GT::inv', C, () => { e2 = mcl.inv(e2) })
+  }
   Qcoeff.destroy()
 }
 
-/*
-function benchPairingCapi () {
-  console.log('c api')
-  const mod = mcl.mod
-  const a = mod.mclBnFr_malloc()
-  const P = mod.mclBnG1_malloc()
-  const Q = mod.mclBnG2_malloc()
-  const e = mod.mclBnGT_malloc()
-
-  const msg = 'hello wasm'
-
-  mod._mclBnFr_setByCSPRNG(a)
-  mod.mclBnG1_hashAndMapTo(P, 'abc')
-  mod.mclBnG2_hashAndMapTo(Q, 'abc')
-  bench('time_pairing', 50, () => mod._mclBn_pairing(e, P, Q))
-  bench('time_g1mul', 50, () => mod._mclBnG1_mulCT(P, P, a))
-  bench('time_g2mul', 50, () => mod._mclBnG2_mulCT(Q, Q, a))
-  bench('time_mapToG1', 50, () => mod.mclBnG1_hashAndMapTo(P, msg))
-
-  mcl.free(e)
-  mcl.free(Q)
-  mcl.free(P)
-}
-*/
