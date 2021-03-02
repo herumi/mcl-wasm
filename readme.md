@@ -1,4 +1,4 @@
-[![Build Status](https://api.travis-ci.com/herumi/mcl-wasm.svg?branch=master)](https://travis-ci.com/github/herumi/mcl-wasm)
+[![Build Status](https://github.com/herumi/mcl-wasm/actions/workflows/main.yml/badge.svg)](https://github.com/herumi/mcl-wasm/actions/workflows/main.yml)
 
 # A portable and fast pairing-based cryptography library for Node.js by WebAssembly
 
