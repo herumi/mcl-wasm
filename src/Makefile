@@ -17,7 +17,7 @@ mcl_c.js:
 	perl -i -pe 's@(.* = require\(.*)@//\1@' mcl_c.js
 
 clean:
-	rm -rf bls_c.js
+	rm -rf mcl_c.js
 
 .PHONY: clean mcl_c.js
 

@@ -1,5 +1,6 @@
 module.exports = {
   entry: "./src/index-browser.js",
+  mode: "production",
   output: {
     path: __dirname + '/',
     library: 'mcl',
