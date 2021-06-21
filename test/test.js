@@ -120,7 +120,7 @@ function FrTest () {
 
   a.setHashOf('abc')
   a.dump()
-  b.setHashOf([97, 98, 99])
+  b.setHashOf(new Uint8Array([97, 98, 99]))
   assert(a.isEqual(b))
   assert(mcl.sub(a, b).isEqual(mcl.neg(mcl.sub(b, a))))
 }
@@ -368,7 +368,7 @@ function PairingTest () {
     assert(e1.isEqual(e2))
     assert(e1.isEqual(e3))
     const C = 100
-    bench('precomputedMillerLoop2', C, () => mcl.precomputedMillerLoop(P, Q1coeff, P2, Q2coeff))
+    bench('precomputedMillerLoop2', C, () => mcl.precomputedMillerLoop2(P, Q1coeff, P2, Q2coeff))
     bench('precomputedMillerLoop2mixed', C, () => mcl.precomputedMillerLoop2mixed(P, Q, P2, Q2coeff))
     // call this function to avoid memory leak
     Q2coeff.destroy()
