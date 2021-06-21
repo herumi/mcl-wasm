@@ -179,7 +179,7 @@ function FpTest() {
   }
 }
 
-function Fp2Test(): void {
+function Fp2Test() {
   const x = new mcl.Fp2()
   let xs = x.serialize()
   for (let i = 0; i < xs.length; i++) {
@@ -440,7 +440,7 @@ function mulVecTest() {
 }
 
 // Enc(m) = [r P, m + h(e(r mpk, H(id)))]
-function IDenc(id: string, P: mcl.G1, mpk: mcl.G1, m: mcl.Fr) {
+function IDenc(id, P, mpk, m) {
   const r = new mcl.Fr()
   r.setByCSPRNG()
   const Q = mcl.hashAndMapToG2(id)
@@ -449,13 +449,13 @@ function IDenc(id: string, P: mcl.G1, mpk: mcl.G1, m: mcl.Fr) {
 }
 
 // Dec([U, v]) = v - h(e(U, sk))
-function IDdec(c: any, sk: mcl.G2) {
+function IDdec(c, sk) {
   const [U, v] = c
   const e = mcl.pairing(U, sk)
   return mcl.sub(v, mcl.hashToFr(e.serialize()))
 }
 
-function IDbasedEncryptionTest(): void {
+function IDbasedEncryptionTest() {
   // system parameter
   const P = mcl.hashAndMapToG1('1')
   /*
