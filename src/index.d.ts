@@ -46,10 +46,12 @@ declare class IntType extends Common {
 }
 
 declare class Fp extends IntType {
-//    mapToG1(): G1; // QQQ : why does this cause an error?
+    __Fp:never; // to distinct Fp and Fr
+    mapToG1(): G1;
 }
 
 declare class Fr extends IntType {
+    __Fr:never; // to distinct Fp and Fr
 }
 
 declare class Fp2 extends Common {

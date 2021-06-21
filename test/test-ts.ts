@@ -145,14 +145,12 @@ function FpTest() {
   for (let i = 0; i < b.length - 1; i++) {
     assert(b[i] === c[i])
   }
-/*
   {
     const P1 = mcl.hashAndMapToG1('abc')
     a.setHashOf('abc')
     const P2 = a.mapToG1()
     assert(P1.isEqual(P2))
   }
-*/
   {
     const b = new mcl.Fp()
     const c = new mcl.Fp()
@@ -238,22 +236,10 @@ function Fp2Test() {
   z.setInt(-16, 30)
   assert(mcl.sqr(x).isEqual(z))
   // 1/(3+5i) = (3-5i)/(9+25)
-  {
-    const a = new mcl.Fp()
-    const b = new mcl.Fp()
-    a.setInt(3)
-    b.setInt(34)
-    const c = mcl.div(a, b)
-    z.set_a(c)
-    c.dump()
-    /*
-      z.set_a(mcl.div(a, b))
-      a.setInt(-5)
-      z.set_b(mcl.div(a, b))
-      assert(mcl.inv(x).isEqual(z))
-    */
-
-  }
+  z.set_a(mcl.div(a, b))
+  a.setInt(-5)
+  z.set_b(mcl.div(a, b))
+  assert(mcl.inv(x).isEqual(z))
 }
 
 function G1Test() {
@@ -440,7 +426,7 @@ function mulVecTest() {
 }
 
 // Enc(m) = [r P, m + h(e(r mpk, H(id)))]
-function IDenc(id, P, mpk, m) {
+function IDenc(id, P: mcl.G1, mpk: mcl.G1, m: mcl.Fr) {
   const r = new mcl.Fr()
   r.setByCSPRNG()
   const Q = mcl.hashAndMapToG2(id)
@@ -449,7 +435,7 @@ function IDenc(id, P, mpk, m) {
 }
 
 // Dec([U, v]) = v - h(e(U, sk))
-function IDdec(c, sk) {
+function IDdec(c, sk: mcl.G2) {
   const [U, v] = c
   const e = mcl.pairing(U, sk)
   return mcl.sub(v, mcl.hashToFr(e.serialize()))
