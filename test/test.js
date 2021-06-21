@@ -58,7 +58,7 @@ function arithTest () {
 async function curveTestAll () {
   // can't parallel
   await curveTest(mcl.BN254, 'BN254')
-  await curveTest(mcl.BN_ZKSNARK1, 'ZKSNARK')
+  await curveTest(mcl.BN_SNARK1, 'SNARK')
   //  await curveTest(mcl.BN381_1, 'BN381_1')
   await curveTest(mcl.BLS12_381, 'BLS12_381')
   //  await curveTest(mcl.BN462, 'BN462')

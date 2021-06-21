@@ -14,7 +14,7 @@ export const BN254 = CurveType.BN254;
 export const BN_SNARK1 = CurveType.BN_SNARK1;
 export const BLS12_381 = CurveType.BLS12_381;
 export const SECP224K1 = CurveType.SECP224K1;
-export const SECP56K1 = CurveType.SECP256K1;
+export const SECP256K1 = CurveType.SECP256K1;
 export const NIST_P192 = CurveType.NIST_P192;
 export const NIST_P224 = CurveType.NIST_P224;
 export const NIST_P256 = CurveType.NIST_P256;
@@ -33,7 +33,7 @@ declare class Common {
     isZero(): boolean;
     deserialize(v: Uint8Array): void;
     serialize(): Uint8Array;
-    setHashOf(a: Uint8Array | Uint8Array): void;
+    setHashOf(a: string | Uint8Array): void;
 }
 
 declare class IntType extends Common {
@@ -45,11 +45,11 @@ declare class IntType extends Common {
     setByCSPRNG(): void;
 }
 
-declare class Fr extends IntType {
-}
-
 declare class Fp extends IntType {
     mapToG1(): G1;
+}
+
+declare class Fr extends IntType {
 }
 
 declare class Fp2 extends Common {
@@ -91,7 +91,10 @@ declare class GT extends Common {
 }
 
 declare class PrecomputedG2 {
+    constructor(Q: G2);
+    destroy(): void;
 }
+
 export function init(curveType?: CurveType): Promise<void>;
 
 export function deserializeHexStrToFr(s: string): Fr;
@@ -170,5 +173,5 @@ export function millerLoop(P: G1, Q: G2): GT;
 export function finalExp(x: GT): GT;
 
 export function precomputedMillerLoop(P: G1, Qcoeff: PrecomputedG2): GT;
-export function precomputedMillerLoop(P: G1, Q1coeff: PrecomputedG2, P2: G2, Q2coeff: PrecomputedG2): GT;
-export function precomputedMillerLoop2mixed(P: G1, Q1: G2, P2: G2, Q2coeff: PrecomputedG2): GT;
+export function precomputedMillerLoop2(P: G1, Q1coeff: PrecomputedG2, P2: G1, Q2coeff: PrecomputedG2): GT;
+export function precomputedMillerLoop2mixed(P: G1, Q1: G2, P2: G1, Q2coeff: PrecomputedG2): GT;
