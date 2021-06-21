@@ -46,7 +46,7 @@ declare class IntType extends Common {
 }
 
 declare class Fp extends IntType {
-    mapToG1(): G1;
+//    mapToG1(): G1; // QQQ : why does this cause an error?
 }
 
 declare class Fr extends IntType {
