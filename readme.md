@@ -7,6 +7,7 @@
 see [mcl](https://github.com/herumi/mcl)
 
 ## News
+- 2021/Jun/22 add index.d.ts
 - 2021/Mar/02 improve performance
 - 2020/Nov/10 setup function has changed.
 - add `mulVec(xVec, yVec)` where xVec is an array of G1 or G2 and yVec is an array of Fr, which returns `sum of xVec[i] yVec[i]`.
