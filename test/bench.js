@@ -601,6 +601,8 @@ function benchAll () {
   bench('G2::mul', C, () => { Q = mcl.mul(Q, a) })
   bench('hashAndMapToG1', C, () => mcl.hashAndMapToG1(msg))
   bench('hashAndMapToG2', C, () => mcl.hashAndMapToG2(msg))
+  bench('G1::isValidOrder', C, () => P.isValidOrder())
+  bench('G2::isValidOrder', C, () => Q.isValidOrder())
 
   {
     const a = new mcl.Fp()
