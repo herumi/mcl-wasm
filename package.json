@@ -7,6 +7,7 @@
     "lint": "standard src/mcl.js test/test.js",
     "test": "node test/test.js"
   },
+  "types": "src/index.d.ts",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/herumi/mcl-wasm.git"
@@ -17,21 +18,14 @@
     "pairing"
   ],
   "files": [
-    "src/Makefile",
+    "package.json",
     "src/index.js",
     "src/mcl.js",
     "src/mcl_c.js",
     "src/index.d.ts",
-    "browser/demo.html",
-    "browser/demo.js",
     "browser/mcl.js",
-    "browser/package-lock.json",
     "browser/package.json",
-    "browser/readme.md",
-    "browser/src/index-browser.js",
-    "browser/webpack.config.js",
-    "test/test.js",
-    "test/eth-test.js"
+    "browser/src/index-browser.js"
   ],
   "author": "herumi <herumi@nifty.com> (https://github.com/herumi/)",
   "license": "BSD-3-Clause",
