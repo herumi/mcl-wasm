@@ -2,14 +2,14 @@ const mclCreateModule = require('./mcl_c')
 const mclSetupFactory = require('./mcl')
 
 const getRandomValues = (buf) => {
-  if(typeof window === 'object'){
+  if (typeof window === 'object') {
     // for Browser
     const crypto = window.crypto || window.msCrypto
-    return crypto.getRandomValues(buf);
+    return crypto.getRandomValues(buf)
   } else {
     // for Node.js
-    const crypto = require('crypto');
-    return crypto.randomFillSync(buf);
+    const crypto = require('crypto')
+    return crypto.randomFillSync(buf)
   }
 }
 
