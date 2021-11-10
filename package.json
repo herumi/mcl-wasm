@@ -41,6 +41,6 @@
     "assert": "^2.0.0",
     "perf_hooks": "^0.0.1",
     "standard": "^16.0.4",
-    "typescript": "^4.3.4"
+    "typescript": "^4.4.4"
   }
 }
