@@ -13,7 +13,7 @@ module.exports = {
     fallback: {
       path: false,
       fs: false,
-      crypto: false,
+      crypto: false
     },
   },
   target: "web"
