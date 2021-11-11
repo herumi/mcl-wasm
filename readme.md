@@ -7,6 +7,7 @@
 see [mcl](https://github.com/herumi/mcl)
 
 ## News
+- 2021/Nov/11 unify index.js of Node.js and browser
 - 2021/Aug/28 improve performance of `{G1,G2}::isValidOrder()`
 - 2021/Jun/22 add index.d.ts
 - 2021/Mar/02 improve performance

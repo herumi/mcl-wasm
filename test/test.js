@@ -530,11 +530,9 @@ function shiftAndSetTest (a, b) {
   assert(a.isEqual(b))
 }
 function modTest () {
-  {
-    const a = new mcl.Fr()
-    const b = new mcl.Fr()
-    shiftAndSetTest(a, b)
-  }
+  const a = new mcl.Fr()
+  const b = new mcl.Fr()
+  shiftAndSetTest(a, b)
 /* Fp::neg is not yet implemented
   {
     const a = new mcl.Fp()

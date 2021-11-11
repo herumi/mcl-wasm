@@ -6,9 +6,10 @@ const getRandomValues = (buf) => {
     // for Browser
     const crypto = window.crypto || window.msCrypto
     return crypto.getRandomValues(buf)
-  } else if (typeof self === 'object' && typeof self.crypto === 'object' && typeof self.crypto.getRandomValues === 'function') {
+    /* eslint no-unused-vars: 0 */
+  } else if (typeof self === 'object' && typeof self.crypto === 'object' && typeof self.crypto.getRandomValues === 'function') { // eslint-disable-line no-undef
     // for Worker
-    const crypto = self.crypto
+    const crypto = self.crypto // eslint-disable-line no-undef
     return crypto.getRandomValues(buf)
   } else {
     // for Node.js

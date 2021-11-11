@@ -1,10 +1,11 @@
 {
   "name": "mcl-wasm",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "mcl ; A portable and fast pairing-based cryptography library for Node.js by WebAssembly",
   "main": "src/index.js",
   "scripts": {
-    "lint": "standard src/mcl.js test/test.js",
+    "lint": "standard --verbose src/mcl.js src/index.js test/test.js",
+    "lint-fix": "standard --fix src/mcl.js src/index.js test/test.js",
     "test": "node test/test.js"
   },
   "types": "src/index.d.ts",
