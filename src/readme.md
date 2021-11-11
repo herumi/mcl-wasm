@@ -1,6 +1,7 @@
 # Development
 
 ## Build mcl_c.js
+Install emscripten and
 ```
 make
 ```

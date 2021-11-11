@@ -20,7 +20,7 @@ see [mcl](https://github.com/herumi/mcl)
 The version `v0.6.0` breaks backward compatibility of the entry point.
 
 - Node.js : `const mcl = require('mcl-wasm')`
-- React : `const mcl = require('mcl-wasm/browser')`
+- React : `const mcl = require('mcl-wasm')`
 - HTML : `<script src="https://herumi.github.io/mcl-wasm/browser/mcl.js"></script>`
 
 ## for Node.js
