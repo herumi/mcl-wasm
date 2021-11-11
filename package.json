@@ -6,6 +6,7 @@
   "scripts": {
     "lint": "standard --verbose src/*.js test/test.js; ts-standard-ts --verbose src/*.ts",
     "lint-fix": "standard --fix src/*.js test/test.js; ts-standard --fix src/*.ts",
+    "tsc": "tsc",
     "test": "tsc && node test/test.js && node test/eth-test.js"
   },
   "types": "dist/index.d.ts",
@@ -19,11 +20,8 @@
     "pairing"
   ],
   "files": [
-    "package.json",
-    "src/index.js",
-    "src/mcl.js",
-    "src/mcl_c.js",
-    "src/index.d.ts",
+    "dist/*.js",
+    "dist/*.d.ts",
     "browser/mcl.js",
     "browser/package.json"
   ],
