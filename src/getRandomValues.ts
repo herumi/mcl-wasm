@@ -1,7 +1,7 @@
-const getRandomValues = (buf) => {
+const getRandomValues = (buf: Uint8Array): Uint8Array => {
   if (typeof window === 'object') {
     // for Browser
-    const crypto = window.crypto || window.msCrypto
+    const crypto = window.crypto || (window as any).msCrypto as Crypto
     return crypto.getRandomValues(buf)
     /* eslint no-unused-vars: 0 */
   } else if (typeof self === 'object' && typeof self.crypto === 'object' && typeof self.crypto.getRandomValues === 'function') { // eslint-disable-line no-undef
@@ -14,4 +14,5 @@ const getRandomValues = (buf) => {
     return crypto.randomFillSync(buf)
   }
 }
-module.exports = getRandomValues
+
+export default getRandomValues

@@ -1,4 +1,4 @@
-import * as mcl from 'mcl-wasm'
+import * as mcl from '../dist'
 import * as assert from 'assert'
 import { performance } from 'perf_hooks'
 

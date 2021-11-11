@@ -1,17 +1,20 @@
-const { _free, _malloc, mod, toHexStr, fromHexStr } = require('./mcl')
-const { MCLBN_FP_SIZE, MCLBN_FR_SIZE, MCLBN_G1_SIZE, MCLBN_G2_SIZE, MCLBN_GT_SIZE } = require('./constants')
-const getRandomValues = require('./getRandomValues')
+import { mod, _free, toHexStr, fromHexStr, _malloc } from './mcl'
+import { MCLBN_FP_SIZE, MCLBN_FR_SIZE, MCLBN_G1_SIZE, MCLBN_G2_SIZE, MCLBN_GT_SIZE } from './constants'
+import getRandomValues from './getRandomValues'
 
-class Common {
-  constructor (size) {
+abstract class Common {
+  /** @internal */
+  public a_: Uint32Array
+
+  constructor (size: number) {
     this.a_ = new Uint32Array(size / 4)
   }
 
-  deserializeHexStr (s) {
+  deserializeHexStr (s: string) {
     this.deserialize(fromHexStr(s))
   }
 
-  serializeToHexStr () {
+  serializeToHexStr (): string {
     return toHexStr(this.serialize())
   }
 
@@ -24,55 +27,66 @@ class Common {
   }
 
   // copy to allocated memory
-  copyToMem (pos) {
+  copyToMem (pos: number) {
     mod.HEAP32.set(this.a_, pos / 4)
   }
 
   // copy from allocated memory
-  copyFromMem (pos) {
+  copyFromMem (pos: number) {
     this.a_.set(mod.HEAP32.subarray(pos / 4, pos / 4 + this.a_.length))
   }
 
-  // alloc new array
+  abstract setStr (s: string, base?: number): void
+  abstract getStr (base?: number): string
+  abstract isEqual (rhs: this): boolean
+  abstract isZero (): boolean
+  abstract deserialize (v: Uint8Array): void
+  abstract serialize (): Uint8Array
+  abstract setHashOf (a: string | Uint8Array): void
+
+  // internal methods
+
+  /** @internal alloc new array */
   _alloc () {
     return _malloc(this.a_.length * 4)
   }
 
-  // alloc and copy a_ to mod.HEAP32[pos / 4]
+  /** @internal alloc and copy a_ to mod.HEAP32[pos / 4] */
   _allocAndCopy () {
     const pos = this._alloc()
     mod.HEAP32.set(this.a_, pos / 4)
     return pos
   }
 
-  // save pos to a_
-  _save (pos) {
+  /** @internal save pos to a_ */
+  _save (pos: number) {
     this.a_.set(mod.HEAP32.subarray(pos / 4, pos / 4 + this.a_.length))
   }
 
-  // save and free
-  _saveAndFree (pos) {
+  /** @internal save and free */
+  _saveAndFree (pos: number) {
     this._save(pos)
     _free(pos)
   }
 
-  // set parameter (p1, p2 may be undefined)
-  _setter (func, p1, p2) {
+  /** @internal set parameter */
+  _setter (func: Function, ...params: any[]): void {
     const pos = this._alloc()
-    const r = func(pos, p1, p2)
+    const r = func(pos, ...params)
     this._saveAndFree(pos)
     if (r) throw new Error('_setter err')
   }
 
-  // getter (p1, p2 may be undefined)
-  _getter (func, p1, p2) {
+  /** @internal getter */
+  _getter (func: Function, ...params: any[]): any {
     const pos = this._allocAndCopy()
-    const s = func(pos, p1, p2)
+    const s = func(pos, ...params)
     _free(pos)
     return s
   }
 
-  _isEqual (func, rhs) {
+  /** @internal */
+  _isEqual (func: (xPos: number, yPos: number) => number, rhs: Common) {
     const xPos = this._allocAndCopy()
     const yPos = rhs._allocAndCopy()
     const r = func(xPos, yPos)
@@ -81,9 +95,9 @@ class Common {
     return r === 1
   }
 
-  // func(y, this) and return y
-  _op1 (func) {
-    const y = new this.constructor()
+  /** @internal func(y, this) and return y */
+  _op1 (func: (yPos: number, xPos: number) => void) {
+    const y = new (this.constructor as any)()
     const xPos = this._allocAndCopy()
     const yPos = y._alloc()
     func(yPos, xPos)
@@ -92,9 +106,9 @@ class Common {
     return y
   }
 
-  // func(z, this, y) and return z
-  _op2 (func, y, Cstr = null) {
-    const z = Cstr ? new Cstr() : new this.constructor()
+  /** @internal func(z, this, y) and return z */
+  _op2 (func: (zPos: number, xPos: number, yPos: number) => void, y: Common, Cstr: any = null) {
+    const z = Cstr ? new Cstr() : new (this.constructor as any)()
     const xPos = this._allocAndCopy()
     const yPos = y._allocAndCopy()
     const zPos = z._alloc()
@@ -105,40 +119,50 @@ class Common {
     return z
   }
 
-  // devide Uint32Array a into n and chose the idx-th
-  _getSubArray (idx, n) {
+  /** @internal devide Uint32Array a into n and chose the idx-th */
+  _getSubArray (idx: number, n: number) {
     const d = this.a_.length / n
     return new Uint32Array(this.a_.buffer, d * idx * 4, d)
   }
 
-  // set array lhs to idx
-  _setSubArray (lhs, idx, n) {
+  /** @internal set array lhs to idx */
+  _setSubArray (lhs: Common, idx: number, n: number) {
     const d = this.a_.length / n
     this.a_.set(lhs.a_, d * idx)
   }
 }
-exports.Fr = class extends Common {
+
+abstract class IntType extends Common {
+  abstract setInt (x: number): void
+  abstract isOne (): boolean
+  abstract setLittleEndian (a: Uint8Array): void
+  abstract setLittleEndianMod (a: Uint8Array): void
+  abstract setBigEndianMod (a: Uint8Array): void
+  abstract setByCSPRNG (): void
+}
+
+export class Fr extends IntType {
   constructor () {
     super(MCLBN_FR_SIZE)
   }
 
-  setInt (x) {
+  setInt (x: number) {
     this._setter(mod._mclBnFr_setInt32, x)
   }
 
-  deserialize (s) {
+  deserialize (s: Uint8Array) {
     this._setter(mod.mclBnFr_deserialize, s)
   }
 
-  serialize () {
+  serialize (): Uint8Array {
     return this._getter(mod.mclBnFr_serialize)
   }
 
-  setStr (s, base = 0) {
+  setStr (s: string, base = 0) {
     this._setter(mod.mclBnFr_setStr, s, base)
   }
 
-  getStr (base = 0) {
+  getStr (base = 0): string {
     return this._getter(mod.mclBnFr_getStr, base)
   }
 
@@ -150,20 +174,20 @@ exports.Fr = class extends Common {
     return this._getter(mod._mclBnFr_isOne) === 1
   }
 
-  isEqual (rhs) {
+  isEqual (rhs: this): boolean {
     return this._isEqual(mod._mclBnFr_isEqual, rhs)
   }
 
-  setLittleEndian (s) {
-    this._setter(mod.mclBnFr_setLittleEndian, s)
+  setLittleEndian (a: Uint8Array) {
+    this._setter(mod.mclBnFr_setLittleEndian, a)
   }
 
-  setLittleEndianMod (s) {
-    this._setter(mod.mclBnFr_setLittleEndianMod, s)
+  setLittleEndianMod (a: Uint8Array) {
+    this._setter(mod.mclBnFr_setLittleEndianMod, a)
   }
 
-  setBigEndianMod (s) {
-    this._setter(mod.mclBnFr_setBigEndianMod, s)
+  setBigEndianMod (a: Uint8Array) {
+    this._setter(mod.mclBnFr_setBigEndianMod, a)
   }
 
   setByCSPRNG () {
@@ -172,54 +196,69 @@ exports.Fr = class extends Common {
     this.setLittleEndian(a)
   }
 
-  setHashOf (s) {
+  setHashOf (s: string | Uint8Array) {
     this._setter(mod.mclBnFr_setHashOf, s)
   }
 }
-exports.deserializeHexStrToFr = s => {
-  const r = new exports.Fr()
+
+export interface Fr {
+  /** to distinct Fp and Fr for typescript */
+  __Fr: never
+}
+
+export const deserializeHexStrToFr = (s: string) => {
+  const r = new Fr()
   r.deserializeHexStr(s)
   return r
 }
-exports.Fp = class extends Common {
+
+export class Fp extends IntType {
   constructor () {
     super(MCLBN_FP_SIZE)
   }
 
-  setInt (x) {
+  setInt (x: number) {
     this._setter(mod._mclBnFp_setInt32, x)
   }
 
-  deserialize (s) {
+  deserialize (s: Uint8Array) {
     this._setter(mod.mclBnFp_deserialize, s)
   }
 
-  serialize () {
+  serialize (): Uint8Array {
     return this._getter(mod.mclBnFp_serialize)
   }
 
-  setStr (s, base = 0) {
+  setStr (s: string, base = 0) {
     this._setter(mod.mclBnFp_setStr, s, base)
   }
 
-  getStr (base = 0) {
+  getStr (base = 0): string {
     return this._getter(mod.mclBnFp_getStr, base)
   }
 
-  isEqual (rhs) {
+  isOne () {
+    return this._getter(mod._mclBnFr_isOne) === 1
+  }
+
+  isZero (): boolean {
+    throw new Error('Fp.isZero is not supported')
+  }
+
+  isEqual (rhs: this): boolean {
     return this._isEqual(mod._mclBnFp_isEqual, rhs)
   }
 
-  setLittleEndian (s) {
-    this._setter(mod.mclBnFp_setLittleEndian, s)
+  setLittleEndian (a: Uint8Array) {
+    this._setter(mod.mclBnFp_setLittleEndian, a)
   }
 
-  setLittleEndianMod (s) {
-    this._setter(mod.mclBnFp_setLittleEndianMod, s)
+  setLittleEndianMod (a: Uint8Array) {
+    this._setter(mod.mclBnFp_setLittleEndianMod, a)
   }
 
-  setBigEndianMod (s) {
-    this._setter(mod.mclBnFp_setBigEndianMod, s)
+  setBigEndianMod (a: Uint8Array) {
+    this._setter(mod.mclBnFp_setBigEndianMod, a)
   }
 
   setByCSPRNG () {
@@ -228,12 +267,12 @@ exports.Fp = class extends Common {
     this.setLittleEndian(a)
   }
 
-  setHashOf (s) {
+  setHashOf (s: string | Uint8Array) {
     this._setter(mod.mclBnFp_setHashOf, s)
   }
 
   mapToG1 () {
-    const y = new exports.G1()
+    const y = new G1()
     const xPos = this._allocAndCopy()
     const yPos = y._alloc()
     mod._mclBnFp_mapToG1(yPos, xPos)
@@ -242,61 +281,84 @@ exports.Fp = class extends Common {
     return y
   }
 }
-exports.deserializeHexStrToFp = s => {
-  const r = new exports.Fp()
+
+export interface Fp {
+  /** to distinct Fp and Fr for typescript */
+  __Fp: never
+}
+
+export const deserializeHexStrToFp = (s: string) => {
+  const r = new Fp()
   r.deserializeHexStr(s)
   return r
 }
-exports.Fp2 = class extends Common {
+
+export class Fp2 extends Common {
   constructor () {
     super(MCLBN_FP_SIZE * 2)
   }
 
-  setInt (x, y) {
-    const v = new exports.Fp()
+  setInt (x: number, y: number) {
+    const v = new Fp()
     v.setInt(x)
     this.set_a(v)
     v.setInt(y)
     this.set_b(v)
   }
 
-  deserialize (s) {
+  deserialize (s: Uint8Array) {
     this._setter(mod.mclBnFp2_deserialize, s)
   }
 
-  serialize () {
+  serialize (): Uint8Array {
     return this._getter(mod.mclBnFp2_serialize)
   }
 
-  isEqual (rhs) {
+  getStr (): string {
+    throw new Error('Fp2.getStr is not supported')
+  }
+
+  setStr (): string {
+    throw new Error('Fp2.setStr is not supported')
+  }
+
+  isEqual (rhs: this): boolean {
     return this._isEqual(mod._mclBnFp2_isEqual, rhs)
+  }
+
+  isZero (): boolean {
+    throw new Error('Fp2.isZero is not supported')
+  }
+
+  setHashOf (s: string | Uint8Array) {
+    throw new Error('Fp2.setHashOf is not supported')
   }
 
   /*
     x = a + bi where a, b in Fp and i^2 = -1
   */
   get_a () {
-    const r = new exports.Fp()
+    const r = new Fp()
     r.a_ = this._getSubArray(0, 2)
     return r
   }
 
   get_b () {
-    const r = new exports.Fp()
+    const r = new Fp()
     r.a_ = this._getSubArray(1, 2)
     return r
   }
 
-  set_a (v) {
+  set_a (v: Fp) {
     this._setSubArray(v, 0, 2)
   }
 
-  set_b (v) {
+  set_b (v: Fp) {
     this._setSubArray(v, 1, 2)
   }
 
   mapToG2 () {
-    const y = new exports.G2()
+    const y = new G2()
     const xPos = this._allocAndCopy()
     const yPos = y._alloc()
     mod._mclBnFp2_mapToG2(yPos, xPos)
@@ -305,63 +367,71 @@ exports.Fp2 = class extends Common {
     return y
   }
 }
-exports.deserializeHexStrToFp2 = s => {
-  const r = new exports.Fp2()
+
+export const deserializeHexStrToFp2 = (s: string) => {
+  const r = new Fp2()
   r.deserializeHexStr(s)
   return r
 }
-exports.G1 = class extends Common {
+
+abstract class EllipticType extends Common {
+  abstract normalize (): void
+  abstract isValid (): boolean
+  abstract isValidOrder (): boolean
+}
+
+export class G1 extends EllipticType {
   constructor () {
     super(MCLBN_G1_SIZE)
   }
 
-  deserialize (s) {
+  deserialize (s: Uint8Array) {
     this._setter(mod.mclBnG1_deserialize, s)
   }
 
-  serialize () {
+  serialize (): Uint8Array {
     return this._getter(mod.mclBnG1_serialize)
   }
 
-  setStr (s, base = 0) {
+  setStr (s: string, base = 0) {
     this._setter(mod.mclBnG1_setStr, s, base)
   }
 
-  getStr (base = 0) {
+  getStr (base = 0): string {
     return this._getter(mod.mclBnG1_getStr, base)
   }
 
   normalize () {
-    this.a_ = exports.normalize(this).a_
+    this.a_ = normalize(this).a_
   }
 
   getX () {
-    const r = new exports.Fp()
+    const r = new Fp()
     r.a_ = this._getSubArray(0, 3)
     return r
   }
 
   getY () {
-    const r = new exports.Fp()
+    const r = new Fp()
     r.a_ = this._getSubArray(1, 3)
     return r
   }
 
   getZ () {
-    const r = new exports.Fp()
+    const r = new Fp()
     r.a_ = this._getSubArray(2, 3)
     return r
   }
 
-  setX (v) {
+  setX (v: Fp) {
     this._setSubArray(v, 0, 3)
   }
 
-  setY (v) {
+  setY (v: Fp) {
     this._setSubArray(v, 1, 3)
   }
 
-  setZ (v) {
+  setZ (v: Fp) {
     this._setSubArray(v, 2, 3)
   }
 
@@ -377,34 +447,40 @@ exports.G1 = class extends Common {
     return this._getter(mod._mclBnG1_isValidOrder) === 1
   }
 
-  isEqual (rhs) {
+  isEqual (rhs: this): boolean {
     return this._isEqual(mod._mclBnG1_isEqual, rhs)
   }
 
-  setHashOf (s) {
+  setHashOf (s: string | Uint8Array) {
     this._setter(mod.mclBnG1_hashAndMapTo, s)
   }
 }
-exports.deserializeHexStrToG1 = s => {
-  const r = new exports.G1()
+
+export const deserializeHexStrToG1 = (s: string) => {
+  const r = new G1()
   r.deserializeHexStr(s)
   return r
 }
-exports.setETHserialization = (ETHserialization) => {
+
+export const setETHserialization = (ETHserialization: boolean) => {
   mod._mclBn_setETHserialization(ETHserialization ? 1 : 0)
 }
+
 // mode = mcl.IRTF for Ethereum 2.0 spec
-exports.setMapToMode = (mode) => {
+export const setMapToMode = (mode: number) => {
   mod._mclBn_setMapToMode(mode)
 }
-exports.verifyOrderG1 = (doVerify) => {
+
+export const verifyOrderG1 = (doVerify: boolean) => {
   mod._mclBn_verifyOrderG1(doVerify ? 1 : 0)
 }
-exports.verifyOrderG2 = (doVerify) => {
+
+export const verifyOrderG2 = (doVerify: boolean) => {
   mod._mclBn_verifyOrderG2(doVerify ? 1 : 0)
 }
-exports.getBasePointG1 = () => {
-  const x = new exports.G1()
+
+export const getBasePointG1 = () => {
+  const x = new G1()
   const xPos = x._alloc()
   mod._mclBnG1_getBasePoint(xPos)
   x._saveAndFree(xPos)
@@ -413,58 +489,59 @@ exports.getBasePointG1 = () => {
   }
   return x
 }
-exports.G2 = class extends Common {
+
+export class G2 extends EllipticType {
   constructor () {
     super(MCLBN_G2_SIZE)
   }
 
-  deserialize (s) {
+  deserialize (s: Uint8Array) {
     this._setter(mod.mclBnG2_deserialize, s)
   }
 
-  serialize () {
+  serialize (): Uint8Array {
     return this._getter(mod.mclBnG2_serialize)
   }
 
-  setStr (s, base = 0) {
+  setStr (s: string, base = 0) {
     this._setter(mod.mclBnG2_setStr, s, base)
   }
 
-  getStr (base = 0) {
+  getStr (base = 0): string {
     return this._getter(mod.mclBnG2_getStr, base)
   }
 
   normalize () {
-    this.a_ = exports.normalize(this).a_
+    this.a_ = normalize(this).a_
   }
 
   getX () {
-    const r = new exports.Fp2()
+    const r = new Fp2()
     r.a_ = this._getSubArray(0, 3)
     return r
   }
 
   getY () {
-    const r = new exports.Fp2()
+    const r = new Fp2()
     r.a_ = this._getSubArray(1, 3)
     return r
   }
 
   getZ () {
-    const r = new exports.Fp2()
+    const r = new Fp2()
     r.a_ = this._getSubArray(2, 3)
     return r
   }
 
-  setX (v) {
+  setX (v: Fp2) {
     this._setSubArray(v, 0, 3)
   }
 
-  setY (v) {
+  setY (v: Fp2) {
     this._setSubArray(v, 1, 3)
   }
 
-  setZ (v) {
+  setZ (v: Fp2) {
     this._setSubArray(v, 2, 3)
   }
 
@@ -480,41 +557,43 @@ exports.G2 = class extends Common {
     return this._getter(mod._mclBnG2_isValidOrder) === 1
   }
 
-  isEqual (rhs) {
+  isEqual (rhs: this): boolean {
     return this._isEqual(mod._mclBnG2_isEqual, rhs)
   }
 
-  setHashOf (s) {
+  setHashOf (s: string | Uint8Array) {
     this._setter(mod.mclBnG2_hashAndMapTo, s)
   }
 }
-exports.deserializeHexStrToG2 = s => {
-  const r = new exports.G2()
+
+export const deserializeHexStrToG2 = (s: string) => {
+  const r = new G2()
   r.deserializeHexStr(s)
   return r
 }
-exports.GT = class extends Common {
+
+export class GT extends Common {
   constructor () {
     super(MCLBN_GT_SIZE)
   }
 
-  setInt (x) {
+  setInt (x: number) {
     this._setter(mod._mclBnGT_setInt32, x)
   }
 
-  deserialize (s) {
+  deserialize (s: Uint8Array) {
     this._setter(mod.mclBnGT_deserialize, s)
   }
 
-  serialize () {
+  serialize (): Uint8Array {
     return this._getter(mod.mclBnGT_serialize)
   }
 
-  setStr (s, base = 0) {
+  setStr (s: string, base = 0) {
     this._setter(mod.mclBnGT_setStr, s, base)
   }
 
-  getStr (base = 0) {
+  getStr (base = 0): string {
     return this._getter(mod.mclBnGT_getStr, base)
   }
 
@@ -526,18 +605,27 @@ exports.GT = class extends Common {
     return this._getter(mod._mclBnGT_isOne) === 1
   }
 
-  isEqual (rhs) {
+  isEqual (rhs: this): boolean {
     return this._isEqual(mod._mclBnGT_isEqual, rhs)
   }
+
+  setHashOf (s: string | Uint8Array) {
+    throw new Error('Fp2.setHashOf is not supported')
+  }
 }
-exports.deserializeHexStrToGT = s => {
-  const r = new exports.GT()
+
+export const deserializeHexStrToGT = (s: string) => {
+  const r = new GT()
   r.deserializeHexStr(s)
   return r
 }
-exports.PrecomputedG2 = class {
-  constructor (Q) {
-    if (!(Q instanceof exports.G2)) throw new Error('PrecomputedG2:bad type')
+
+export class PrecomputedG2 {
+  /** @internal */
+  p: number | null
+
+  constructor (Q: G2) {
+    if (!(Q instanceof G2)) throw new Error('PrecomputedG2:bad type')
     const byteSize = mod._mclBn_getUint64NumToPrecompute() * 8
     this.p = _malloc(byteSize)
     const Qpos = Q._allocAndCopy()
@@ -550,143 +638,156 @@ exports.PrecomputedG2 = class {
     to avoid memory leak
   */
   destroy () {
-    _free(this.p)
+    if (this.p != null) _free(this.p)
     this.p = null
   }
 }
-exports.neg = x => {
-  if (x instanceof exports.Fr) {
+
+export const neg = <T extends Fr | Fp | G1 | G2 | GT | Fp2>(x: T): T => {
+  if (x instanceof Fr) {
     return x._op1(mod._mclBnFr_neg)
   }
-  if (x instanceof exports.Fp) {
+  if (x instanceof Fp) {
     return x._op1(mod._mclBnFp_neg)
   }
-  if (x instanceof exports.G1) {
+  if (x instanceof G1) {
     return x._op1(mod._mclBnG1_neg)
   }
-  if (x instanceof exports.G2) {
+  if (x instanceof G2) {
     return x._op1(mod._mclBnG2_neg)
   }
-  if (x instanceof exports.GT) {
+  if (x instanceof GT) {
     return x._op1(mod._mclBnGT_neg)
   }
-  if (x instanceof exports.Fp2) {
+  if (x instanceof Fp2) {
     return x._op1(mod._mclBnFp2_neg)
   }
   throw new Error('neg:bad type')
 }
-exports.sqr = x => {
-  if (x instanceof exports.Fp) {
+
+export const sqr = <T extends Fp | Fr | GT | Fp2>(x: T): T => {
+  if (x instanceof Fp) {
     return x._op1(mod._mclBnFp_sqr)
   }
-  if (x instanceof exports.Fr) {
+  if (x instanceof Fr) {
     return x._op1(mod._mclBnFr_sqr)
   }
-  if (x instanceof exports.GT) {
+  if (x instanceof GT) {
     return x._op1(mod._mclBnGT_sqr)
   }
-  if (x instanceof exports.Fp2) {
+  if (x instanceof Fp2) {
     return x._op1(mod._mclBnFp2_sqr)
   }
   throw new Error('sqr:bad type')
 }
-exports.inv = x => {
-  if (x instanceof exports.Fp) {
+
+export const inv = <T extends Fp | Fr | GT | Fp2>(x: T): T => {
+  if (x instanceof Fp) {
     return x._op1(mod._mclBnFp_inv)
   }
-  if (x instanceof exports.Fr) {
+  if (x instanceof Fr) {
     return x._op1(mod._mclBnFr_inv)
   }
-  if (x instanceof exports.GT) {
+  if (x instanceof GT) {
     return x._op1(mod._mclBnGT_inv)
   }
-  if (x instanceof exports.Fp2) {
+  if (x instanceof Fp2) {
     return x._op1(mod._mclBnFp2_inv)
   }
   throw new Error('inv:bad type')
 }
-exports.normalize = x => {
-  if (x instanceof exports.G1) {
+
+export const normalize = <T extends G1 | G2>(x: T): T => {
+  if (x instanceof G1) {
     return x._op1(mod._mclBnG1_normalize)
   }
-  if (x instanceof exports.G2) {
+  if (x instanceof G2) {
     return x._op1(mod._mclBnG2_normalize)
   }
   throw new Error('normalize:bad type')
 }
-exports.add = (x, y) => {
+
+export const add = <T extends Fp | Fr | G1 | G2 | GT | Fp2>(x: T, y: T): T => {
   if (x.constructor !== y.constructor) throw new Error('add:mismatch type')
-  if (x instanceof exports.Fp) {
+  if (x instanceof Fp) {
     return x._op2(mod._mclBnFp_add, y)
   }
-  if (x instanceof exports.Fr) {
+  if (x instanceof Fr) {
     return x._op2(mod._mclBnFr_add, y)
   }
-  if (x instanceof exports.G1) {
+  if (x instanceof G1) {
     return x._op2(mod._mclBnG1_add, y)
   }
-  if (x instanceof exports.G2) {
+  if (x instanceof G2) {
     return x._op2(mod._mclBnG2_add, y)
   }
-  if (x instanceof exports.GT) {
+  if (x instanceof GT) {
     return x._op2(mod._mclBnGT_add, y)
   }
-  if (x instanceof exports.Fp2) {
+  if (x instanceof Fp2) {
     return x._op2(mod._mclBnFp2_add, y)
   }
   throw new Error('add:bad type')
 }
-exports.sub = (x, y) => {
+
+export const sub = <T extends Fp | Fr | G1 | G2 | GT | Fp2>(x: T, y: T): T => {
   if (x.constructor !== y.constructor) throw new Error('sub:mismatch type')
-  if (x instanceof exports.Fp) {
+  if (x instanceof Fp) {
     return x._op2(mod._mclBnFp_sub, y)
   }
-  if (x instanceof exports.Fr) {
+  if (x instanceof Fr) {
     return x._op2(mod._mclBnFr_sub, y)
   }
-  if (x instanceof exports.G1) {
+  if (x instanceof G1) {
     return x._op2(mod._mclBnG1_sub, y)
   }
-  if (x instanceof exports.G2) {
+  if (x instanceof G2) {
     return x._op2(mod._mclBnG2_sub, y)
   }
-  if (x instanceof exports.GT) {
+  if (x instanceof GT) {
     return x._op2(mod._mclBnGT_sub, y)
   }
-  if (x instanceof exports.Fp2) {
+  if (x instanceof Fp2) {
     return x._op2(mod._mclBnFp2_sub, y)
   }
   throw new Error('sub:bad type')
 }
+
 /*
   Fr * Fr
   G1 * Fr ; scalar mul
   G2 * Fr ; scalar mul
   GT * GT
 */
-exports.mul = (x, y) => {
-  if (x instanceof exports.Fp && y instanceof exports.Fp) {
+export function mul (x: Fr, y: Fr): Fr
+export function mul (x: Fp, y: Fp): Fp
+export function mul (x: Fp2, y: Fp2): Fp2
+export function mul (x: G1, y: Fr): G1
+export function mul (x: G2, y: Fr): G2
+export function mul (x: GT, y: GT): GT
+export function mul (x: Common, y: Common): Common {
+  if (x instanceof Fp && y instanceof Fp) {
     return x._op2(mod._mclBnFp_mul, y)
   }
-  if (x instanceof exports.Fr && y instanceof exports.Fr) {
+  if (x instanceof Fr && y instanceof Fr) {
     return x._op2(mod._mclBnFr_mul, y)
   }
-  if (x instanceof exports.G1 && y instanceof exports.Fr) {
+  if (x instanceof G1 && y instanceof Fr) {
     return x._op2(mod._mclBnG1_mul, y)
   }
-  if (x instanceof exports.G2 && y instanceof exports.Fr) {
+  if (x instanceof G2 && y instanceof Fr) {
     return x._op2(mod._mclBnG2_mul, y)
   }
-  if (x instanceof exports.GT && y instanceof exports.GT) {
+  if (x instanceof GT && y instanceof GT) {
     return x._op2(mod._mclBnGT_mul, y)
   }
-  if (x instanceof exports.Fp2 && y instanceof exports.Fp2) {
+  if (x instanceof Fp2 && y instanceof Fp2) {
     return x._op2(mod._mclBnFp2_mul, y)
   }
   throw new Error('mul:mismatch type')
 }
 
-const _mulVec = (func, xVec, yVec, Cstr) => {
+const _mulVec = <T extends G1 | G2>(func: (zPos: number, xPos: number, yPos: number, n: number) => void, xVec: T[], yVec: Fr[], Cstr: any) => {
   const n = xVec.length
   if (n != yVec.length) throw new Error(`err _mulVec bad length ${n}, ${yVec.length}`)
   const xSize = xVec[0].a_.length
@@ -716,80 +817,90 @@ const _mulVec = (func, xVec, yVec, Cstr) => {
   sum G1 * Fr ; scalar mul
   sum G2 * Fr ; scalar mul
 */
-exports.mulVec = (xVec, yVec) => {
+export const mulVec = <T extends G1 | G2>(xVec: T[], yVec: Fr[]): T => {
   if (xVec.length == 0) throw new Error('mulVec:zero array')
-  if (xVec[0] instanceof exports.G1 && yVec[0] instanceof exports.Fr) {
-    return _mulVec(mod._mclBnG1_mulVec, xVec, yVec, exports.G1)
+  if (xVec[0] instanceof G1 && yVec[0] instanceof Fr) {
+    return _mulVec(mod._mclBnG1_mulVec, xVec, yVec, G1)
   }
-  if (xVec[0] instanceof exports.G2 && yVec[0] instanceof exports.Fr) {
-    return _mulVec(mod._mclBnG2_mulVec, xVec, yVec, exports.G2)
+  if (xVec[0] instanceof G2 && yVec[0] instanceof Fr) {
+    return _mulVec(mod._mclBnG2_mulVec, xVec, yVec, G2)
   }
   throw new Error('mulVec:mismatch type')
 }
-exports.div = (x, y) => {
+
+export function div (x: Fr, y: Fr): Fr
+export function div (x: Fp, y: Fp): Fp
+export function div (x: Fp2, y: Fp2): Fp2
+export function div (x: GT, y: GT): GT
+export function div (x: Common, y: Common): Common {
   if (x.constructor !== y.constructor) throw new Error('div:mismatch type')
-  if (x instanceof exports.Fp) {
+  if (x instanceof Fp) {
     return x._op2(mod._mclBnFp_div, y)
   }
-  if (x instanceof exports.Fr) {
+  if (x instanceof Fr) {
     return x._op2(mod._mclBnFr_div, y)
   }
-  if (x instanceof exports.GT) {
+  if (x instanceof GT) {
     return x._op2(mod._mclBnGT_div, y)
   }
-  if (x instanceof exports.Fp2) {
+  if (x instanceof Fp2) {
     return x._op2(mod._mclBnFp2_div, y)
   }
   throw new Error('div:bad type')
 }
-exports.dbl = x => {
-  if (x instanceof exports.G1) {
+
+export const dbl = <T extends G1 | G2>(x: T): T => {
+  if (x instanceof G1) {
     return x._op1(mod._mclBnG1_dbl)
   }
-  if (x instanceof exports.G2) {
+  if (x instanceof G2) {
     return x._op1(mod._mclBnG2_dbl)
   }
   throw new Error('dbl:bad type')
 }
-exports.hashToFr = s => {
-  const x = new exports.Fr()
+
+export const hashToFr = (s: string | Uint8Array) => {
+  const x = new Fr()
   x.setHashOf(s)
   return x
 }
-exports.hashAndMapToG1 = s => {
-  const x = new exports.G1()
+
+export const hashAndMapToG1 = (s: string | Uint8Array) => {
+  const x = new G1()
   x.setHashOf(s)
   return x
 }
-exports.hashAndMapToG2 = s => {
-  const x = new exports.G2()
+
+export const hashAndMapToG2 = (s: string | Uint8Array) => {
+  const x = new G2()
   x.setHashOf(s)
   return x
 }
-// pow(GT x, Fr y)
-exports.pow = (x, y) => {
-  if (x instanceof exports.GT && y instanceof exports.Fr) {
+
+export const pow = (x: GT, y: Fr): GT => {
+  if (x instanceof GT && y instanceof Fr) {
     return x._op2(mod._mclBnGT_pow, y)
   }
   throw new Error('pow:bad type')
 }
-// pairing(G1 P, G2 Q)
-exports.pairing = (P, Q) => {
-  if (P instanceof exports.G1 && Q instanceof exports.G2) {
-    return P._op2(mod._mclBn_pairing, Q, exports.GT)
+
+export const pairing = (P: G1, Q: G2): GT => {
+  if (P instanceof G1 && Q instanceof G2) {
+    return P._op2(mod._mclBn_pairing, Q, GT)
   }
   throw new Error('exports.pairing:bad type')
 }
-// millerLoop(G1 P, G2 Q)
-exports.millerLoop = (P, Q) => {
-  if (P instanceof exports.G1 && Q instanceof exports.G2) {
-    return P._op2(mod._mclBn_millerLoop, Q, exports.GT)
+
+export const millerLoop = (P: G1, Q: G2): GT => {
+  if (P instanceof G1 && Q instanceof G2) {
+    return P._op2(mod._mclBn_millerLoop, Q, GT)
   }
   throw new Error('exports.millerLoop:bad type')
 }
-exports.precomputedMillerLoop = (P, Qcoeff) => {
-  if (!(P instanceof exports.G1 && Qcoeff instanceof exports.PrecomputedG2)) throw new Error('exports.precomputedMillerLoop:bad type')
-  const e = new exports.GT()
+
+export const precomputedMillerLoop = (P: G1, Qcoeff: PrecomputedG2): GT => {
+  if (!(P instanceof G1 && Qcoeff instanceof PrecomputedG2)) throw new Error('exports.precomputedMillerLoop:bad type')
+  const e = new GT()
   const PPos = P._allocAndCopy()
   const ePos = e._alloc()
   mod._mclBn_precomputedMillerLoop(ePos, PPos, Qcoeff.p)
@@ -797,10 +908,11 @@ exports.precomputedMillerLoop = (P, Qcoeff) => {
   _free(PPos)
   return e
 }
+
 // millerLoop(P1, Q1coeff) * millerLoop(P2, Q2coeff)
-exports.precomputedMillerLoop2 = (P1, Q1coeff, P2, Q2coeff) => {
-  if (!(P1 instanceof exports.G1 && Q1coeff instanceof exports.PrecomputedG2 && P2 instanceof exports.G1 && Q2coeff instanceof exports.PrecomputedG2)) throw new Error('exports.precomputedMillerLoop2mixed:bad type')
-  const e = new exports.GT()
+export const precomputedMillerLoop2 = (P1: G1, Q1coeff: PrecomputedG2, P2: G1, Q2coeff: PrecomputedG2): GT => {
+  if (!(P1 instanceof G1 && Q1coeff instanceof PrecomputedG2 && P2 instanceof G1 && Q2coeff instanceof PrecomputedG2)) throw new Error('exports.precomputedMillerLoop2mixed:bad type')
+  const e = new GT()
   const P1Pos = P1._allocAndCopy()
   const P2Pos = P2._allocAndCopy()
   const ePos = e._alloc()
@@ -810,10 +922,11 @@ exports.precomputedMillerLoop2 = (P1, Q1coeff, P2, Q2coeff) => {
   _free(P2Pos)
   return e
 }
+
 // millerLoop(P1, Q1) * millerLoop(P2, Q2coeff)
-exports.precomputedMillerLoop2mixed = (P1, Q1, P2, Q2coeff) => {
-  if (!(P1 instanceof exports.G1 && Q1 instanceof exports.G2 && P2 instanceof exports.G1 && Q2coeff instanceof exports.PrecomputedG2)) throw new Error('exports.precomputedMillerLoop2mixed:bad type')
-  const e = new exports.GT()
+export const precomputedMillerLoop2mixed = (P1: G1, Q1: G2, P2: G1, Q2coeff: PrecomputedG2): GT => {
+  if (!(P1 instanceof G1 && Q1 instanceof G2 && P2 instanceof G1 && Q2coeff instanceof PrecomputedG2)) throw new Error('exports.precomputedMillerLoop2mixed:bad type')
+  const e = new GT()
   const P1Pos = P1._allocAndCopy()
   const Q1Pos = Q1._allocAndCopy()
   const P2Pos = P2._allocAndCopy()
@@ -825,8 +938,9 @@ exports.precomputedMillerLoop2mixed = (P1, Q1, P2, Q2coeff) => {
   _free(P2Pos)
   return e
 }
-exports.finalExp = x => {
-  if (x instanceof exports.GT) {
+
+export const finalExp = (x: GT): GT => {
+  if (x instanceof GT) {
     return x._op1(mod._mclBn_finalExp)
   }
   throw new Error('finalExp:bad type')

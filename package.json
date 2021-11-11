@@ -2,13 +2,13 @@
   "name": "mcl-wasm",
   "version": "0.9.0",
   "description": "mcl ; A portable and fast pairing-based cryptography library for Node.js by WebAssembly",
-  "main": "src/index.js",
+  "main": "dist/index.js",
   "scripts": {
-    "lint": "standard --verbose src/*.js test/test.js",
-    "lint-fix": "standard --fix src/*.js test/test.js",
-    "test": "node test/test.js"
+    "lint": "standard --verbose src/*.js test/test.js; ts-standard-ts --verbose src/*.ts",
+    "lint-fix": "standard --fix src/*.js test/test.js; ts-standard --fix src/*.ts",
+    "test": "tsc && node test/test.js && node test/eth-test.js"
   },
-  "types": "src/index.d.ts",
+  "types": "dist/index.d.ts",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/herumi/mcl-wasm.git"
@@ -36,15 +36,20 @@
     "node": ">=8.9.0"
   },
   "homepage": "https://github.com/herumi/mcl-wasm#readme",
-  "dependencies": {},
   "devDependencies": {
     "@types/node": "^15.12.4",
     "assert": "^2.0.0",
     "perf_hooks": "^0.0.1",
     "standard": "^16.0.4",
+    "ts-standard": "^10.0.0",
     "typescript": "^4.3.4"
   },
   "standard": {
-    "ignore": ["src/mcl_c.js"]
+    "ignore": [
+      "src/mcl_c.js"
+    ]
+  },
+  "ts-standard": {
+    "project": "./tsconfig.json"
   }
 }
