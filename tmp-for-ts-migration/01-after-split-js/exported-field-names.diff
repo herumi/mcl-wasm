@@ -1,0 +1,18 @@
+--- 00-original/exported-field-names.dump	2021-11-11 20:47:49.000000000 +0900
++++ 01-after-split-js/exported-field-names.dump	2021-11-11 20:51:28.000000000 +0900
+@@ -21,6 +21,7 @@
+   'SECP256K1',
+   'SECP384R1',
+   'add',
++  'asciiStrToPtr',
+   'curveType',
+   'dbl',
+   'deserializeHexStrToFp',
+@@ -51,6 +52,7 @@
+   'precomputedMillerLoop',
+   'precomputedMillerLoop2',
+   'precomputedMillerLoop2mixed',
++  'ptrToAsciiStr',
+   'setETHserialization',
+   'setMapToMode',
+   'sqr',

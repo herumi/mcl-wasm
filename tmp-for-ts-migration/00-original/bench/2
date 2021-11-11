@@ -1,0 +1,62 @@
+name=BLS12_381
+ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f200152d
+precomputedMillerLoop2 1683.346 usec
+precomputedMillerLoop2mixed 3628.914 usec
+all ok
+Capi benchmark
+Fr
+Fr::add 0.057 usec
+Fr::sub 0.03 usec
+Fr::mul 0.104 usec
+Fr::sqr 0.105 usec
+Fr::div 14.189 usec
+Fp
+Fp::add 0.038 usec
+Fp::sub 0.031 usec
+Fp::mul 0.257 usec
+Fp::sqr 0.262 usec
+Fp::div 24.922 usec
+Fp2
+Fp2::add 0.056 usec
+Fp2::sub 0.049 usec
+Fp2::mul 0.898 usec
+Fp2::sqr 0.583 usec
+Fp2::div 26.539 usec
+benchmark
+Fr::setByCSPRNG 16.109 usec
+pairing 5345.425 usec
+millerLoop 2329.34 usec
+finalExp 2995.676 usec
+precomputedMillerLoop 1741.24 usec
+G1::add 5.829 usec
+G1::dbl 3.63 usec
+G1::mul 525.132 usec
+G2::add 14.701 usec
+G2::dbl 6.571 usec
+G2::mul 1115.776 usec
+hashAndMapToG1 655.572 usec
+hashAndMapToG2 1408.412 usec
+G1::isValidOrder 362.91 usec
+G2::isValidOrder 456.009 usec
+Fp
+Fp::add 0.677 usec
+Fp::sub 0.619 usec
+Fp::mul 0.914 usec
+Fp::sqr 0.867 usec
+Fp::inv 27.623 usec
+Fp2
+Fp2::add 2.052 usec
+Fp2::sub 1.539 usec
+Fp2::mul 2.353 usec
+Fp2::sqr 2.058 usec
+Fp2::inv 29.013 usec
+Fr
+Fr::add 0.654 usec
+Fr::sub 0.854 usec
+Fr::mul 0.664 usec
+Fr::sqr 0.809 usec
+Fr::inv 14.268 usec
+GT::add 1.907 usec
+GT::mul 19.611 usec
+GT::sqr 13.653 usec
+GT::inv 2.051 usec

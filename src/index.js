@@ -1,23 +1,11 @@
-const mclCreateModule = require('./mcl_c')
-const mclSetupFactory = require('./mcl')
+const { BN254, BN381_1, BN381_2, BN462, BN_SNARK1, BLS12_381, SECP224K1, SECP256K1, SECP384R1, NIST_P192, NIST_P224, NIST_P256, IRTF, EC_PROJ } = require('./constants')
+const valueTypes = require('./value-types')
+const getRandomValues = require('./getRandomValues')
+const { mod, initializeMcl: init, fromHexStr, free, ptrToAsciiStr, toHex, toHexStr, asciiStrToPtr, initializedCurveType: curveType } = require('./mcl')
 
-const getRandomValues = (buf) => {
-  if (typeof window === 'object') {
-    // for Browser
-    const crypto = window.crypto || window.msCrypto
-    return crypto.getRandomValues(buf)
-    /* eslint no-unused-vars: 0 */
-  } else if (typeof self === 'object' && typeof self.crypto === 'object' && typeof self.crypto.getRandomValues === 'function') { // eslint-disable-line no-undef
-    // for Worker
-    const crypto = self.crypto // eslint-disable-line no-undef
-    return crypto.getRandomValues(buf)
-  } else {
-    // for Node.js
-    const crypto = require('crypto')
-    return crypto.randomFillSync(buf)
-  }
+module.exports = {
+  BN254, BN381_1, BN381_2, BN462, BN_SNARK1, BLS12_381, SECP224K1, SECP256K1, SECP384R1, NIST_P192, NIST_P224, NIST_P256, IRTF, EC_PROJ,
+  ...valueTypes,
+  getRandomValues,
+  mod, init, fromHexStr, free, ptrToAsciiStr, toHex, toHexStr, asciiStrToPtr, curveType,
 }
-
-const mcl = mclSetupFactory(mclCreateModule, getRandomValues)
-
-module.exports = mcl
