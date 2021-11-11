@@ -6,45 +6,56 @@ class Common {
   constructor (size) {
     this.a_ = new Uint32Array(size / 4)
   }
+
   deserializeHexStr (s) {
     this.deserialize(fromHexStr(s))
   }
+
   serializeToHexStr () {
     return toHexStr(this.serialize())
   }
+
   dump (msg = '') {
     console.log(msg + this.serializeToHexStr())
   }
+
   clear () {
     this.a_.fill(0)
   }
+
   // copy to allocated memory
   copyToMem (pos) {
     mod.HEAP32.set(this.a_, pos / 4)
   }
+
   // copy from allocated memory
   copyFromMem (pos) {
     this.a_.set(mod.HEAP32.subarray(pos / 4, pos / 4 + this.a_.length))
   }
+
   // alloc new array
   _alloc () {
     return _malloc(this.a_.length * 4)
   }
+
   // alloc and copy a_ to mod.HEAP32[pos / 4]
   _allocAndCopy () {
     const pos = this._alloc()
     mod.HEAP32.set(this.a_, pos / 4)
     return pos
   }
+
   // save pos to a_
   _save (pos) {
     this.a_.set(mod.HEAP32.subarray(pos / 4, pos / 4 + this.a_.length))
   }
+
   // save and free
-  _saveAndFree(pos) {
+  _saveAndFree (pos) {
     this._save(pos)
     _free(pos)
   }
+
   // set parameter (p1, p2 may be undefined)
   _setter (func, p1, p2) {
     const pos = this._alloc()
@@ -52,6 +63,7 @@ class Common {
     this._saveAndFree(pos)
     if (r) throw new Error('_setter err')
   }
+
   // getter (p1, p2 may be undefined)
   _getter (func, p1, p2) {
     const pos = this._allocAndCopy()
@@ -59,6 +71,7 @@ class Common {
     _free(pos)
     return s
   }
+
   _isEqual (func, rhs) {
     const xPos = this._allocAndCopy()
     const yPos = rhs._allocAndCopy()
@@ -67,6 +80,7 @@ class Common {
     _free(xPos)
     return r === 1
   }
+
   // func(y, this) and return y
   _op1 (func) {
     const y = new this.constructor()
@@ -77,6 +91,7 @@ class Common {
     _free(xPos)
     return y
   }
+
   // func(z, this, y) and return z
   _op2 (func, y, Cstr = null) {
     const z = Cstr ? new Cstr() : new this.constructor()
@@ -89,11 +104,13 @@ class Common {
     _free(xPos)
     return z
   }
+
   // devide Uint32Array a into n and chose the idx-th
   _getSubArray (idx, n) {
     const d = this.a_.length / n
     return new Uint32Array(this.a_.buffer, d * idx * 4, d)
   }
+
   // set array lhs to idx
   _setSubArray (lhs, idx, n) {
     const d = this.a_.length / n
@@ -104,44 +121,57 @@ exports.Fr = class extends Common {
   constructor () {
     super(MCLBN_FR_SIZE)
   }
+
   setInt (x) {
     this._setter(mod._mclBnFr_setInt32, x)
   }
+
   deserialize (s) {
     this._setter(mod.mclBnFr_deserialize, s)
   }
+
   serialize () {
     return this._getter(mod.mclBnFr_serialize)
   }
+
   setStr (s, base = 0) {
     this._setter(mod.mclBnFr_setStr, s, base)
   }
+
   getStr (base = 0) {
     return this._getter(mod.mclBnFr_getStr, base)
   }
+
   isZero () {
     return this._getter(mod._mclBnFr_isZero) === 1
   }
+
   isOne () {
     return this._getter(mod._mclBnFr_isOne) === 1
   }
+
   isEqual (rhs) {
     return this._isEqual(mod._mclBnFr_isEqual, rhs)
   }
+
   setLittleEndian (s) {
     this._setter(mod.mclBnFr_setLittleEndian, s)
   }
+
   setLittleEndianMod (s) {
     this._setter(mod.mclBnFr_setLittleEndianMod, s)
   }
+
   setBigEndianMod (s) {
     this._setter(mod.mclBnFr_setBigEndianMod, s)
   }
+
   setByCSPRNG () {
     const a = new Uint8Array(MCLBN_FR_SIZE)
     getRandomValues(a)
     this.setLittleEndian(a)
   }
+
   setHashOf (s) {
     this._setter(mod.mclBnFr_setHashOf, s)
   }
@@ -155,41 +185,53 @@ exports.Fp = class extends Common {
   constructor () {
     super(MCLBN_FP_SIZE)
   }
+
   setInt (x) {
     this._setter(mod._mclBnFp_setInt32, x)
   }
+
   deserialize (s) {
     this._setter(mod.mclBnFp_deserialize, s)
   }
+
   serialize () {
     return this._getter(mod.mclBnFp_serialize)
   }
+
   setStr (s, base = 0) {
     this._setter(mod.mclBnFp_setStr, s, base)
   }
+
   getStr (base = 0) {
     return this._getter(mod.mclBnFp_getStr, base)
   }
+
   isEqual (rhs) {
     return this._isEqual(mod._mclBnFp_isEqual, rhs)
   }
+
   setLittleEndian (s) {
     this._setter(mod.mclBnFp_setLittleEndian, s)
   }
+
   setLittleEndianMod (s) {
     this._setter(mod.mclBnFp_setLittleEndianMod, s)
   }
+
   setBigEndianMod (s) {
     this._setter(mod.mclBnFp_setBigEndianMod, s)
   }
+
   setByCSPRNG () {
     const a = new Uint8Array(MCLBN_FP_SIZE)
     getRandomValues(a)
     this.setLittleEndian(a)
   }
+
   setHashOf (s) {
     this._setter(mod.mclBnFp_setHashOf, s)
   }
+
   mapToG1 () {
     const y = new exports.G1()
     const xPos = this._allocAndCopy()
@@ -197,7 +239,7 @@ exports.Fp = class extends Common {
     mod._mclBnFp_mapToG1(yPos, xPos)
     y._saveAndFree(yPos)
     _free(xPos)
-   return y
+    return y
   }
 }
 exports.deserializeHexStrToFp = s => {
@@ -209,6 +251,7 @@ exports.Fp2 = class extends Common {
   constructor () {
     super(MCLBN_FP_SIZE * 2)
   }
+
   setInt (x, y) {
     const v = new exports.Fp()
     v.setInt(x)
@@ -216,15 +259,19 @@ exports.Fp2 = class extends Common {
     v.setInt(y)
     this.set_b(v)
   }
+
   deserialize (s) {
     this._setter(mod.mclBnFp2_deserialize, s)
   }
+
   serialize () {
     return this._getter(mod.mclBnFp2_serialize)
   }
+
   isEqual (rhs) {
     return this._isEqual(mod._mclBnFp2_isEqual, rhs)
   }
+
   /*
     x = a + bi where a, b in Fp and i^2 = -1
   */
@@ -233,17 +280,21 @@ exports.Fp2 = class extends Common {
     r.a_ = this._getSubArray(0, 2)
     return r
   }
+
   get_b () {
     const r = new exports.Fp()
     r.a_ = this._getSubArray(1, 2)
     return r
   }
-  set_a(v) {
+
+  set_a (v) {
     this._setSubArray(v, 0, 2)
   }
-  set_b(v) {
+
+  set_b (v) {
     this._setSubArray(v, 1, 2)
   }
+
   mapToG2 () {
     const y = new exports.G2()
     const xPos = this._allocAndCopy()
@@ -251,7 +302,7 @@ exports.Fp2 = class extends Common {
     mod._mclBnFp2_mapToG2(yPos, xPos)
     y._saveAndFree(yPos)
     _free(xPos)
-   return y
+    return y
   }
 }
 exports.deserializeHexStrToFp2 = s => {
@@ -263,57 +314,73 @@ exports.G1 = class extends Common {
   constructor () {
     super(MCLBN_G1_SIZE)
   }
+
   deserialize (s) {
     this._setter(mod.mclBnG1_deserialize, s)
   }
+
   serialize () {
     return this._getter(mod.mclBnG1_serialize)
   }
+
   setStr (s, base = 0) {
     this._setter(mod.mclBnG1_setStr, s, base)
   }
+
   getStr (base = 0) {
     return this._getter(mod.mclBnG1_getStr, base)
   }
+
   normalize () {
     this.a_ = exports.normalize(this).a_
   }
+
   getX () {
     const r = new exports.Fp()
     r.a_ = this._getSubArray(0, 3)
     return r
   }
+
   getY () {
     const r = new exports.Fp()
     r.a_ = this._getSubArray(1, 3)
     return r
   }
+
   getZ () {
     const r = new exports.Fp()
     r.a_ = this._getSubArray(2, 3)
     return r
   }
+
   setX (v) {
     this._setSubArray(v, 0, 3)
   }
+
   setY (v) {
     this._setSubArray(v, 1, 3)
   }
+
   setZ (v) {
     this._setSubArray(v, 2, 3)
   }
+
   isZero () {
     return this._getter(mod._mclBnG1_isZero) === 1
   }
+
   isValid () {
     return this._getter(mod._mclBnG1_isValid) === 1
   }
+
   isValidOrder () {
     return this._getter(mod._mclBnG1_isValidOrder) === 1
   }
+
   isEqual (rhs) {
     return this._isEqual(mod._mclBnG1_isEqual, rhs)
   }
+
   setHashOf (s) {
     this._setter(mod.mclBnG1_hashAndMapTo, s)
   }
@@ -350,57 +417,73 @@ exports.G2 = class extends Common {
   constructor () {
     super(MCLBN_G2_SIZE)
   }
+
   deserialize (s) {
     this._setter(mod.mclBnG2_deserialize, s)
   }
+
   serialize () {
     return this._getter(mod.mclBnG2_serialize)
   }
+
   setStr (s, base = 0) {
     this._setter(mod.mclBnG2_setStr, s, base)
   }
+
   getStr (base = 0) {
     return this._getter(mod.mclBnG2_getStr, base)
   }
+
   normalize () {
     this.a_ = exports.normalize(this).a_
   }
+
   getX () {
     const r = new exports.Fp2()
     r.a_ = this._getSubArray(0, 3)
     return r
   }
+
   getY () {
     const r = new exports.Fp2()
     r.a_ = this._getSubArray(1, 3)
     return r
   }
+
   getZ () {
     const r = new exports.Fp2()
     r.a_ = this._getSubArray(2, 3)
     return r
   }
+
   setX (v) {
     this._setSubArray(v, 0, 3)
   }
+
   setY (v) {
     this._setSubArray(v, 1, 3)
   }
+
   setZ (v) {
     this._setSubArray(v, 2, 3)
   }
+
   isZero () {
     return this._getter(mod._mclBnG2_isZero) === 1
   }
+
   isValid () {
     return this._getter(mod._mclBnG2_isValid) === 1
   }
+
   isValidOrder () {
     return this._getter(mod._mclBnG2_isValidOrder) === 1
   }
+
   isEqual (rhs) {
     return this._isEqual(mod._mclBnG2_isEqual, rhs)
   }
+
   setHashOf (s) {
     this._setter(mod.mclBnG2_hashAndMapTo, s)
   }
@@ -414,27 +497,35 @@ exports.GT = class extends Common {
   constructor () {
     super(MCLBN_GT_SIZE)
   }
+
   setInt (x) {
     this._setter(mod._mclBnGT_setInt32, x)
   }
+
   deserialize (s) {
     this._setter(mod.mclBnGT_deserialize, s)
   }
+
   serialize () {
     return this._getter(mod.mclBnGT_serialize)
   }
+
   setStr (s, base = 0) {
     this._setter(mod.mclBnGT_setStr, s, base)
   }
+
   getStr (base = 0) {
     return this._getter(mod.mclBnGT_getStr, base)
   }
+
   isZero () {
     return this._getter(mod._mclBnGT_isZero) === 1
   }
+
   isOne () {
     return this._getter(mod._mclBnGT_isOne) === 1
   }
+
   isEqual (rhs) {
     return this._isEqual(mod._mclBnGT_isEqual, rhs)
   }
@@ -453,6 +544,7 @@ exports.PrecomputedG2 = class {
     mod._mclBn_precomputeG2(this.p, Qpos)
     _free(Qpos)
   }
+
   /*
     call destroy if PrecomputedG2 is not necessary
     to avoid memory leak

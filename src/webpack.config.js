@@ -1,7 +1,7 @@
 
 module.exports = {
-  mode: "production",
-  entry: "./index.js",
+  mode: 'production',
+  entry: './index.js',
   output: {
     path: __dirname + '/../browser/',
     library: 'mcl',
@@ -13,7 +13,7 @@ module.exports = {
       path: false,
       fs: false,
       crypto: false
-    },
+    }
   },
-  target: "web"
-};
+  target: 'web'
+}
