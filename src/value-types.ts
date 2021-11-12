@@ -237,8 +237,8 @@ export class Fp extends IntType {
     return this._getter(mod.mclBnFp_getStr, base)
   }
 
-  isOne () {
-    return this._getter(mod._mclBnFr_isOne) === 1
+  isOne (): boolean {
+    throw new Error('Fp.isOne is not supported')
   }
 
   isZero (): boolean {
@@ -610,7 +610,7 @@ export class GT extends Common {
   }
 
   setHashOf (s: string | Uint8Array) {
-    throw new Error('Fp2.setHashOf is not supported')
+    throw new Error('GT.setHashOf is not supported')
   }
 }
 
