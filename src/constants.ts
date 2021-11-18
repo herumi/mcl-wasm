@@ -27,6 +27,7 @@ export const NIST_P256 = CurveType.NIST_P256
 /* MCL_MAP_TO_MODE_HASH_TO_CURVE_07 */
 export const IRTF = 5
 
+/* flag for G1/G2.getStr */
 export const EC_PROJ = 1024
 
 export const MCLBN_FP_UNIT_SIZE = 6
