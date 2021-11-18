@@ -35,7 +35,7 @@
   },
   "homepage": "https://github.com/herumi/mcl-wasm#readme",
   "devDependencies": {
-    "@types/node": "^15.12.4",
+    "@types/node": "^15.14.9",
     "assert": "^2.0.0",
     "perf_hooks": "^0.0.1",
     "standard": "^16.0.4",
