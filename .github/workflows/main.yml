@@ -9,6 +9,5 @@ jobs:
     - uses: actions/checkout@v2
     - name: node
       uses: actions/setup-node@v1
-    - run: node test/test.js
-    - run: node test/eth-test.js
+    - run: npm test
 
