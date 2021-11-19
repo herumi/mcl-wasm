@@ -3,7 +3,7 @@
 ## Build mcl_c.js
 Install emscripten and
 ```
-make
+npm run build:mcl_c.js
 ```
 
 ## Build for browser
@@ -11,6 +11,6 @@ make
 How to build `browser/mcl.js`.
 ```
 npm install
-npx webpack
+npm run build:browser
 ```
 

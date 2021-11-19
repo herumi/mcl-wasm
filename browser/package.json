@@ -1,5 +1,5 @@
 {
-  "main": "../src/index.js",
+  "main": "./mcl.js",
   "author": "herumi <herumi@nifty.com> (https://github.com/herumi/)",
   "license": "BSD-3-Clause"
 }
