@@ -1,9 +1,9 @@
 
 module.exports = {
   mode: 'production',
-  entry: './index.ts',
+  entry: './src/index.ts',
   output: {
-    path: __dirname + '/../browser/',
+    path: __dirname + '/browser/',
     library: 'mcl',
     libraryTarget: 'umd',
     filename: 'mcl.js'
@@ -11,7 +11,7 @@ module.exports = {
   module: {
     rules: [
       {
-        test: /\.tsx?$/,
+        test: /\.ts$/,
         use: 'ts-loader',
         exclude: /node_modules/,
       },
