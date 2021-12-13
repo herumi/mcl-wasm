@@ -4,9 +4,12 @@
   "description": "mcl ; A portable and fast pairing-based cryptography library for Node.js by WebAssembly",
   "main": "dist/index.js",
   "scripts": {
-    "lint": "standard --verbose src/*.js test/test.js; ts-standard-ts --verbose src/*.ts",
-    "lint-fix": "standard --fix src/*.js test/test.js; ts-standard --fix src/*.ts",
-    "tsc": "tsc",
+    "build": "npm run build:mcl_c.js && npm run build:dist && npm run build:browser",
+    "build:mcl_c.js": "make",
+    "build:dist": "tsc",
+    "build:browser": "webpack",
+    "lint": "standard --verbose test/test.js; ts-standard-ts --verbose src/*.ts",
+    "lint-fix": "standard --fix test/test.js; ts-standard --fix src/*.ts",
     "test": "tsc && node test/test.js && node test/eth-test.js"
   },
   "types": "dist/index.d.ts",
@@ -20,8 +23,7 @@
     "pairing"
   ],
   "files": [
-    "dist/*.js",
-    "dist/*.d.ts",
+    "dist/*",
     "browser/mcl.js",
     "browser/package.json"
   ],
@@ -39,9 +41,11 @@
     "assert": "^2.0.0",
     "perf_hooks": "^0.0.1",
     "standard": "^16.0.4",
+    "ts-loader": "^9.2.6",
     "ts-standard": "^10.0.0",
-    "tsc": "^2.0.3",
-    "typescript": "^4.5.2"
+    "typescript": "^4.3.4",
+    "webpack": "^5.64.1",
+    "webpack-cli": "^4.9.1"
   },
   "standard": {
     "ignore": [
