@@ -1,5 +1,5 @@
 'use strict'
-const mcl = require('../src/index.js')
+const mcl = require('../dist/index.js')
 const assert = require('assert')
 const { performance } = require('perf_hooks')
 
@@ -648,4 +648,3 @@ function benchAll () {
   }
   Qcoeff.destroy()
 }
-

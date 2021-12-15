@@ -1,13 +1,18 @@
 {
   "name": "mcl-wasm",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "mcl ; A portable and fast pairing-based cryptography library for Node.js by WebAssembly",
-  "main": "src/index.js",
+  "main": "dist/index.js",
   "scripts": {
-    "lint": "standard src/mcl.js test/test.js",
-    "test": "node test/test.js"
+    "build": "npm run build:mcl_c.js && npm run build:dist && npm run build:browser",
+    "build:mcl_c.js": "make",
+    "build:dist": "tsc",
+    "build:browser": "webpack",
+    "lint": "standard --verbose test/test.js; ts-standard-ts --verbose src/*.ts",
+    "lint-fix": "standard --fix test/test.js; ts-standard --fix src/*.ts",
+    "test": "tsc && node test/test.js && node test/eth-test.js"
   },
-  "types": "src/index.d.ts",
+  "types": "dist/index.d.ts",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/herumi/mcl-wasm.git"
@@ -18,14 +23,9 @@
     "pairing"
   ],
   "files": [
-    "package.json",
-    "src/index.js",
-    "src/mcl.js",
-    "src/mcl_c.js",
-    "src/index.d.ts",
+    "dist/*",
     "browser/mcl.js",
-    "browser/package.json",
-    "browser/src/index-browser.js"
+    "browser/package.json"
   ],
   "author": "herumi <herumi@nifty.com> (https://github.com/herumi/)",
   "license": "BSD-3-Clause",
@@ -36,11 +36,23 @@
     "node": ">=8.9.0"
   },
   "homepage": "https://github.com/herumi/mcl-wasm#readme",
-  "dependencies": {},
   "devDependencies": {
-    "@types/node": "^15.12.4",
+    "@types/node": "^15.14.9",
     "assert": "^2.0.0",
     "perf_hooks": "^0.0.1",
-    "typescript": "^4.3.4"
+    "standard": "^16.0.4",
+    "ts-loader": "^9.2.6",
+    "ts-standard": "^10.0.0",
+    "typescript": "^4.3.4",
+    "webpack": "^5.64.1",
+    "webpack-cli": "^4.9.1"
+  },
+  "standard": {
+    "ignore": [
+      "src/mcl_c.js"
+    ]
+  },
+  "ts-standard": {
+    "project": "./tsconfig.json"
   }
 }

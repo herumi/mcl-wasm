@@ -1,10 +1,8 @@
 # browser demo
 
-How to build `browser/mcl.js`.
+Start demo server.
 ```
 cd browser
-npm install webpack webpack-cli --save-dev
-npx webpack
 python3 -m http.server
 ```
 
