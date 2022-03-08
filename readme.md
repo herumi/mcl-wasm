@@ -7,6 +7,7 @@
 see [mcl](https://github.com/herumi/mcl)
 
 ## News
+- 2022/May/08 fix get{X,Y,Z} and get\_{a,b}.
 - 2021/Dec/15 rewritten by TypeScript (Thanks to asa-taka)
 - 2021/Nov/11 unify index.js of Node.js and browser (Thanks to Futa HIRAKOBA)
 - 2021/Aug/28 improve performance of `{G1,G2}::isValidOrder()`
