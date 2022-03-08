@@ -314,12 +314,18 @@ export class Fp2 extends Common {
     return this._getter(mod.mclBnFp2_serialize)
   }
 
-  getStr (): string {
-    return this.get_a().getStr() + ' ' + this.get_b().getStr()
+  getStr (base = 0): string {
+    return this.get_a().getStr(base) + ' ' + this.get_b().getStr(base)
   }
 
-  setStr (): string {
-    throw new Error('Fp2.setStr is not supported')
+  setStr (s: string, base = 0) {
+    const ss = s.split(' ')
+    if (ss.length !== 2) throw new Error('bad str')
+    const v = new Fp()
+    v.setStr(ss[0], base)
+    this.set_a(v)
+    v.setStr(ss[1], base)
+    this.set_b(v)
   }
 
   isEqual (rhs: this): boolean {
