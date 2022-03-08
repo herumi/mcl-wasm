@@ -10,6 +10,7 @@
     "build:browser": "webpack",
     "lint": "standard --verbose test/test.js; ts-standard-ts --verbose src/*.ts",
     "lint-fix": "standard --fix test/test.js; ts-standard --fix src/*.ts",
+    "test-ts": "tsc test/test-ts.ts && node test/test-ts.js",
     "test": "tsc && node test/test.js && node test/eth-test.js"
   },
   "types": "dist/index.d.ts",
