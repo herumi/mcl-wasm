@@ -122,7 +122,9 @@ abstract class Common {
   /** @internal devide Uint32Array a into n and chose the idx-th */
   _getSubArray (idx: number, n: number) {
     const d = this.a_.length / n
-    return new Uint32Array(this.a_.buffer, d * idx * 4, d)
+    // return new Uint32Array(this.a_.buffer, d * idx * 4, d) // err : return reference to the buffer
+    // correct : make new buffer and copy it
+    return new Uint32Array(new Uint32Array(this.a_.buffer, d * idx * 4, d))
   }
 
   /** @internal set array lhs to idx */
