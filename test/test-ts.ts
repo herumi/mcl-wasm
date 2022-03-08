@@ -204,6 +204,9 @@ function Fp2Test() {
   y.set_a(x.get_a())
   y.set_b(x.get_b())
   assert(x.isEqual(y))
+  y.clear()
+  y.setStr(x.getStr())
+  assert(x.isEqual(y))
 
   /*
     hashAndMapToG2(msg) = [setHashOf(msg), 0].mapToG2()
@@ -236,6 +239,8 @@ function Fp2Test() {
   z.setInt(-16, 30)
   assert(mcl.sqr(x).isEqual(z))
   // 1/(3+5i) = (3-5i)/(9+25)
+  a.setInt(3)
+  b.setInt(34)
   z.set_a(mcl.div(a, b))
   a.setInt(-5)
   z.set_b(mcl.div(a, b))
