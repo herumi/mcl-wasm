@@ -122,7 +122,9 @@ abstract class Common {
   /** @internal devide Uint32Array a into n and chose the idx-th */
   _getSubArray (idx: number, n: number) {
     const d = this.a_.length / n
-    return new Uint32Array(this.a_.buffer, d * idx * 4, d)
+    // return new Uint32Array(this.a_.buffer, d * idx * 4, d) // err : return reference to the buffer
+    // correct : make new buffer and copy it
+    return new Uint32Array(new Uint32Array(this.a_.buffer, d * idx * 4, d))
   }
 
   /** @internal set array lhs to idx */
@@ -314,12 +316,18 @@ export class Fp2 extends Common {
     return this._getter(mod.mclBnFp2_serialize)
   }
 
-  getStr (): string {
-    throw new Error('Fp2.getStr is not supported')
+  getStr (base = 0): string {
+    return this.get_a().getStr(base) + ' ' + this.get_b().getStr(base)
   }
 
-  setStr (): string {
-    throw new Error('Fp2.setStr is not supported')
+  setStr (s: string, base = 0) {
+    const ss = s.split(' ')
+    if (ss.length !== 2) throw new Error('bad str')
+    const v = new Fp()
+    v.setStr(ss[0], base)
+    this.set_a(v)
+    v.setStr(ss[1], base)
+    this.set_b(v)
   }
 
   isEqual (rhs: this): boolean {
