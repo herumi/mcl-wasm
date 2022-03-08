@@ -14,6 +14,7 @@ const curveTest = (curveType, name) => {
         GTTest()
         FpTest()
         Fp2Test()
+        memberTest()
         mulVecTest()
         serializeTest()
         IDbasedEncryptionTest()
@@ -546,6 +547,47 @@ function modTest () {
     shiftAndSetTest(a, b)
   }
 */
+}
+
+function memberTest () {
+  console.log('memberTest')
+  const x0 = new mcl.Fp()
+  const x1 = new mcl.Fp()
+  const y0 = new mcl.Fp()
+  const y1 = new mcl.Fp()
+  const z0 = new mcl.Fp()
+  const z1 = new mcl.Fp()
+
+  x0.setInt(10)
+  x1.setInt(11)
+  y0.setInt(12)
+  y1.setInt(13)
+  z0.setInt(1)
+  z1.setInt(0)
+
+  const x = new mcl.Fp2()
+  const y = new mcl.Fp2()
+  const z = new mcl.Fp2()
+
+  x.set_a(x0)
+  x.set_b(x1)
+  y.set_a(y0)
+  y.set_b(y1)
+  z.set_a(z0)
+  z.set_b(z1)
+
+  const P = new mcl.G2()
+  P.setX(x)
+  P.setY(y)
+  P.setZ(z)
+
+  assert.equal(P.getStr(), "1 10 11 12 13")
+  assert.equal(P.getX().get_a().getStr(), "10")
+  assert.equal(P.getX().get_b().getStr(), "11")
+  assert.equal(P.getY().get_a().getStr(), "12")
+  assert.equal(P.getY().get_b().getStr(), "13")
+  assert.equal(P.getZ().get_a().getStr(), "1")
+  assert.equal(P.getZ().get_b().getStr(), "0")
 }
 
 function bench (label, count, func) {
