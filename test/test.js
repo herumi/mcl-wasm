@@ -189,6 +189,12 @@ function Fp2Test () {
   y.set_a(x.get_a())
   y.set_b(x.get_b())
   assert(x.isEqual(y))
+  y.clear()
+  y.setStr(x.getStr())
+  assert(x.isEqual(y))
+  y.clear()
+  y.setStr(x.getStr(16), 16)
+  assert(x.isEqual(y))
 
   /*
     hashAndMapToG2(msg) = [setHashOf(msg), 0].mapToG2()
