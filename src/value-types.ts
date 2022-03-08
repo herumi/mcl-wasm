@@ -315,7 +315,7 @@ export class Fp2 extends Common {
   }
 
   getStr (): string {
-    throw new Error('Fp2.getStr is not supported')
+    return this.get_a().getStr() + ' ' + this.get_b().getStr()
   }
 
   setStr (): string {
