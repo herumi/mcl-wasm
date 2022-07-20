@@ -3,6 +3,7 @@ MCL_JS=./src/mcl_c.js
 
 EMCC_OPT=-I $(MCL_DIR)/include -I $(MCL_DIR)/src -Wall -Wextra
 EMCC_OPT+=-O3 -DNDEBUG -std=c++03
+EMCC_OPT+=-fno-threadsafe-statics -fno-rtti -fno-stack-protector -fno-exceptions
 EMCC_OPT+=-DMCL_SIZEOF_UNIT=4
 EMCC_OPT+=-s WASM=1 -s NO_EXIT_RUNTIME=1 -s NODEJS_CATCH_EXIT=0 -s NODEJS_CATCH_REJECTION=0
 EMCC_OPT+=-s MODULARIZE=1
