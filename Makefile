@@ -20,6 +20,10 @@ $(MCL_JS):
 	emcc -o $@ $(MCL_DIR)/src/fp.cpp $(MCL_DIR)/src/bn_c384_256.cpp $(EMCC_OPT) -DMCL_MAX_BIT_SIZE=384 -DMCL_USE_WEB_CRYPTO_API -s DISABLE_EXCEPTION_CATCHING=1 -DCYBOZU_DONT_USE_EXCEPTION -DCYBOZU_DONT_USE_STRING -fno-exceptions
 	# disable require fs, path
 	perl -i -pe 's@(.* = require\(.*)@//\1@' $@
+	patch -p1 < patch_mcl_c.diff
+
+make_patch:
+	git diff -p src/mcl_c.js > patch_mcl_c.diff
 
 clean:
 	rm -rf $(MCL_JS)
