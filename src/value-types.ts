@@ -953,3 +953,65 @@ export const finalExp = (x: GT): GT => {
   }
   throw new Error('finalExp:bad type')
 }
+
+const _callShare = (func: Function, a: Common, size: number, vec: Common[], id: Common) => {
+  const pos = a._allocAndCopy()
+  const idPos = id._allocAndCopy()
+  const vecPos = _malloc(size * vec.length)
+  for (let i = 0; i < vec.length; i++) {
+//      copyFromUint32Array(vecPos + size * i, vec[i].a_)
+    vec[i].copyToMem(vecPos + size * i)
+  }
+  func(pos, vecPos, vec.length, idPos)
+  _free(vecPos)
+  _free(idPos)
+  a._saveAndFree(pos)
+}
+
+const _callRecover = (func: Function, a: Common, size: number, vec: Common[], idVec: Common[]) => {
+  const k = vec.length
+  if (k != idVec.length) throw ('recover:bad length')
+  const secPos = a._alloc()
+  const vecPos = _malloc(size * k)
+  const idVecPos = _malloc(MCLBN_FR_SIZE * k)
+  for (let i = 0; i < k; i++) {
+    vec[i].copyToMem(vecPos + size * i)
+    idVec[i].copyToMem(idVecPos + MCLBN_FR_SIZE * i)
+  }
+  const r = func(secPos, vecPos, idVecPos, k)
+  _free(idVecPos)
+  _free(vecPos)
+  a._saveAndFree(secPos)
+  if (r) throw ('callRecover')
+}
+
+export const shareFr = (vec: Fr[], id: Fr): Fr => {
+  const r = new Fr()
+  _callShare(mod._mclBn_FrEvaluatePolynomial, r, MCLBN_FR_SIZE, vec, id)
+  return r
+}
+export const shareG1 = (vec: G1[], id: Fr): G1 => {
+  const r = new G1()
+  _callShare(mod._mclBn_G1EvaluatePolynomial, r, MCLBN_G1_SIZE, vec, id)
+  return r
+}
+export const shareG2 = (vec: G2[], id: Fr): G2 => {
+  const r = new G2()
+  _callShare(mod._mclBn_G2EvaluatePolynomial, r, MCLBN_G2_SIZE, vec, id)
+  return r
+}
+export const recoverFr = (xVec: Fr[], idVec: Fr[]): Fr => {
+  const r = new Fr()
+  _callRecover(mod._mclBn_FrLagrangeInterpolation, r, MCLBN_FR_SIZE, xVec, idVec)
+  return r
+}
+export const recoverG1 = (xVec: G1[], idVec: Fr[]): G1 => {
+  const r = new G1()
+  _callRecover(mod._mclBn_G1LagrangeInterpolation, r, MCLBN_G1_SIZE, xVec, idVec)
+  return r
+}
+export const recoverG2 = (xVec: G2[], idVec: Fr[]): G2 => {
+  const r = new G2()
+  _callRecover(mod._mclBn_G2LagrangeInterpolation, r, MCLBN_G2_SIZE, xVec, idVec)
+  return r
+}
