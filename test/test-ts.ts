@@ -558,9 +558,16 @@ function modTest() {
   }
 }
 
+function put(msg:string, x:(mcl.Fr|mcl.G1|mcl.G2)[]){
+  console.log(msg)
+  for (let i = 0; i < x.length; i++){
+    console.log(x[i].getStr())
+  }
+}
+
 function shareTest() {
   console.log('shareTest')
-  const k = 3 // fixed for test of recover
+  const k = 3 // fixed for test of recover loop
   const n = 10
   // coefficients of polynomial
   const cfr: mcl.Fr[] = []
@@ -577,45 +584,46 @@ function shareTest() {
   // setup coefficients
   for (let i = 0; i < k; i++) {
     const sk = new mcl.Fr()
-//    sk.setByCSPRNG()
-    sk.setInt(i+5)
+    sk.setByCSPRNG()
     cfr.push(sk)
 
-//    sk.setByCSPRNG()
-    sk.setInt(i+100)
+    sk.setByCSPRNG()
     cg1.push(mcl.hashAndMapToG1(sk.getStr()))
-//    sk.setByCSPRNG()
-    sk.setInt(i+200)
+    sk.setByCSPRNG()
     cg2.push(mcl.hashAndMapToG2(sk.getStr()))
   }
+  //put('cfr', cfr)
   // setup id
   for (let i = 0; i < n; i++) {
     const id = new mcl.Fr()
-//    id.setByCSPRNG()
-    id.setInt(i+9)
+    id.setByCSPRNG()
     ids.push(id)
   }
+  //put('ids', ids)
   // share
   for (let i = 0; i < n; i++) {
     sfr.push(mcl.shareFr(cfr, ids[i]))
-    cg1.push(mcl.shareG1(cg1, ids[i]))
-    cg2.push(mcl.shareG2(cg2, ids[i]))
+    sg1.push(mcl.shareG1(cg1, ids[i]))
+    sg2.push(mcl.shareG2(cg2, ids[i]))
   }
   // recover
   const frStr = cfr[0].getStr()
   const g1Str = cg1[0].getStr()
   const g2Str = cg2[0].getStr()
-  // k = 3
+
+  assert.strictEqual(k, 3)
   for (let i = 0; i < n; i++){
     for (let j = i + 1; j < n; j++) {
-      for (let k = j + 1;k < n; k++) {
+      for (let k = j + 1; k < n; k++) {
         const idVec = [ids[i], ids[j], ids[k]]
+        //put('idVec', idVec)
         const rVec = [sfr[i], sfr[j], sfr[k]]
-        const g1Vec = [cg1[i], cg1[j], cg1[k]]
-        const g2Vec = [cg2[i], cg2[j], cg2[k]]
+        //put('rVec', rVec)
+        const g1Vec = [sg1[i], sg1[j], sg1[k]]
+        const g2Vec = [sg2[i], sg2[j], sg2[k]]
         assert.strictEqual(frStr, mcl.recoverFr(rVec, idVec).getStr())
-//        assert.strictEqual(g1Str, mcl.recoverG1(g1Vec, idVec).getStr())
-//        assert.strictEqual(g2Str, mcl.recoverG2(g2Vec, idVec).getStr())
+        assert.strictEqual(g1Str, mcl.recoverG1(g1Vec, idVec).getStr())
+        assert.strictEqual(g2Str, mcl.recoverG2(g2Vec, idVec).getStr())
       }
     }
   }
