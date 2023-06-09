@@ -74,31 +74,31 @@ curveTestAll()
 function FrTest() {
   const a = new mcl.Fr()
   a.setInt(5)
-  assert.equal(a.getStr(), '5')
+  assert.strictEqual(a.getStr(), '5')
   a.setStr('65535')
-  assert.equal(a.getStr(), '65535')
-  assert.equal(a.getStr(16), 'ffff')
+  assert.strictEqual(a.getStr(), '65535')
+  assert.strictEqual(a.getStr(16), 'ffff')
   a.setStr('ff', 16)
-  assert.equal(a.getStr(), '255')
+  assert.strictEqual(a.getStr(), '255')
   a.setStr('0x10')
-  assert.equal(a.getStr(), '16')
-  assert.equal(a.getStr(16), '10')
+  assert.strictEqual(a.getStr(), '16')
+  assert.strictEqual(a.getStr(16), '10')
   const b = new mcl.Fr()
   a.setByCSPRNG()
   b.deserialize(a.serialize())
-  assert.deepEqual(a.serialize(), b.serialize())
+  assert.deepStrictEqual(a.serialize(), b.serialize())
   a.setStr('1000000000020')
   b.setInt(-15)
-  assert.equal(mcl.add(a, b).getStr(), '1000000000005')
-  assert.equal(mcl.sub(a, b).getStr(), '1000000000035')
+  assert.strictEqual(mcl.add(a, b).getStr(), '1000000000005')
+  assert.strictEqual(mcl.sub(a, b).getStr(), '1000000000035')
   a.setInt(200)
   b.setInt(20)
-  assert.equal(mcl.mul(a, b).getStr(), '4000')
-  assert.equal(mcl.div(a, b).getStr(), '10')
-  assert.equal(mcl.mul(mcl.div(b, a), a).getStr(), '20')
+  assert.strictEqual(mcl.mul(a, b).getStr(), '4000')
+  assert.strictEqual(mcl.div(a, b).getStr(), '10')
+  assert.strictEqual(mcl.mul(mcl.div(b, a), a).getStr(), '20')
   a.setInt(-123)
-  assert.equal(mcl.neg(a).getStr(), '123')
-  assert.equal(mcl.mul(a, mcl.inv(a)).getStr(), '1')
+  assert.strictEqual(mcl.neg(a).getStr(), '123')
+  assert.strictEqual(mcl.mul(a, mcl.inv(a)).getStr(), '1')
   a.setInt(123459)
   assert(mcl.mul(a, a).isEqual(mcl.sqr(a)))
 
@@ -346,7 +346,7 @@ function PairingTest() {
   a.setStr('123')
   b.setStr('456')
   const ab = mcl.mul(a, b)
-  assert.equal(ab.getStr(), 123 * 456)
+  assert.strictEqual(ab.getStr(), String(123 * 456))
 
   const P = mcl.hashAndMapToG1('aaa')
   const Q = mcl.hashAndMapToG2('bbb')
@@ -404,9 +404,9 @@ function mulVecGeneric(Cstr, xVec, yVec) {
 
 function mulVecTest() {
   [1, 2, 3, 15, 30, 100].forEach(n => {
-    const xs = []
-    const g1s = []
-    const g2s = []
+    const xs:mcl.Fr[] = []
+    const g1s:mcl.G1[] = []
+    const g2s:mcl.G2[] = []
     for (let i = 0; i < n; i++) {
       const x = new mcl.Fr()
       x.setByCSPRNG()
@@ -431,7 +431,7 @@ function mulVecTest() {
 }
 
 // Enc(m) = [r P, m + h(e(r mpk, H(id)))]
-function IDenc(id, P: mcl.G1, mpk: mcl.G1, m: mcl.Fr) {
+function IDenc(id:string, P: mcl.G1, mpk: mcl.G1, m: mcl.Fr):[mcl.G1, mcl.Fr] {
   const r = new mcl.Fr()
   r.setByCSPRNG()
   const Q = mcl.hashAndMapToG2(id)
@@ -440,7 +440,7 @@ function IDenc(id, P: mcl.G1, mpk: mcl.G1, m: mcl.Fr) {
 }
 
 // Dec([U, v]) = v - h(e(U, sk))
-function IDdec(c, sk: mcl.G2) {
+function IDdec(c:[mcl.G1, mcl.Fr], sk: mcl.G2):mcl.Fr {
   const [U, v] = c
   const e = mcl.pairing(U, sk)
   return mcl.sub(v, mcl.hashToFr(e.serialize()))
@@ -490,7 +490,7 @@ function PairingCapiTest () {
   mod.mclBnFr_setStr(a, '123')
   mod.mclBnFr_setStr(b, '456')
   mod._mclBnFr_mul(ab, a, b)
-  assert.equal(mod.mclBnFr_getStr(ab), 123 * 456)
+  assert.strictEqual(mod.mclBnFr_getStr(ab), 123 * 456)
 
   mod.mclBnG1_hashAndMapTo(P, 'aaa')
   mod.mclBnG2_hashAndMapTo(Q, 'bbb')
