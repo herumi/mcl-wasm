@@ -10,7 +10,7 @@ abstract class Common {
     this.a_ = new Uint32Array(size / 4)
   }
 
-  deserializeHexStr (s: string) {
+  deserializeHexStr (s: string): void {
     this.deserialize(fromHexStr(s))
   }
 
@@ -18,21 +18,21 @@ abstract class Common {
     return toHexStr(this.serialize())
   }
 
-  dump (msg = '') {
+  dump (msg = ''): void {
     console.log(msg + this.serializeToHexStr())
   }
 
-  clear () {
+  clear (): void {
     this.a_.fill(0)
   }
 
   // copy to allocated memory
-  copyToMem (pos: number) {
+  copyToMem (pos: number): void {
     mod.HEAP32.set(this.a_, pos / 4)
   }
 
   // copy from allocated memory
-  copyFromMem (pos: number) {
+  copyFromMem (pos: number): void {
     this.a_.set(mod.HEAP32.subarray(pos / 4, pos / 4 + this.a_.length))
   }
 
@@ -47,24 +47,24 @@ abstract class Common {
   // internal methods
 
   /** @internal alloc new array */
-  _alloc () {
+  _alloc (): number {
     return _malloc(this.a_.length * 4)
   }
 
   /** @internal alloc and copy a_ to mod.HEAP32[pos / 4] */
-  _allocAndCopy () {
+  _allocAndCopy (): number {
     const pos = this._alloc()
     mod.HEAP32.set(this.a_, pos / 4)
     return pos
   }
 
   /** @internal save pos to a_ */
-  _save (pos: number) {
+  _save (pos: number): void {
     this.a_.set(mod.HEAP32.subarray(pos / 4, pos / 4 + this.a_.length))
   }
 
   /** @internal save and free */
-  _saveAndFree (pos: number) {
+  _saveAndFree (pos: number): void {
     this._save(pos)
     _free(pos)
   }
@@ -74,7 +74,7 @@ abstract class Common {
     const pos = this._alloc()
     const r = func(pos, ...params)
     this._saveAndFree(pos)
-    if (r) throw new Error('_setter err')
+    if (r !== undefined && r !== 0) throw new Error('_setter err')
   }
 
   /** @internal getter */
@@ -86,7 +86,7 @@ abstract class Common {
   }
 
   /** @internal */
-  _isEqual (func: (xPos: number, yPos: number) => number, rhs: Common) {
+  _isEqual (func: (xPos: number, yPos: number) => number, rhs: Common): boolean {
     const xPos = this._allocAndCopy()
     const yPos = rhs._allocAndCopy()
     const r = func(xPos, yPos)
@@ -96,7 +96,7 @@ abstract class Common {
   }
 
   /** @internal func(y, this) and return y */
-  _op1 (func: (yPos: number, xPos: number) => void) {
+  _op1 (func: (yPos: number, xPos: number) => void): any {
     const y = new (this.constructor as any)()
     const xPos = this._allocAndCopy()
     const yPos = y._alloc()
@@ -107,7 +107,7 @@ abstract class Common {
   }
 
   /** @internal func(z, this, y) and return z */
-  _op2 (func: (zPos: number, xPos: number, yPos: number) => void, y: Common, Cstr: any = null) {
+  _op2 (func: (zPos: number, xPos: number, yPos: number) => void, y: Common, Cstr: any = null): any {
     const z = Cstr ? new Cstr() : new (this.constructor as any)()
     const xPos = this._allocAndCopy()
     const yPos = y._allocAndCopy()
@@ -120,7 +120,7 @@ abstract class Common {
   }
 
   /** @internal devide Uint32Array a into n and chose the idx-th */
-  _getSubArray (idx: number, n: number) {
+  _getSubArray (idx: number, n: number): Uint32Array {
     const d = this.a_.length / n
     // return new Uint32Array(this.a_.buffer, d * idx * 4, d) // err : return reference to the buffer
     // correct : make new buffer and copy it
@@ -128,7 +128,7 @@ abstract class Common {
   }
 
   /** @internal set array lhs to idx */
-  _setSubArray (lhs: Common, idx: number, n: number) {
+  _setSubArray (lhs: Common, idx: number, n: number): void {
     const d = this.a_.length / n
     this.a_.set(lhs.a_, d * idx)
   }
@@ -148,11 +148,11 @@ export class Fr extends IntType {
     super(MCLBN_FR_SIZE)
   }
 
-  setInt (x: number) {
+  setInt (x: number): void {
     this._setter(mod._mclBnFr_setInt32, x)
   }
 
-  deserialize (s: Uint8Array) {
+  deserialize (s: Uint8Array): void {
     this._setter(mod.mclBnFr_deserialize, s)
   }
 
@@ -160,7 +160,7 @@ export class Fr extends IntType {
     return this._getter(mod.mclBnFr_serialize)
   }
 
-  setStr (s: string, base = 0) {
+  setStr (s: string, base = 0): void {
     this._setter(mod.mclBnFr_setStr, s, base)
   }
 
@@ -168,11 +168,11 @@ export class Fr extends IntType {
     return this._getter(mod.mclBnFr_getStr, base)
   }
 
-  isZero () {
+  isZero (): boolean {
     return this._getter(mod._mclBnFr_isZero) === 1
   }
 
-  isOne () {
+  isOne (): boolean {
     return this._getter(mod._mclBnFr_isOne) === 1
   }
 
@@ -180,25 +180,25 @@ export class Fr extends IntType {
     return this._isEqual(mod._mclBnFr_isEqual, rhs)
   }
 
-  setLittleEndian (a: Uint8Array) {
+  setLittleEndian (a: Uint8Array): void {
     this._setter(mod.mclBnFr_setLittleEndian, a)
   }
 
-  setLittleEndianMod (a: Uint8Array) {
+  setLittleEndianMod (a: Uint8Array): void {
     this._setter(mod.mclBnFr_setLittleEndianMod, a)
   }
 
-  setBigEndianMod (a: Uint8Array) {
+  setBigEndianMod (a: Uint8Array): void {
     this._setter(mod.mclBnFr_setBigEndianMod, a)
   }
 
-  setByCSPRNG () {
+  setByCSPRNG (): void {
     const a = new Uint8Array(MCLBN_FR_SIZE)
     getRandomValues(a)
     this.setLittleEndian(a)
   }
 
-  setHashOf (s: string | Uint8Array) {
+  setHashOf (s: string | Uint8Array): void {
     this._setter(mod.mclBnFr_setHashOf, s)
   }
 }
@@ -208,7 +208,7 @@ export interface Fr {
   __Fr: never
 }
 
-export const deserializeHexStrToFr = (s: string) => {
+export const deserializeHexStrToFr = (s: string): Fr => {
   const r = new Fr()
   r.deserializeHexStr(s)
   return r
@@ -219,11 +219,11 @@ export class Fp extends IntType {
     super(MCLBN_FP_SIZE)
   }
 
-  setInt (x: number) {
+  setInt (x: number): void {
     this._setter(mod._mclBnFp_setInt32, x)
   }
 
-  deserialize (s: Uint8Array) {
+  deserialize (s: Uint8Array): void {
     this._setter(mod.mclBnFp_deserialize, s)
   }
 
@@ -231,7 +231,7 @@ export class Fp extends IntType {
     return this._getter(mod.mclBnFp_serialize)
   }
 
-  setStr (s: string, base = 0) {
+  setStr (s: string, base = 0): void {
     this._setter(mod.mclBnFp_setStr, s, base)
   }
 
@@ -251,29 +251,29 @@ export class Fp extends IntType {
     return this._isEqual(mod._mclBnFp_isEqual, rhs)
   }
 
-  setLittleEndian (a: Uint8Array) {
+  setLittleEndian (a: Uint8Array): void {
     this._setter(mod.mclBnFp_setLittleEndian, a)
   }
 
-  setLittleEndianMod (a: Uint8Array) {
+  setLittleEndianMod (a: Uint8Array): void {
     this._setter(mod.mclBnFp_setLittleEndianMod, a)
   }
 
-  setBigEndianMod (a: Uint8Array) {
+  setBigEndianMod (a: Uint8Array): void {
     this._setter(mod.mclBnFp_setBigEndianMod, a)
   }
 
-  setByCSPRNG () {
+  setByCSPRNG (): void {
     const a = new Uint8Array(MCLBN_FP_SIZE)
     getRandomValues(a)
     this.setLittleEndian(a)
   }
 
-  setHashOf (s: string | Uint8Array) {
+  setHashOf (s: string | Uint8Array): void {
     this._setter(mod.mclBnFp_setHashOf, s)
   }
 
-  mapToG1 () {
+  mapToG1 (): G1 {
     const y = new G1()
     const xPos = this._allocAndCopy()
     const yPos = y._alloc()
@@ -289,7 +289,7 @@ export interface Fp {
   __Fp: never
 }
 
-export const deserializeHexStrToFp = (s: string) => {
+export const deserializeHexStrToFp = (s: string): Fp => {
   const r = new Fp()
   r.deserializeHexStr(s)
   return r
@@ -300,7 +300,7 @@ export class Fp2 extends Common {
     super(MCLBN_FP_SIZE * 2)
   }
 
-  setInt (x: number, y: number) {
+  setInt (x: number, y: number): void {
     const v = new Fp()
     v.setInt(x)
     this.set_a(v)
@@ -308,7 +308,7 @@ export class Fp2 extends Common {
     this.set_b(v)
   }
 
-  deserialize (s: Uint8Array) {
+  deserialize (s: Uint8Array): void {
     this._setter(mod.mclBnFp2_deserialize, s)
   }
 
@@ -320,7 +320,7 @@ export class Fp2 extends Common {
     return this.get_a().getStr(base) + ' ' + this.get_b().getStr(base)
   }
 
-  setStr (s: string, base = 0) {
+  setStr (s: string, base = 0): void {
     const ss = s.split(' ')
     if (ss.length !== 2) throw new Error('bad str')
     const v = new Fp()
@@ -338,34 +338,34 @@ export class Fp2 extends Common {
     throw new Error('Fp2.isZero is not supported')
   }
 
-  setHashOf (s: string | Uint8Array) {
+  setHashOf (s: string | Uint8Array): void {
     throw new Error('Fp2.setHashOf is not supported')
   }
 
   /*
     x = a + bi where a, b in Fp and i^2 = -1
   */
-  get_a () {
+  get_a (): Fp {
     const r = new Fp()
     r.a_ = this._getSubArray(0, 2)
     return r
   }
 
-  get_b () {
+  get_b (): Fp {
     const r = new Fp()
     r.a_ = this._getSubArray(1, 2)
     return r
   }
 
-  set_a (v: Fp) {
+  set_a (v: Fp): void {
     this._setSubArray(v, 0, 2)
   }
 
-  set_b (v: Fp) {
+  set_b (v: Fp): void {
     this._setSubArray(v, 1, 2)
   }
 
-  mapToG2 () {
+  mapToG2 (): G2 {
     const y = new G2()
     const xPos = this._allocAndCopy()
     const yPos = y._alloc()
@@ -376,7 +376,7 @@ export class Fp2 extends Common {
   }
 }
 
-export const deserializeHexStrToFp2 = (s: string) => {
+export const deserializeHexStrToFp2 = (s: string): Fp2 => {
   const r = new Fp2()
   r.deserializeHexStr(s)
   return r
@@ -393,7 +393,7 @@ export class G1 extends EllipticType {
     super(MCLBN_G1_SIZE)
   }
 
-  deserialize (s: Uint8Array) {
+  deserialize (s: Uint8Array): void {
     this._setter(mod.mclBnG1_deserialize, s)
   }
 
@@ -401,7 +401,7 @@ export class G1 extends EllipticType {
     return this._getter(mod.mclBnG1_serialize)
   }
 
-  setStr (s: string, base = 0) {
+  setStr (s: string, base = 0): void {
     this._setter(mod.mclBnG1_setStr, s, base)
   }
 
@@ -409,49 +409,49 @@ export class G1 extends EllipticType {
     return this._getter(mod.mclBnG1_getStr, base)
   }
 
-  normalize () {
+  normalize (): void {
     this.a_ = normalize(this).a_
   }
 
-  getX () {
+  getX (): Fp {
     const r = new Fp()
     r.a_ = this._getSubArray(0, 3)
     return r
   }
 
-  getY () {
+  getY (): Fp {
     const r = new Fp()
     r.a_ = this._getSubArray(1, 3)
     return r
   }
 
-  getZ () {
+  getZ (): Fp {
     const r = new Fp()
     r.a_ = this._getSubArray(2, 3)
     return r
   }
 
-  setX (v: Fp) {
+  setX (v: Fp): void {
     this._setSubArray(v, 0, 3)
   }
 
-  setY (v: Fp) {
+  setY (v: Fp): void {
     this._setSubArray(v, 1, 3)
   }
 
-  setZ (v: Fp) {
+  setZ (v: Fp): void {
     this._setSubArray(v, 2, 3)
   }
 
-  isZero () {
+  isZero (): boolean {
     return this._getter(mod._mclBnG1_isZero) === 1
   }
 
-  isValid () {
+  isValid (): boolean {
     return this._getter(mod._mclBnG1_isValid) === 1
   }
 
-  isValidOrder () {
+  isValidOrder (): boolean {
     return this._getter(mod._mclBnG1_isValidOrder) === 1
   }
 
@@ -459,35 +459,35 @@ export class G1 extends EllipticType {
     return this._isEqual(mod._mclBnG1_isEqual, rhs)
   }
 
-  setHashOf (s: string | Uint8Array) {
+  setHashOf (s: string | Uint8Array): void {
     this._setter(mod.mclBnG1_hashAndMapTo, s)
   }
 }
 
-export const deserializeHexStrToG1 = (s: string) => {
+export const deserializeHexStrToG1 = (s: string): G1 => {
   const r = new G1()
   r.deserializeHexStr(s)
   return r
 }
 
-export const setETHserialization = (ETHserialization: boolean) => {
+export const setETHserialization = (ETHserialization: boolean): void => {
   mod._mclBn_setETHserialization(ETHserialization ? 1 : 0)
 }
 
 // mode = mcl.IRTF for Ethereum 2.0 spec
-export const setMapToMode = (mode: number) => {
+export const setMapToMode = (mode: number): void => {
   mod._mclBn_setMapToMode(mode)
 }
 
-export const verifyOrderG1 = (doVerify: boolean) => {
+export const verifyOrderG1 = (doVerify: boolean): void => {
   mod._mclBn_verifyOrderG1(doVerify ? 1 : 0)
 }
 
-export const verifyOrderG2 = (doVerify: boolean) => {
+export const verifyOrderG2 = (doVerify: boolean): void => {
   mod._mclBn_verifyOrderG2(doVerify ? 1 : 0)
 }
 
-export const getBasePointG1 = () => {
+export const getBasePointG1 = (): G1 => {
   const x = new G1()
   const xPos = x._alloc()
   mod._mclBnG1_getBasePoint(xPos)
@@ -503,7 +503,7 @@ export class G2 extends EllipticType {
     super(MCLBN_G2_SIZE)
   }
 
-  deserialize (s: Uint8Array) {
+  deserialize (s: Uint8Array): void {
     this._setter(mod.mclBnG2_deserialize, s)
   }
 
@@ -511,7 +511,7 @@ export class G2 extends EllipticType {
     return this._getter(mod.mclBnG2_serialize)
   }
 
-  setStr (s: string, base = 0) {
+  setStr (s: string, base = 0): void {
     this._setter(mod.mclBnG2_setStr, s, base)
   }
 
@@ -519,49 +519,49 @@ export class G2 extends EllipticType {
     return this._getter(mod.mclBnG2_getStr, base)
   }
 
-  normalize () {
+  normalize (): void {
     this.a_ = normalize(this).a_
   }
 
-  getX () {
+  getX (): Fp2 {
     const r = new Fp2()
     r.a_ = this._getSubArray(0, 3)
     return r
   }
 
-  getY () {
+  getY (): Fp2 {
     const r = new Fp2()
     r.a_ = this._getSubArray(1, 3)
     return r
   }
 
-  getZ () {
+  getZ (): Fp2 {
     const r = new Fp2()
     r.a_ = this._getSubArray(2, 3)
     return r
   }
 
-  setX (v: Fp2) {
+  setX (v: Fp2): void {
     this._setSubArray(v, 0, 3)
   }
 
-  setY (v: Fp2) {
+  setY (v: Fp2): void {
     this._setSubArray(v, 1, 3)
   }
 
-  setZ (v: Fp2) {
+  setZ (v: Fp2): void {
     this._setSubArray(v, 2, 3)
   }
 
-  isZero () {
+  isZero (): boolean {
     return this._getter(mod._mclBnG2_isZero) === 1
   }
 
-  isValid () {
+  isValid (): boolean {
     return this._getter(mod._mclBnG2_isValid) === 1
   }
 
-  isValidOrder () {
+  isValidOrder (): boolean {
     return this._getter(mod._mclBnG2_isValidOrder) === 1
   }
 
@@ -569,12 +569,12 @@ export class G2 extends EllipticType {
     return this._isEqual(mod._mclBnG2_isEqual, rhs)
   }
 
-  setHashOf (s: string | Uint8Array) {
+  setHashOf (s: string | Uint8Array): void {
     this._setter(mod.mclBnG2_hashAndMapTo, s)
   }
 }
 
-export const deserializeHexStrToG2 = (s: string) => {
+export const deserializeHexStrToG2 = (s: string): G2 => {
   const r = new G2()
   r.deserializeHexStr(s)
   return r
@@ -585,11 +585,11 @@ export class GT extends Common {
     super(MCLBN_GT_SIZE)
   }
 
-  setInt (x: number) {
+  setInt (x: number): void {
     this._setter(mod._mclBnGT_setInt32, x)
   }
 
-  deserialize (s: Uint8Array) {
+  deserialize (s: Uint8Array): void {
     this._setter(mod.mclBnGT_deserialize, s)
   }
 
@@ -597,7 +597,7 @@ export class GT extends Common {
     return this._getter(mod.mclBnGT_serialize)
   }
 
-  setStr (s: string, base = 0) {
+  setStr (s: string, base = 0): void {
     this._setter(mod.mclBnGT_setStr, s, base)
   }
 
@@ -605,11 +605,11 @@ export class GT extends Common {
     return this._getter(mod.mclBnGT_getStr, base)
   }
 
-  isZero () {
+  isZero (): boolean {
     return this._getter(mod._mclBnGT_isZero) === 1
   }
 
-  isOne () {
+  isOne (): boolean {
     return this._getter(mod._mclBnGT_isOne) === 1
   }
 
@@ -617,12 +617,12 @@ export class GT extends Common {
     return this._isEqual(mod._mclBnGT_isEqual, rhs)
   }
 
-  setHashOf (s: string | Uint8Array) {
+  setHashOf (s: string | Uint8Array): void {
     throw new Error('GT.setHashOf is not supported')
   }
 }
 
-export const deserializeHexStrToGT = (s: string) => {
+export const deserializeHexStrToGT = (s: string): GT => {
   const r = new GT()
   r.deserializeHexStr(s)
   return r
@@ -645,7 +645,7 @@ export class PrecomputedG2 {
     call destroy if PrecomputedG2 is not necessary
     to avoid memory leak
   */
-  destroy () {
+  destroy (): void {
     if (this.p != null) _free(this.p)
     this.p = null
   }
@@ -795,9 +795,9 @@ export function mul (x: Common, y: Common): Common {
   throw new Error('mul:mismatch type')
 }
 
-const _mulVec = <T extends G1 | G2>(func: (zPos: number, xPos: number, yPos: number, n: number) => void, xVec: T[], yVec: Fr[], Cstr: any) => {
+const _mulVec = <T extends G1 | G2>(func: (zPos: number, xPos: number, yPos: number, n: number) => void, xVec: T[], yVec: Fr[], Cstr: any): T => {
   const n = xVec.length
-  if (n != yVec.length) throw new Error(`err _mulVec bad length ${n}, ${yVec.length}`)
+  if (n !== yVec.length) throw new Error(`err _mulVec bad length ${n}, ${yVec.length}`)
   const xSize = xVec[0].a_.length
   const ySize = yVec[0].a_.length
   const z = new Cstr()
@@ -826,7 +826,7 @@ const _mulVec = <T extends G1 | G2>(func: (zPos: number, xPos: number, yPos: num
   sum G2 * Fr ; scalar mul
 */
 export const mulVec = <T extends G1 | G2>(xVec: T[], yVec: Fr[]): T => {
-  if (xVec.length == 0) throw new Error('mulVec:zero array')
+  if (xVec.length === 0) throw new Error('mulVec:zero array')
   if (xVec[0] instanceof G1 && yVec[0] instanceof Fr) {
     return _mulVec(mod._mclBnG1_mulVec, xVec, yVec, G1)
   }
@@ -867,19 +867,19 @@ export const dbl = <T extends G1 | G2>(x: T): T => {
   throw new Error('dbl:bad type')
 }
 
-export const hashToFr = (s: string | Uint8Array) => {
+export const hashToFr = (s: string | Uint8Array): Fr => {
   const x = new Fr()
   x.setHashOf(s)
   return x
 }
 
-export const hashAndMapToG1 = (s: string | Uint8Array) => {
+export const hashAndMapToG1 = (s: string | Uint8Array): G1 => {
   const x = new G1()
   x.setHashOf(s)
   return x
 }
 
-export const hashAndMapToG2 = (s: string | Uint8Array) => {
+export const hashAndMapToG2 = (s: string | Uint8Array): G2 => {
   const x = new G2()
   x.setHashOf(s)
   return x
@@ -956,7 +956,7 @@ export const finalExp = (x: GT): GT => {
 
 // alloc memory and copy v to it and return the position
 function _arrayAllocAndCopy<T extends Common> (v: T[]): number {
-  if (v.length == 0) throw new Error('zero size array')
+  if (v.length === 0) throw new Error('zero size array')
   const size = v[0].a_.length * 4
   const pos = _malloc(size * v.length)
   for (let i = 0; i < v.length; i++) {
@@ -965,8 +965,8 @@ function _arrayAllocAndCopy<T extends Common> (v: T[]): number {
   return pos
 }
 
-function _callShare<T extends Common> (cstr: new() => T, func: Function, vec: T[], id: Fr): T {
-  const a = new cstr()
+function _callShare<T extends Common> (CstrT: new() => T, func: Function, vec: T[], id: Fr): T {
+  const a = new CstrT()
   const pos = a._alloc()
   const vecPos = _arrayAllocAndCopy(vec)
   const idPos = id._allocAndCopy()
@@ -977,18 +977,18 @@ function _callShare<T extends Common> (cstr: new() => T, func: Function, vec: T[
   return a
 }
 
-function _callRecover<T extends Common> (cstr: new() => T, func: Function, vec: T[], idVec: Fr[]): T {
+function _callRecover<T extends Common> (CstrT: new() => T, func: Function, vec: T[], idVec: Fr[]): T {
   const k = vec.length
-  if (k != idVec.length) throw ('recover:bad length')
-  const a = new cstr()
+  if (k !== idVec.length) throw new Error('recover:bad length')
+  const a = new CstrT()
   const aPos = a._alloc()
   const vecPos = _arrayAllocAndCopy(vec)
   const idVecPos = _arrayAllocAndCopy(idVec)
-  const r = func(aPos, idVecPos, vecPos, k)
+  const r: number = func(aPos, idVecPos, vecPos, k)
   _free(idVecPos)
   _free(vecPos)
   a._saveAndFree(aPos)
-  if (r) throw ('callRecover')
+  if (r !== 0) throw new Error('callRecover')
   return a
 }
 
