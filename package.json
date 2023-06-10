@@ -8,9 +8,9 @@
     "build:mcl_c.js": "make",
     "build:dist": "tsc",
     "build:browser": "webpack",
-    "lint": "standard --verbose test/test.js; ts-standard-ts --verbose src/*.ts",
+    "lint": "standard --verbose test/test.js; ts-standard --verbose src/*.ts",
     "lint-fix": "standard --fix test/test.js; ts-standard --fix src/*.ts",
-    "test-ts": "tsc test/test-ts.ts && node test/test-ts.js",
+    "test-ts": "tsc && tsc test/test-ts.ts && node test/test-ts.js",
     "test": "tsc && node test/test.js && node test/eth-test.js"
   },
   "types": "dist/index.d.ts",
@@ -38,13 +38,12 @@
   },
   "homepage": "https://github.com/herumi/mcl-wasm#readme",
   "devDependencies": {
-    "@types/node": "^15.14.9",
     "assert": "^2.0.0",
     "perf_hooks": "^0.0.1",
     "standard": "^16.0.4",
     "ts-loader": "^9.2.6",
     "ts-standard": "^10.0.0",
-    "typescript": "^4.3.4",
+    "typescript": "^4.9.5",
     "webpack": "^5.64.1",
     "webpack-cli": "^4.9.1"
   },
@@ -55,5 +54,8 @@
   },
   "ts-standard": {
     "project": "./tsconfig.json"
+  },
+  "dependencies": {
+    "@types/node": "^20.2.5"
   }
 }
