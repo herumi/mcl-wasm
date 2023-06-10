@@ -7,6 +7,7 @@
 see [mcl](https://github.com/herumi/mcl)
 
 ## News
+- 2023/Jun/10 add share/recover functions of Fr, G1, G2 for secret sharing.
 - 2022/May/08 fix get{X,Y,Z} and get\_{a,b}.
 - 2021/Dec/15 rewritten by TypeScript (Thanks to asa-taka)
 - 2021/Nov/11 unify index.js of Node.js and browser (Thanks to Futa HIRAKOBA)
@@ -86,6 +87,24 @@ mcl.verifyOrderG2(false)
 ```
 
 see [test.js](https://github.com/herumi/mcl-wasm/blob/master/test/test.js)
+
+## Secret Sharing
+
+```typescript
+shareFr = (cVec: Fr[], id: Fr): Fr
+shareG1 = (cVec: G1[], id: Fr): G1
+shareG2 = (cVec: G2[], id: Fr): G2
+```
+Evaluate the value of the polynomial `f(x)` whose coefficients `cVec[]` are vec with x=id.
+Return `f(id)`.
+
+```typescript
+recoverFr = (idVec: Fr[], yVec: Fr[]): Fr
+recoverG1 = (idVec: Fr[], yVec: G1[]): G1
+recoverG2 = (idVec: Fr[], yVec: G2[]): G2
+```
+Recover the polynomial `f(x)` through the point `(idVec[0], yVec[0])`, `(idVec[1], yVec[1])`, ... and return `f(0)`.
+Note that the order of arguments is reversed from that of the recover function in bls-eth-wasm.
 
 # License
 
