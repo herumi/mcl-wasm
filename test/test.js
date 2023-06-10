@@ -581,13 +581,13 @@ function memberTest () {
   P.setY(y)
   P.setZ(z)
 
-  assert.equal(P.getStr(), "1 10 11 12 13")
-  assert.equal(P.getX().get_a().getStr(), "10")
-  assert.equal(P.getX().get_b().getStr(), "11")
-  assert.equal(P.getY().get_a().getStr(), "12")
-  assert.equal(P.getY().get_b().getStr(), "13")
-  assert.equal(P.getZ().get_a().getStr(), "1")
-  assert.equal(P.getZ().get_b().getStr(), "0")
+  assert.equal(P.getStr(), '1 10 11 12 13')
+  assert.equal(P.getX().get_a().getStr(), '10')
+  assert.equal(P.getX().get_b().getStr(), '11')
+  assert.equal(P.getY().get_a().getStr(), '12')
+  assert.equal(P.getY().get_b().getStr(), '13')
+  assert.equal(P.getZ().get_a().getStr(), '1')
+  assert.equal(P.getZ().get_b().getStr(), '0')
 }
 
 function bench (label, count, func) {
