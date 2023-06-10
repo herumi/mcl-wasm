@@ -614,16 +614,16 @@ function shareTest() {
   assert.strictEqual(k, 3)
   for (let i = 0; i < n; i++){
     for (let j = i + 1; j < n; j++) {
-      for (let k = j + 1; k < n; k++) {
-        const idVec = [ids[i], ids[j], ids[k]]
+      for (let m = j + 1; m < n; m++) {
+        const idVec = [ids[i], ids[j], ids[m]]
         //put('idVec', idVec)
-        const rVec = [sfr[i], sfr[j], sfr[k]]
+        const rVec = [sfr[i], sfr[j], sfr[m]]
         //put('rVec', rVec)
-        const g1Vec = [sg1[i], sg1[j], sg1[k]]
-        const g2Vec = [sg2[i], sg2[j], sg2[k]]
-        assert.strictEqual(frStr, mcl.recoverFr(rVec, idVec).getStr())
-        assert.strictEqual(g1Str, mcl.recoverG1(g1Vec, idVec).getStr())
-        assert.strictEqual(g2Str, mcl.recoverG2(g2Vec, idVec).getStr())
+        const g1Vec = [sg1[i], sg1[j], sg1[m]]
+        const g2Vec = [sg2[i], sg2[j], sg2[m]]
+        assert.strictEqual(frStr, mcl.recoverFr(idVec, rVec).getStr())
+        assert.strictEqual(g1Str, mcl.recoverG1(idVec, g1Vec).getStr())
+        assert.strictEqual(g2Str, mcl.recoverG2(idVec, g2Vec).getStr())
       }
     }
   }

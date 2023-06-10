@@ -977,16 +977,16 @@ function _callShare<T extends Common> (CstrT: new() => T, func: Function, vec: T
   return a
 }
 
-function _callRecover<T extends Common> (CstrT: new() => T, func: Function, vec: T[], idVec: Fr[]): T {
-  const k = vec.length
+function _callRecover<T extends Common> (CstrT: new() => T, func: Function, idVec: Fr[], yVec: T[]): T {
+  const k = yVec.length
   if (k !== idVec.length) throw new Error('recover:bad length')
   const a = new CstrT()
   const aPos = a._alloc()
-  const vecPos = _arrayAllocAndCopy(vec)
   const idVecPos = _arrayAllocAndCopy(idVec)
-  const r: number = func(aPos, idVecPos, vecPos, k)
+  const yVecPos = _arrayAllocAndCopy(yVec)
+  const r: number = func(aPos, idVecPos, yVecPos, k)
+  _free(yVecPos)
   _free(idVecPos)
-  _free(vecPos)
   a._saveAndFree(aPos)
   if (r !== 0) throw new Error('callRecover')
   return a
@@ -1001,12 +1001,12 @@ export const shareG1 = (vec: G1[], id: Fr): G1 => {
 export const shareG2 = (vec: G2[], id: Fr): G2 => {
   return _callShare(G2, mod._mclBn_G2EvaluatePolynomial, vec, id)
 }
-export const recoverFr = (xVec: Fr[], idVec: Fr[]): Fr => {
-  return _callRecover(Fr, mod._mclBn_FrLagrangeInterpolation, xVec, idVec)
+export const recoverFr = (idVec: Fr[], yVec: Fr[]): Fr => {
+  return _callRecover(Fr, mod._mclBn_FrLagrangeInterpolation, idVec, yVec)
 }
-export const recoverG1 = (xVec: G1[], idVec: Fr[]): G1 => {
-  return _callRecover(G1, mod._mclBn_G1LagrangeInterpolation, xVec, idVec)
+export const recoverG1 = (idVec: Fr[], yVec: G1[]): G1 => {
+  return _callRecover(G1, mod._mclBn_G1LagrangeInterpolation, idVec, yVec)
 }
-export const recoverG2 = (xVec: G2[], idVec: Fr[]): G2 => {
-  return _callRecover(G2, mod._mclBn_G2LagrangeInterpolation, xVec, idVec)
+export const recoverG2 = (idVec: Fr[], yVec: G2[]): G2 => {
+  return _callRecover(G2, mod._mclBn_G2LagrangeInterpolation, idVec, yVec)
 }
