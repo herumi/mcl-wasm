@@ -955,7 +955,7 @@ export const finalExp = (x: GT): GT => {
 }
 
 // alloc memory and copy v to it and return the position
-function _arrayAllocAndCopy<T extends Common>(v : T[]): number {
+function _arrayAllocAndCopy<T extends Common> (v: T[]): number {
   if (v.length == 0) throw new Error('zero size array')
   const size = v[0].a_.length * 4
   const pos = _malloc(size * v.length)
@@ -965,7 +965,7 @@ function _arrayAllocAndCopy<T extends Common>(v : T[]): number {
   return pos
 }
 
-function _callShare<T extends Common>(cstr: { new(): T}, func: Function, vec: T[], id: Fr): T {
+function _callShare<T extends Common> (cstr: new() => T, func: Function, vec: T[], id: Fr): T {
   const a = new cstr()
   const pos = a._alloc()
   const vecPos = _arrayAllocAndCopy(vec)
@@ -977,7 +977,7 @@ function _callShare<T extends Common>(cstr: { new(): T}, func: Function, vec: T[
   return a
 }
 
-function _callRecover<T extends Common>(cstr: { new(): T}, func: Function, vec: T[], idVec: Fr[]): T {
+function _callRecover<T extends Common> (cstr: new() => T, func: Function, vec: T[], idVec: Fr[]): T {
   const k = vec.length
   if (k != idVec.length) throw ('recover:bad length')
   const a = new cstr()
