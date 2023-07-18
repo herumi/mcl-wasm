@@ -34,7 +34,7 @@
     "url": "https://github.com/herumi/mcl-wasm/issues"
   },
   "engines": {
-    "node": ">=8.9.0"
+    "node": ">=14.17"
   },
   "homepage": "https://github.com/herumi/mcl-wasm#readme",
   "devDependencies": {
