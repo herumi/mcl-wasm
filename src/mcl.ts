@@ -28,7 +28,7 @@ export const _free = (pos: number): void => {
   mod._mclBnFree(pos)
 }
 
-const showMem = (): void => {
+export const showMem = (): void => {
   console.log(`g_total=${g_total}`)
   console.log(`mallocPtr=${JSON.stringify(g_mallocPtr,null,'\t')}`)
 }
