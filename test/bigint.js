@@ -6,7 +6,7 @@ const { performance } = require('perf_hooks')
 const g_r = BigInt('0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001')
 const g_p = BigInt('0x1a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaab')
 
-const C2 = 1000000
+const C2 = 100000
 
 function FrAdd (x, y) {
   let r = BigInt(x + y)
@@ -295,4 +295,5 @@ function benchAll () {
   benchFr()
   benchFp()
   benchG1()
+  mcl.mod.showMem()
 }
