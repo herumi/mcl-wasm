@@ -50,10 +50,20 @@ abstract class Common {
   _alloc (): number {
     return _malloc(this.a_.length * 4)
   }
+  /** @internal stack alloc new array */
+  _salloc (): number {
+    return mod.stackAlloc(this.a_.length * 4)
+  }
 
   /** @internal alloc and copy a_ to mod.HEAP32[pos / 4] */
   _allocAndCopy (): number {
     const pos = this._alloc()
+    mod.HEAP32.set(this.a_, pos / 4)
+    return pos
+  }
+  /** @internal stack alloc and copy a_ to mod.HEAP32[pos / 4] */
+  _sallocAndCopy (): number {
+    const pos = this._salloc()
     mod.HEAP32.set(this.a_, pos / 4)
     return pos
   }
@@ -98,17 +108,35 @@ abstract class Common {
   /** @internal func(y, this) and return y */
   _op1 (func: (yPos: number, xPos: number) => void): any {
     const y = new (this.constructor as any)()
+    const stack = mod.stackSave()
+    const xPos = this._sallocAndCopy()
+    const yPos = y._salloc()
+    func(yPos, xPos)
+    y._save(yPos)
+    mod.stackRestore(stack)
+    return y
+/*
     const xPos = this._allocAndCopy()
     const yPos = y._alloc()
     func(yPos, xPos)
     y._saveAndFree(yPos)
     _free(xPos)
     return y
+*/
   }
 
   /** @internal func(z, this, y) and return z */
   _op2 (func: (zPos: number, xPos: number, yPos: number) => void, y: Common, Cstr: any = null): any {
     const z = Cstr ? new Cstr() : new (this.constructor as any)()
+    const stack = mod.stackSave()
+    const xPos = this._sallocAndCopy()
+    const yPos = y._sallocAndCopy()
+    const zPos = z._salloc()
+    func(zPos, xPos, yPos)
+    z._save(zPos)
+    mod.stackRestore(stack)
+    return z
+/*
     const xPos = this._allocAndCopy()
     const yPos = y._allocAndCopy()
     const zPos = z._alloc()
@@ -117,6 +145,7 @@ abstract class Common {
     _free(yPos)
     _free(xPos)
     return z
+*/
   }
 
   /** @internal devide Uint32Array a into n and chose the idx-th */
