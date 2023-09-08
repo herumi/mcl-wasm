@@ -1,4 +1,4 @@
-import { mod, _free, toHexStr, fromHexStr, _malloc } from './mcl'
+import { mod, toHexStr, fromHexStr } from './mcl'
 import { MCLBN_FP_SIZE, MCLBN_FR_SIZE, MCLBN_G1_SIZE, MCLBN_G2_SIZE, MCLBN_GT_SIZE } from './constants'
 import getRandomValues from './getRandomValues'
 
@@ -48,7 +48,7 @@ abstract class Common {
 
   /** @internal alloc new array */
   _alloc (): number {
-    return _malloc(this.a_.length * 4)
+    return mod._malloc(this.a_.length * 4)
   }
   /** @internal stack alloc new array */
   _salloc (): number {
@@ -76,7 +76,7 @@ abstract class Common {
   /** @internal save and free */
   _saveAndFree (pos: number): void {
     this._save(pos)
-    _free(pos)
+    mod._free(pos)
   }
 
   /** @internal set parameter */
@@ -103,7 +103,7 @@ abstract class Common {
 /*
     const pos = this._allocAndCopy()
     const s = func(pos, ...params)
-    _free(pos)
+    mod._free(pos)
 */
     return s
   }
@@ -119,8 +119,8 @@ abstract class Common {
     const xPos = this._allocAndCopy()
     const yPos = rhs._allocAndCopy()
     const r = func(xPos, yPos)
-    _free(yPos)
-    _free(xPos)
+    mod._free(yPos)
+    mod._free(xPos)
 */
     return r === 1
   }
@@ -140,7 +140,7 @@ abstract class Common {
     const yPos = y._alloc()
     func(yPos, xPos)
     y._saveAndFree(yPos)
-    _free(xPos)
+    mod._free(xPos)
     return y
 */
   }
@@ -162,8 +162,8 @@ abstract class Common {
     const zPos = z._alloc()
     func(zPos, xPos, yPos)
     z._saveAndFree(zPos)
-    _free(yPos)
-    _free(xPos)
+    mod._free(yPos)
+    mod._free(xPos)
     return z
 */
   }
@@ -335,7 +335,7 @@ export class Fp extends IntType {
     const yPos = y._alloc()
     mod._mclBnFp_mapToG1(yPos, xPos)
     y._saveAndFree(yPos)
-    _free(xPos)
+    mod._free(xPos)
 */
     return y
   }
@@ -435,7 +435,7 @@ export class Fp2 extends Common {
     const yPos = y._alloc()
     mod._mclBnFp2_mapToG2(yPos, xPos)
     y._saveAndFree(yPos)
-    _free(xPos)
+    mod._free(xPos)
 */
     return y
   }
@@ -707,7 +707,7 @@ export class PrecomputedG2 {
   constructor (Q: G2) {
     if (!(Q instanceof G2)) throw new Error('PrecomputedG2:bad type')
     const byteSize = mod._mclBn_getUint64NumToPrecompute() * 8
-    this.p = _malloc(byteSize)
+    this.p = mod._malloc(byteSize)
     const stack = mod.stackSave()
     const Qpos = Q._sallocAndCopy()
     mod._mclBn_precomputeG2(this.p, Qpos)
@@ -715,7 +715,7 @@ export class PrecomputedG2 {
 /*
     const Qpos = Q._allocAndCopy()
     mod._mclBn_precomputeG2(this.p, Qpos)
-    _free(Qpos)
+    mod._free(Qpos)
 */
   }
 
@@ -724,7 +724,7 @@ export class PrecomputedG2 {
     to avoid memory leak
   */
   destroy (): void {
-    if (this.p != null) _free(this.p)
+    if (this.p != null) mod._free(this.p)
     this.p = null
   }
 }
@@ -880,8 +880,8 @@ const _mulVec = <T extends G1 | G2>(func: (zPos: number, xPos: number, yPos: num
   const ySize = yVec[0].a_.length
   const z = new Cstr()
   const zPos = z._alloc()
-  const xPos = _malloc(xSize * n * 4)
-  const yPos = _malloc(ySize * n * 4)
+  const xPos = mod._malloc(xSize * n * 4)
+  const yPos = mod._malloc(ySize * n * 4)
   let pos = xPos / 4
   for (let i = 0; i < n; i++) {
     mod.HEAP32.set(xVec[i].a_, pos)
@@ -893,8 +893,8 @@ const _mulVec = <T extends G1 | G2>(func: (zPos: number, xPos: number, yPos: num
     pos += ySize
   }
   func(zPos, xPos, yPos, n)
-  _free(yPos)
-  _free(xPos)
+  mod._free(yPos)
+  mod._free(xPos)
   z._saveAndFree(zPos)
   return z
 }
@@ -998,7 +998,7 @@ export const precomputedMillerLoop = (P: G1, Qcoeff: PrecomputedG2): GT => {
   const ePos = e._alloc()
   mod._mclBn_precomputedMillerLoop(ePos, PPos, Qcoeff.p)
   e._saveAndFree(ePos)
-  _free(PPos)
+  mod._free(PPos)
 */
   return e
 }
@@ -1020,8 +1020,8 @@ export const precomputedMillerLoop2 = (P1: G1, Q1coeff: PrecomputedG2, P2: G1, Q
   const ePos = e._alloc()
   mod._mclBn_precomputedMillerLoop2(ePos, P1Pos, Q1coeff.p, P2Pos, Q2coeff.p)
   e._saveAndFree(ePos)
-  _free(P1Pos)
-  _free(P2Pos)
+  mod._free(P1Pos)
+  mod._free(P2Pos)
 */
   return e
 }
@@ -1045,9 +1045,9 @@ export const precomputedMillerLoop2mixed = (P1: G1, Q1: G2, P2: G1, Q2coeff: Pre
   const ePos = e._alloc()
   mod._mclBn_precomputedMillerLoop2mixed(ePos, P1Pos, Q1Pos, P2Pos, Q2coeff.p)
   e._saveAndFree(ePos)
-  _free(P1Pos)
-  _free(Q1Pos)
-  _free(P2Pos)
+  mod._free(P1Pos)
+  mod._free(Q1Pos)
+  mod._free(P2Pos)
 */
   return e
 }
@@ -1063,7 +1063,7 @@ export const finalExp = (x: GT): GT => {
 function _arrayAllocAndCopy<T extends Common> (v: T[]): number {
   if (v.length === 0) throw new Error('zero size array')
   const size = v[0].a_.length * 4
-  const pos = _malloc(size * v.length)
+  const pos = mod._malloc(size * v.length)
   for (let i = 0; i < v.length; i++) {
     v[i].copyToMem(pos + size * i)
   }
@@ -1085,8 +1085,8 @@ function _callShare<T extends Common> (CstrT: new() => T, func: Function, vec: T
   const vecPos = _arrayAllocAndCopy(vec)
   const idPos = id._allocAndCopy()
   func(pos, vecPos, vec.length, idPos)
-  _free(idPos)
-  _free(vecPos)
+  mod._free(idPos)
+  mod._free(vecPos)
   a._saveAndFree(pos)
   return a
 }
@@ -1099,8 +1099,8 @@ function _callRecover<T extends Common> (CstrT: new() => T, func: Function, idVe
   const idVecPos = _arrayAllocAndCopy(idVec)
   const yVecPos = _arrayAllocAndCopy(yVec)
   const r: number = func(aPos, idVecPos, yVecPos, k)
-  _free(yVecPos)
-  _free(idVecPos)
+  mod._free(yVecPos)
+  mod._free(idVecPos)
   a._saveAndFree(aPos)
   if (r !== 0) throw new Error('callRecover')
   return a

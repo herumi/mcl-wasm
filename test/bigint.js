@@ -295,5 +295,5 @@ function benchAll () {
   benchFr()
   benchFp()
   benchG1()
-  mcl.mod.showMem()
+  mcl._showDebug()
 }
