@@ -108,10 +108,11 @@ const addWrappedMethods = (): void => {
   type StringWriter = (pos: number, maxBufSize: number, x: number) => number
   const _wrapDeserialize = (func: StringWriter) => {
     return (x: number, buf: Uint8Array) => {
-      const pos = _malloc(buf.length)
+      const stack = mod.stackSave()
+      const pos = mod.stackAlloc(buf.length)
       mod.HEAP8.set(buf, pos)
       const r = func(x, pos, buf.length)
-      _free(pos)
+      mod.stackRestore(stack)
       if (r === 0 || r !== buf.length) throw new Error(`err _wrapDeserialize: ${r} != ${buf.length}`)
     }
   }
@@ -129,20 +130,21 @@ const addWrappedMethods = (): void => {
         throw new Error(`err bad type:"${typeStr}". Use String or Uint8Array.`)
       }
       const ioMode = args[argNum + 1] // may undefined
-      const pos = _malloc(buf.length)
+      const stack = mod.stackSave()
+      const pos = mod.stackAlloc(buf.length)
       if (typeStr === '[object String]') {
         asciiStrToPtr(pos, buf)
       } else {
         mod.HEAP8.set(buf, pos)
       }
       const r: number = func(...args.slice(0, argNum), pos, buf.length, ioMode)
-      _free(pos)
+      mod.stackRestore(stack)
       if (r !== 0) throw new Error('err _wrapInput')
     }
   }
 
   mod.mclBnFr_malloc = () => {
-    return _malloc(MCLBN_FR_SIZE)
+    return mod._malloc(MCLBN_FR_SIZE)
   }
   mod.mclBnFr_setLittleEndian = _wrapInput(mod._mclBnFr_setLittleEndian, 1)
   mod.mclBnFr_setLittleEndianMod = _wrapInput(mod._mclBnFr_setLittleEndianMod, 1)
@@ -154,7 +156,7 @@ const addWrappedMethods = (): void => {
   mod.mclBnFr_setHashOf = _wrapInput(mod._mclBnFr_setHashOf, 1)
   /// ////////////////////////////////////////////////////////////
   mod.mclBnFp_malloc = () => {
-    return _malloc(MCLBN_FP_SIZE)
+    return mod._malloc(MCLBN_FP_SIZE)
   }
   mod.mclBnFp_setLittleEndian = _wrapInput(mod._mclBnFp_setLittleEndian, 1)
   mod.mclBnFp_setLittleEndianMod = _wrapInput(mod._mclBnFp_setLittleEndianMod, 1)
@@ -166,14 +168,14 @@ const addWrappedMethods = (): void => {
   mod.mclBnFp_setHashOf = _wrapInput(mod._mclBnFp_setHashOf, 1)
 
   mod.mclBnFp2_malloc = () => {
-    return _malloc(MCLBN_FP_SIZE * 2)
+    return mod._malloc(MCLBN_FP_SIZE * 2)
   }
   mod.mclBnFp2_deserialize = _wrapDeserialize(mod._mclBnFp2_deserialize)
   mod.mclBnFp2_serialize = _wrapSerialize(mod._mclBnFp2_serialize)
 
   /// ////////////////////////////////////////////////////////////
   mod.mclBnG1_malloc = () => {
-    return _malloc(MCLBN_G1_SIZE)
+    return mod._malloc(MCLBN_G1_SIZE)
   }
   mod.mclBnG1_setStr = _wrapInput(mod._mclBnG1_setStr, 1)
   mod.mclBnG1_getStr = _wrapGetStr(mod._mclBnG1_getStr)
@@ -183,7 +185,7 @@ const addWrappedMethods = (): void => {
 
   /// ////////////////////////////////////////////////////////////
   mod.mclBnG2_malloc = () => {
-    return _malloc(MCLBN_G2_SIZE)
+    return mod._malloc(MCLBN_G2_SIZE)
   }
   mod.mclBnG2_setStr = _wrapInput(mod._mclBnG2_setStr, 1)
   mod.mclBnG2_getStr = _wrapGetStr(mod._mclBnG2_getStr)
@@ -193,7 +195,7 @@ const addWrappedMethods = (): void => {
 
   /// ////////////////////////////////////////////////////////////
   mod.mclBnGT_malloc = () => {
-    return _malloc(MCLBN_GT_SIZE)
+    return mod._malloc(MCLBN_GT_SIZE)
   }
   mod.mclBnGT_deserialize = _wrapDeserialize(mod._mclBnGT_deserialize)
   mod.mclBnGT_serialize = _wrapSerialize(mod._mclBnGT_serialize)
