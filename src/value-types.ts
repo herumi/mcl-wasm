@@ -868,29 +868,29 @@ export function mul (x: Common, y: Common): Common {
   throw new Error('mul:mismatch type')
 }
 
+// stack alloc memory and copy v to it and return the position
+function _sarrayAllocAndCopy<T extends Common> (v: T[]): number {
+  if (v.length === 0) throw new Error('zero size array')
+  const size = v[0].a_.length * 4
+  const pos = mod.stackAlloc(size * v.length)
+  for (let i = 0; i < v.length; i++) {
+    v[i].copyToMem(pos + size * i)
+  }
+  return pos
+}
+
 const _mulVec = <T extends G1 | G2>(func: (zPos: number, xPos: number, yPos: number, n: number) => void, xVec: T[], yVec: Fr[], Cstr: any): T => {
   const n = xVec.length
-  if (n !== yVec.length) throw new Error(`err _mulVec bad length ${n}, ${yVec.length}`)
   const xSize = xVec[0].a_.length
   const ySize = yVec[0].a_.length
   const z = new Cstr()
-  const zPos = z._alloc()
-  const xPos = mod._malloc(xSize * n * 4)
-  const yPos = mod._malloc(ySize * n * 4)
-  let pos = xPos / 4
-  for (let i = 0; i < n; i++) {
-    mod.HEAP32.set(xVec[i].a_, pos)
-    pos += xSize
-  }
-  pos = yPos / 4
-  for (let i = 0; i < n; i++) {
-    mod.HEAP32.set(yVec[i].a_, pos)
-    pos += ySize
-  }
+  const stack = mod.stackSave()
+  const zPos = z._salloc()
+  const xPos = _sarrayAllocAndCopy(xVec)
+  const yPos = _sarrayAllocAndCopy(yVec)
   func(zPos, xPos, yPos, n)
-  mod._free(yPos)
-  mod._free(xPos)
-  z._saveAndFree(zPos)
+  z._save(zPos)
+  mod.stackRestore(stack)
   return z
 }
 
@@ -899,7 +899,9 @@ const _mulVec = <T extends G1 | G2>(func: (zPos: number, xPos: number, yPos: num
   sum G2 * Fr ; scalar mul
 */
 export const mulVec = <T extends G1 | G2>(xVec: T[], yVec: Fr[]): T => {
-  if (xVec.length === 0) throw new Error('mulVec:zero array')
+  const n = xVec.length
+  if (n === 0) throw new Error('mulVec:zero array')
+  if (n !== yVec.length) throw new Error(`err _mulVec bad length ${n}, ${yVec.length}`)
   if (xVec[0] instanceof G1 && yVec[0] instanceof Fr) {
     return _mulVec(mod._mclBnG1_mulVec, xVec, yVec, G1)
   }
@@ -1052,28 +1054,6 @@ export const finalExp = (x: GT): GT => {
     return x._op1(mod._mclBn_finalExp)
   }
   throw new Error('finalExp:bad type')
-}
-
-// alloc memory and copy v to it and return the position
-function _arrayAllocAndCopy<T extends Common> (v: T[]): number {
-  if (v.length === 0) throw new Error('zero size array')
-  const size = v[0].a_.length * 4
-  const pos = mod._malloc(size * v.length)
-  for (let i = 0; i < v.length; i++) {
-    v[i].copyToMem(pos + size * i)
-  }
-  return pos
-}
-
-// stack alloc memory and copy v to it and return the position
-function _sarrayAllocAndCopy<T extends Common> (v: T[]): number {
-  if (v.length === 0) throw new Error('zero size array')
-  const size = v[0].a_.length * 4
-  const pos = mod.stackAlloc(size * v.length)
-  for (let i = 0; i < v.length; i++) {
-    v[i].copyToMem(pos + size * i)
-  }
-  return pos
 }
 
 function _callShare<T extends Common> (CstrT: new() => T, func: Function, vec: T[], id: Fr): T {
