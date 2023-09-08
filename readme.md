@@ -7,6 +7,7 @@
 see [mcl](https://github.com/herumi/mcl)
 
 ## News
+- 2023/Sep/08 improve the performance a little
 - 2023/Aug/17 improve the invMod performance
 - 2023/Jun/10 add share/recover functions of Fr, G1, G2 for secret sharing.
 - 2022/May/08 fix get{X,Y,Z} and get\_{a,b}.
