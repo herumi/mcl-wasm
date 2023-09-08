@@ -81,20 +81,23 @@ const addWrappedMethods = (): void => {
   type StringReader = (pos: number, maxBufSize: number, x: number, ioMode: number) => number
   const _wrapGetStr = (func: StringReader, returnAsStr = true): ToStrFunc => {
     return (x: number, ioMode = 0) => {
-      const maxBufSize = 3096
-      const pos = _malloc(maxBufSize)
+      const stack = mod.stackSave()
+      const maxBufSize = 4096
+      const pos = mod.stackAlloc(maxBufSize)
       const n = func(pos, maxBufSize, x, ioMode)
-      if (n <= 0) {
+      if (n > 0) {
+        let s = null
+        if (returnAsStr) {
+          s = ptrToAsciiStr(pos, n)
+        } else {
+          s = new Uint8Array(mod.HEAP8.subarray(pos, pos + n))
+        }
+        mod.stackRestore(stack)
+        return s
+      } else {
+        mod.stackRestore(stack)
         throw new Error(`err gen_str:${x}`)
       }
-      let s = null
-      if (returnAsStr) {
-        s = ptrToAsciiStr(pos, n)
-      } else {
-        s = new Uint8Array(mod.HEAP8.subarray(pos, pos + n))
-      }
-      _free(pos)
-      return s
     }
   }
 
