@@ -1,4 +1,4 @@
-import { mod, _free, toHexStr, fromHexStr, _malloc } from './mcl'
+import { mod, toHexStr, fromHexStr } from './mcl'
 import { MCLBN_FP_SIZE, MCLBN_FR_SIZE, MCLBN_G1_SIZE, MCLBN_G2_SIZE, MCLBN_GT_SIZE } from './constants'
 import getRandomValues from './getRandomValues'
 
@@ -48,12 +48,22 @@ abstract class Common {
 
   /** @internal alloc new array */
   _alloc (): number {
-    return _malloc(this.a_.length * 4)
+    return mod._malloc(this.a_.length * 4)
+  }
+  /** @internal stack alloc new array */
+  _salloc (): number {
+    return mod.stackAlloc(this.a_.length * 4)
   }
 
   /** @internal alloc and copy a_ to mod.HEAP32[pos / 4] */
   _allocAndCopy (): number {
     const pos = this._alloc()
+    mod.HEAP32.set(this.a_, pos / 4)
+    return pos
+  }
+  /** @internal stack alloc and copy a_ to mod.HEAP32[pos / 4] */
+  _sallocAndCopy (): number {
+    const pos = this._salloc()
     mod.HEAP32.set(this.a_, pos / 4)
     return pos
   }
@@ -66,56 +76,60 @@ abstract class Common {
   /** @internal save and free */
   _saveAndFree (pos: number): void {
     this._save(pos)
-    _free(pos)
+    mod._free(pos)
   }
 
   /** @internal set parameter */
   _setter (func: Function, ...params: any[]): void {
-    const pos = this._alloc()
+    const stack = mod.stackSave()
+    const pos = this._salloc()
     const r = func(pos, ...params)
-    this._saveAndFree(pos)
+    this._save(pos)
+    mod.stackRestore(stack)
     if (r !== undefined && r !== 0) throw new Error('_setter err')
   }
 
   /** @internal getter */
   _getter (func: Function, ...params: any[]): any {
-    const pos = this._allocAndCopy()
+    const stack = mod.stackSave()
+    const pos = this._sallocAndCopy()
     const s = func(pos, ...params)
-    _free(pos)
+    mod.stackRestore(stack)
     return s
   }
 
   /** @internal */
   _isEqual (func: (xPos: number, yPos: number) => number, rhs: Common): boolean {
-    const xPos = this._allocAndCopy()
-    const yPos = rhs._allocAndCopy()
+    const stack = mod.stackSave()
+    const xPos = this._sallocAndCopy()
+    const yPos = rhs._sallocAndCopy()
     const r = func(xPos, yPos)
-    _free(yPos)
-    _free(xPos)
+    mod.stackRestore(stack)
     return r === 1
   }
 
   /** @internal func(y, this) and return y */
   _op1 (func: (yPos: number, xPos: number) => void): any {
     const y = new (this.constructor as any)()
-    const xPos = this._allocAndCopy()
-    const yPos = y._alloc()
+    const stack = mod.stackSave()
+    const xPos = this._sallocAndCopy()
+    const yPos = y._salloc()
     func(yPos, xPos)
-    y._saveAndFree(yPos)
-    _free(xPos)
+    y._save(yPos)
+    mod.stackRestore(stack)
     return y
   }
 
   /** @internal func(z, this, y) and return z */
   _op2 (func: (zPos: number, xPos: number, yPos: number) => void, y: Common, Cstr: any = null): any {
     const z = Cstr ? new Cstr() : new (this.constructor as any)()
-    const xPos = this._allocAndCopy()
-    const yPos = y._allocAndCopy()
-    const zPos = z._alloc()
+    const stack = mod.stackSave()
+    const xPos = this._sallocAndCopy()
+    const yPos = y._sallocAndCopy()
+    const zPos = z._salloc()
     func(zPos, xPos, yPos)
-    z._saveAndFree(zPos)
-    _free(yPos)
-    _free(xPos)
+    z._save(zPos)
+    mod.stackRestore(stack)
     return z
   }
 
@@ -275,11 +289,12 @@ export class Fp extends IntType {
 
   mapToG1 (): G1 {
     const y = new G1()
-    const xPos = this._allocAndCopy()
-    const yPos = y._alloc()
+    const stack = mod.stackSave()
+    const xPos = this._sallocAndCopy()
+    const yPos = y._salloc()
     mod._mclBnFp_mapToG1(yPos, xPos)
-    y._saveAndFree(yPos)
-    _free(xPos)
+    y._save(yPos)
+    mod.stackRestore(stack)
     return y
   }
 }
@@ -367,11 +382,12 @@ export class Fp2 extends Common {
 
   mapToG2 (): G2 {
     const y = new G2()
-    const xPos = this._allocAndCopy()
-    const yPos = y._alloc()
+    const stack = mod.stackSave()
+    const xPos = this._sallocAndCopy()
+    const yPos = y._salloc()
     mod._mclBnFp2_mapToG2(yPos, xPos)
-    y._saveAndFree(yPos)
-    _free(xPos)
+    y._save(yPos)
+    mod.stackRestore(stack)
     return y
   }
 }
@@ -489,9 +505,11 @@ export const verifyOrderG2 = (doVerify: boolean): void => {
 
 export const getBasePointG1 = (): G1 => {
   const x = new G1()
-  const xPos = x._alloc()
+  const stack = mod.stackSave()
+  const xPos = x._salloc()
   mod._mclBnG1_getBasePoint(xPos)
-  x._saveAndFree(xPos)
+  x._save(xPos)
+  mod.stackRestore(stack)
   if (x.isZero()) {
     throw new Error('not supported for pairing curves')
   }
@@ -635,10 +653,11 @@ export class PrecomputedG2 {
   constructor (Q: G2) {
     if (!(Q instanceof G2)) throw new Error('PrecomputedG2:bad type')
     const byteSize = mod._mclBn_getUint64NumToPrecompute() * 8
-    this.p = _malloc(byteSize)
-    const Qpos = Q._allocAndCopy()
+    this.p = mod._malloc(byteSize) // keep this address
+    const stack = mod.stackSave()
+    const Qpos = Q._sallocAndCopy()
     mod._mclBn_precomputeG2(this.p, Qpos)
-    _free(Qpos)
+    mod.stackRestore(stack)
   }
 
   /*
@@ -646,7 +665,7 @@ export class PrecomputedG2 {
     to avoid memory leak
   */
   destroy (): void {
-    if (this.p != null) _free(this.p)
+    if (this.p != null) mod._free(this.p)
     this.p = null
   }
 }
@@ -795,29 +814,29 @@ export function mul (x: Common, y: Common): Common {
   throw new Error('mul:mismatch type')
 }
 
+// stack alloc memory and copy v to it and return the position
+function _sarrayAllocAndCopy<T extends Common> (v: T[]): number {
+  if (v.length === 0) throw new Error('zero size array')
+  const size = v[0].a_.length * 4
+  const pos = mod.stackAlloc(size * v.length)
+  for (let i = 0; i < v.length; i++) {
+    v[i].copyToMem(pos + size * i)
+  }
+  return pos
+}
+
 const _mulVec = <T extends G1 | G2>(func: (zPos: number, xPos: number, yPos: number, n: number) => void, xVec: T[], yVec: Fr[], Cstr: any): T => {
   const n = xVec.length
-  if (n !== yVec.length) throw new Error(`err _mulVec bad length ${n}, ${yVec.length}`)
   const xSize = xVec[0].a_.length
   const ySize = yVec[0].a_.length
   const z = new Cstr()
-  const zPos = z._alloc()
-  const xPos = _malloc(xSize * n * 4)
-  const yPos = _malloc(ySize * n * 4)
-  let pos = xPos / 4
-  for (let i = 0; i < n; i++) {
-    mod.HEAP32.set(xVec[i].a_, pos)
-    pos += xSize
-  }
-  pos = yPos / 4
-  for (let i = 0; i < n; i++) {
-    mod.HEAP32.set(yVec[i].a_, pos)
-    pos += ySize
-  }
+  const stack = mod.stackSave()
+  const zPos = z._salloc()
+  const xPos = _sarrayAllocAndCopy(xVec)
+  const yPos = _sarrayAllocAndCopy(yVec)
   func(zPos, xPos, yPos, n)
-  _free(yPos)
-  _free(xPos)
-  z._saveAndFree(zPos)
+  z._save(zPos)
+  mod.stackRestore(stack)
   return z
 }
 
@@ -826,7 +845,9 @@ const _mulVec = <T extends G1 | G2>(func: (zPos: number, xPos: number, yPos: num
   sum G2 * Fr ; scalar mul
 */
 export const mulVec = <T extends G1 | G2>(xVec: T[], yVec: Fr[]): T => {
-  if (xVec.length === 0) throw new Error('mulVec:zero array')
+  const n = xVec.length
+  if (n === 0) throw new Error('mulVec:zero array')
+  if (n !== yVec.length) throw new Error(`err _mulVec bad length ${n}, ${yVec.length}`)
   if (xVec[0] instanceof G1 && yVec[0] instanceof Fr) {
     return _mulVec(mod._mclBnG1_mulVec, xVec, yVec, G1)
   }
@@ -909,11 +930,12 @@ export const millerLoop = (P: G1, Q: G2): GT => {
 export const precomputedMillerLoop = (P: G1, Qcoeff: PrecomputedG2): GT => {
   if (!(P instanceof G1 && Qcoeff instanceof PrecomputedG2)) throw new Error('exports.precomputedMillerLoop:bad type')
   const e = new GT()
-  const PPos = P._allocAndCopy()
-  const ePos = e._alloc()
+  const stack = mod.stackSave()
+  const PPos = P._sallocAndCopy()
+  const ePos = e._salloc()
   mod._mclBn_precomputedMillerLoop(ePos, PPos, Qcoeff.p)
-  e._saveAndFree(ePos)
-  _free(PPos)
+  e._save(ePos)
+  mod.stackRestore(stack)
   return e
 }
 
@@ -921,13 +943,13 @@ export const precomputedMillerLoop = (P: G1, Qcoeff: PrecomputedG2): GT => {
 export const precomputedMillerLoop2 = (P1: G1, Q1coeff: PrecomputedG2, P2: G1, Q2coeff: PrecomputedG2): GT => {
   if (!(P1 instanceof G1 && Q1coeff instanceof PrecomputedG2 && P2 instanceof G1 && Q2coeff instanceof PrecomputedG2)) throw new Error('exports.precomputedMillerLoop2mixed:bad type')
   const e = new GT()
-  const P1Pos = P1._allocAndCopy()
-  const P2Pos = P2._allocAndCopy()
-  const ePos = e._alloc()
+  const stack = mod.stackSave()
+  const P1Pos = P1._sallocAndCopy()
+  const P2Pos = P2._sallocAndCopy()
+  const ePos = e._salloc()
   mod._mclBn_precomputedMillerLoop2(ePos, P1Pos, Q1coeff.p, P2Pos, Q2coeff.p)
-  e._saveAndFree(ePos)
-  _free(P1Pos)
-  _free(P2Pos)
+  e._save(ePos)
+  mod.stackRestore(stack)
   return e
 }
 
@@ -935,15 +957,14 @@ export const precomputedMillerLoop2 = (P1: G1, Q1coeff: PrecomputedG2, P2: G1, Q
 export const precomputedMillerLoop2mixed = (P1: G1, Q1: G2, P2: G1, Q2coeff: PrecomputedG2): GT => {
   if (!(P1 instanceof G1 && Q1 instanceof G2 && P2 instanceof G1 && Q2coeff instanceof PrecomputedG2)) throw new Error('exports.precomputedMillerLoop2mixed:bad type')
   const e = new GT()
-  const P1Pos = P1._allocAndCopy()
-  const Q1Pos = Q1._allocAndCopy()
-  const P2Pos = P2._allocAndCopy()
-  const ePos = e._alloc()
+  const stack = mod.stackSave()
+  const P1Pos = P1._sallocAndCopy()
+  const Q1Pos = Q1._sallocAndCopy()
+  const P2Pos = P2._sallocAndCopy()
+  const ePos = e._salloc()
   mod._mclBn_precomputedMillerLoop2mixed(ePos, P1Pos, Q1Pos, P2Pos, Q2coeff.p)
-  e._saveAndFree(ePos)
-  _free(P1Pos)
-  _free(Q1Pos)
-  _free(P2Pos)
+  e._save(ePos)
+  mod.stackRestore(stack)
   return e
 }
 
@@ -954,26 +975,15 @@ export const finalExp = (x: GT): GT => {
   throw new Error('finalExp:bad type')
 }
 
-// alloc memory and copy v to it and return the position
-function _arrayAllocAndCopy<T extends Common> (v: T[]): number {
-  if (v.length === 0) throw new Error('zero size array')
-  const size = v[0].a_.length * 4
-  const pos = _malloc(size * v.length)
-  for (let i = 0; i < v.length; i++) {
-    v[i].copyToMem(pos + size * i)
-  }
-  return pos
-}
-
 function _callShare<T extends Common> (CstrT: new() => T, func: Function, vec: T[], id: Fr): T {
   const a = new CstrT()
-  const pos = a._alloc()
-  const vecPos = _arrayAllocAndCopy(vec)
-  const idPos = id._allocAndCopy()
+  const stack = mod.stackSave()
+  const pos = a._salloc()
+  const vecPos = _sarrayAllocAndCopy(vec)
+  const idPos = id._sallocAndCopy()
   func(pos, vecPos, vec.length, idPos)
-  _free(idPos)
-  _free(vecPos)
-  a._saveAndFree(pos)
+  a._save(pos)
+  mod.stackRestore(stack)
   return a
 }
 
@@ -981,13 +991,13 @@ function _callRecover<T extends Common> (CstrT: new() => T, func: Function, idVe
   const k = yVec.length
   if (k !== idVec.length) throw new Error('recover:bad length')
   const a = new CstrT()
-  const aPos = a._alloc()
-  const idVecPos = _arrayAllocAndCopy(idVec)
-  const yVecPos = _arrayAllocAndCopy(yVec)
+  const stack = mod.stackSave()
+  const aPos = a._salloc()
+  const idVecPos = _sarrayAllocAndCopy(idVec)
+  const yVecPos = _sarrayAllocAndCopy(yVec)
   const r: number = func(aPos, idVecPos, yVecPos, k)
-  _free(yVecPos)
-  _free(idVecPos)
-  a._saveAndFree(aPos)
+  a._save(aPos)
+  mod.stackRestore(stack)
   if (r !== 0) throw new Error('callRecover')
   return a
 }
