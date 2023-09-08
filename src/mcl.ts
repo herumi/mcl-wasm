@@ -180,8 +180,8 @@ const addWrappedMethods = (): void => {
   /*
     she libray always uses (malloc,free) in nested pairs.
   */
-  const _mallocDebug = (size: number): number => {
-    const p = mod._malloc(size + 4)
+  mod._mallocDebug = (size: number): number => {
+    const p = mod._mallocOrg(size + 4)
     mod.HEAP8[p+size] = 0x12
     mod.HEAP8[p+size+1] = 0x34
     mod.HEAP8[p+size+2] = 0x56
@@ -191,7 +191,7 @@ const addWrappedMethods = (): void => {
     mod.g_total += size
     return p
   }
-  const _freeDebug = (pos: number): void => {
+  mod._freeDebug = (pos: number): void => {
     const ps = mod.g_his.pop()
     const p = ps[0]
     const size = ps[1]
@@ -202,7 +202,7 @@ const addWrappedMethods = (): void => {
     if (v !== 0x78563412) {
       console.log(`ERR=${p} v=${v.toString(16)}`)
     }
-    mod._free(pos)
+    mod._freeOrg(pos)
     const s = mod.g_ptr[pos]
     if (s == 0) {
       console.log(`ERR ${pos}`)
@@ -211,14 +211,20 @@ const addWrappedMethods = (): void => {
       mod.g_total -= s
     }
   }
-//  const _malloc = _mallocDebug
-//  const _free = _freeDebug
-  exports._showDebug = () => {
-    if (mod._malloc === _mallocDebug) {
-      console.log('malloc DEBUG mode')
-      console.log(`  show total=${mod.g_total}`)
-      console.log(`  g_ptr=${JSON.stringify(mod.g_ptr,null,'\t')}`)
-    }
+  mod._mallocOrg = mod._malloc
+  mod._freeOrg = mod._free
+  mod.debug = false
+  if (mod.debug) {
+    mod._malloc = mod._mallocDebug
+    mod._free = mod._freeDebug
+  }
+}
+
+export const _showDebug = () => {
+  if (mod.debug) {
+    console.log('malloc DEBUG mode')
+    console.log(`  show total=${mod.g_total}`)
+    console.log(`  g_ptr=${JSON.stringify(mod.g_ptr,null,'\t')}`)
   }
 }
 

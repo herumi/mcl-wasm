@@ -212,4 +212,5 @@ mcl.init(mcl.BLS12_381).then(() => {
   testFpToG1()
   testVerifyG1()
   testVerifyG2()
+  mcl._showDebug()
 })

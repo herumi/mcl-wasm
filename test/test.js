@@ -23,6 +23,7 @@ const curveTest = (curveType, name) => {
         modTest()
         console.log('all ok')
         benchAll()
+        mcl._showDebug()
       } catch (e) {
         console.log(`TEST FAIL ${e}`)
         assert(false)

@@ -86,11 +86,6 @@ abstract class Common {
     const r = func(pos, ...params)
     this._save(pos)
     mod.stackRestore(stack)
-/*
-    const pos = this._alloc()
-    const r = func(pos, ...params)
-    this._saveAndFree(pos)
-*/
     if (r !== undefined && r !== 0) throw new Error('_setter err')
   }
 
@@ -100,11 +95,6 @@ abstract class Common {
     const pos = this._sallocAndCopy()
     const s = func(pos, ...params)
     mod.stackRestore(stack)
-/*
-    const pos = this._allocAndCopy()
-    const s = func(pos, ...params)
-    mod._free(pos)
-*/
     return s
   }
 
@@ -115,13 +105,6 @@ abstract class Common {
     const yPos = rhs._sallocAndCopy()
     const r = func(xPos, yPos)
     mod.stackRestore(stack)
-/*
-    const xPos = this._allocAndCopy()
-    const yPos = rhs._allocAndCopy()
-    const r = func(xPos, yPos)
-    mod._free(yPos)
-    mod._free(xPos)
-*/
     return r === 1
   }
 
@@ -135,14 +118,6 @@ abstract class Common {
     y._save(yPos)
     mod.stackRestore(stack)
     return y
-/*
-    const xPos = this._allocAndCopy()
-    const yPos = y._alloc()
-    func(yPos, xPos)
-    y._saveAndFree(yPos)
-    mod._free(xPos)
-    return y
-*/
   }
 
   /** @internal func(z, this, y) and return z */
@@ -156,16 +131,6 @@ abstract class Common {
     z._save(zPos)
     mod.stackRestore(stack)
     return z
-/*
-    const xPos = this._allocAndCopy()
-    const yPos = y._allocAndCopy()
-    const zPos = z._alloc()
-    func(zPos, xPos, yPos)
-    z._saveAndFree(zPos)
-    mod._free(yPos)
-    mod._free(xPos)
-    return z
-*/
   }
 
   /** @internal devide Uint32Array a into n and chose the idx-th */
@@ -330,13 +295,6 @@ export class Fp extends IntType {
     mod._mclBnFp_mapToG1(yPos, xPos)
     y._save(yPos)
     mod.stackRestore(stack)
-/*
-    const xPos = this._allocAndCopy()
-    const yPos = y._alloc()
-    mod._mclBnFp_mapToG1(yPos, xPos)
-    y._saveAndFree(yPos)
-    mod._free(xPos)
-*/
     return y
   }
 }
@@ -430,13 +388,6 @@ export class Fp2 extends Common {
     mod._mclBnFp2_mapToG2(yPos, xPos)
     y._save(yPos)
     mod.stackRestore(stack)
-/*
-    const xPos = this._allocAndCopy()
-    const yPos = y._alloc()
-    mod._mclBnFp2_mapToG2(yPos, xPos)
-    y._saveAndFree(yPos)
-    mod._free(xPos)
-*/
     return y
   }
 }
@@ -559,11 +510,6 @@ export const getBasePointG1 = (): G1 => {
   mod._mclBnG1_getBasePoint(xPos)
   x._save(xPos)
   mod.stackRestore(stack)
-/*
-  const xPos = x._alloc()
-  mod._mclBnG1_getBasePoint(xPos)
-  x._saveAndFree(xPos)
-*/
   if (x.isZero()) {
     throw new Error('not supported for pairing curves')
   }
@@ -990,13 +936,6 @@ export const precomputedMillerLoop = (P: G1, Qcoeff: PrecomputedG2): GT => {
   mod._mclBn_precomputedMillerLoop(ePos, PPos, Qcoeff.p)
   e._save(ePos)
   mod.stackRestore(stack)
-/*
-  const PPos = P._allocAndCopy()
-  const ePos = e._alloc()
-  mod._mclBn_precomputedMillerLoop(ePos, PPos, Qcoeff.p)
-  e._saveAndFree(ePos)
-  mod._free(PPos)
-*/
   return e
 }
 
@@ -1011,15 +950,6 @@ export const precomputedMillerLoop2 = (P1: G1, Q1coeff: PrecomputedG2, P2: G1, Q
   mod._mclBn_precomputedMillerLoop2(ePos, P1Pos, Q1coeff.p, P2Pos, Q2coeff.p)
   e._save(ePos)
   mod.stackRestore(stack)
-/*
-  const P1Pos = P1._allocAndCopy()
-  const P2Pos = P2._allocAndCopy()
-  const ePos = e._alloc()
-  mod._mclBn_precomputedMillerLoop2(ePos, P1Pos, Q1coeff.p, P2Pos, Q2coeff.p)
-  e._saveAndFree(ePos)
-  mod._free(P1Pos)
-  mod._free(P2Pos)
-*/
   return e
 }
 
@@ -1035,17 +965,6 @@ export const precomputedMillerLoop2mixed = (P1: G1, Q1: G2, P2: G1, Q2coeff: Pre
   mod._mclBn_precomputedMillerLoop2mixed(ePos, P1Pos, Q1Pos, P2Pos, Q2coeff.p)
   e._save(ePos)
   mod.stackRestore(stack)
-/*
-  const P1Pos = P1._allocAndCopy()
-  const Q1Pos = Q1._allocAndCopy()
-  const P2Pos = P2._allocAndCopy()
-  const ePos = e._alloc()
-  mod._mclBn_precomputedMillerLoop2mixed(ePos, P1Pos, Q1Pos, P2Pos, Q2coeff.p)
-  e._saveAndFree(ePos)
-  mod._free(P1Pos)
-  mod._free(Q1Pos)
-  mod._free(P2Pos)
-*/
   return e
 }
 
