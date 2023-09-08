@@ -707,16 +707,11 @@ export class PrecomputedG2 {
   constructor (Q: G2) {
     if (!(Q instanceof G2)) throw new Error('PrecomputedG2:bad type')
     const byteSize = mod._mclBn_getUint64NumToPrecompute() * 8
-    this.p = mod._malloc(byteSize)
+    this.p = mod._malloc(byteSize) // keep this address
     const stack = mod.stackSave()
     const Qpos = Q._sallocAndCopy()
     mod._mclBn_precomputeG2(this.p, Qpos)
     mod.stackRestore(stack)
-/*
-    const Qpos = Q._allocAndCopy()
-    mod._mclBn_precomputeG2(this.p, Qpos)
-    mod._free(Qpos)
-*/
   }
 
   /*
@@ -1070,9 +1065,19 @@ function _arrayAllocAndCopy<T extends Common> (v: T[]): number {
   return pos
 }
 
+// stack alloc memory and copy v to it and return the position
+function _sarrayAllocAndCopy<T extends Common> (v: T[]): number {
+  if (v.length === 0) throw new Error('zero size array')
+  const size = v[0].a_.length * 4
+  const pos = mod.stackAlloc(size * v.length)
+  for (let i = 0; i < v.length; i++) {
+    v[i].copyToMem(pos + size * i)
+  }
+  return pos
+}
+
 function _callShare<T extends Common> (CstrT: new() => T, func: Function, vec: T[], id: Fr): T {
   const a = new CstrT()
-/*
   const stack = mod.stackSave()
   const pos = a._salloc()
   const vecPos = _sarrayAllocAndCopy(vec)
@@ -1080,14 +1085,6 @@ function _callShare<T extends Common> (CstrT: new() => T, func: Function, vec: T
   func(pos, vecPos, vec.length, idPos)
   a._save(pos)
   mod.stackRestore(stack)
-*/
-  const pos = a._alloc()
-  const vecPos = _arrayAllocAndCopy(vec)
-  const idPos = id._allocAndCopy()
-  func(pos, vecPos, vec.length, idPos)
-  mod._free(idPos)
-  mod._free(vecPos)
-  a._saveAndFree(pos)
   return a
 }
 
@@ -1095,13 +1092,13 @@ function _callRecover<T extends Common> (CstrT: new() => T, func: Function, idVe
   const k = yVec.length
   if (k !== idVec.length) throw new Error('recover:bad length')
   const a = new CstrT()
-  const aPos = a._alloc()
-  const idVecPos = _arrayAllocAndCopy(idVec)
-  const yVecPos = _arrayAllocAndCopy(yVec)
+  const stack = mod.stackSave()
+  const aPos = a._salloc()
+  const idVecPos = _sarrayAllocAndCopy(idVec)
+  const yVecPos = _sarrayAllocAndCopy(yVec)
   const r: number = func(aPos, idVecPos, yVecPos, k)
-  mod._free(yVecPos)
-  mod._free(idVecPos)
-  a._saveAndFree(aPos)
+  a._save(aPos)
+  mod.stackRestore(stack)
   if (r !== 0) throw new Error('callRecover')
   return a
 }
