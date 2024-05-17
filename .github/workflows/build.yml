@@ -43,8 +43,7 @@ jobs:
         npm run build:mcl_c.js
         npm run build:browser
         npm test
-
-		sha256sum src/mcl_c.js browser/mcl.js
+        sha256sum src/mcl_c.js browser/mcl.js
         git add -f src/mcl_c.js browser/mcl.js
         changes=$(git diff --staged --numstat | wc -l)
         if [[ $changes -gt 0 ]]
