@@ -50,6 +50,7 @@ abstract class Common {
   _alloc (): number {
     return mod._malloc(this.a_.length * 4)
   }
+
   /** @internal stack alloc new array */
   _salloc (): number {
     return mod.stackAlloc(this.a_.length * 4)
@@ -61,6 +62,7 @@ abstract class Common {
     mod.HEAP32.set(this.a_, pos / 4)
     return pos
   }
+
   /** @internal stack alloc and copy a_ to mod.HEAP32[pos / 4] */
   _sallocAndCopy (): number {
     const pos = this._salloc()
