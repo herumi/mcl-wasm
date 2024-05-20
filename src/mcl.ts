@@ -182,10 +182,10 @@ const addWrappedMethods = (): void => {
   */
   mod._mallocDebug = (size: number): number => {
     const p = mod._mallocOrg(size + 4)
-    mod.HEAP8[p+size] = 0x12
-    mod.HEAP8[p+size+1] = 0x34
-    mod.HEAP8[p+size+2] = 0x56
-    mod.HEAP8[p+size+3] = 0x78
+    mod.HEAP8[p + size] = 0x12
+    mod.HEAP8[p + size + 1] = 0x34
+    mod.HEAP8[p + size + 2] = 0x56
+    mod.HEAP8[p + size + 3] = 0x78
     mod.g_his.push([p, size])
     mod.g_ptr[p] = size
     mod.g_total += size
@@ -198,7 +198,7 @@ const addWrappedMethods = (): void => {
     if (pos !== p) {
       console.log(`pos=${pos} oldPos=${p}`)
     }
-    const v = mod.HEAP8[p+size] + (mod.HEAP8[p+size+1]<<8) + (mod.HEAP8[p+size+2]<<16) + (mod.HEAP8[p+size+3]<<24)
+    const v = mod.HEAP8[p + size] + (mod.HEAP8[p + size + 1] << 8) + (mod.HEAP8[p + size + 2] << 16) + (mod.HEAP8[p + size + 3] << 24)
     if (v !== 0x78563412) {
       console.log(`ERR=${p} v=${v.toString(16)}`)
     }
@@ -224,7 +224,7 @@ export const _showDebug = () => {
   if (mod.debug) {
     console.log('malloc DEBUG mode')
     console.log(`  show total=${mod.g_total}`)
-    console.log(`  g_ptr=${JSON.stringify(mod.g_ptr,null,'\t')}`)
+    console.log(`  g_ptr=${JSON.stringify(mod.g_ptr, null, '\t')}`)
   }
 }
 
