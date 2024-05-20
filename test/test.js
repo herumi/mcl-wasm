@@ -3,45 +3,41 @@ const mcl = require('../dist/index.js')
 const assert = require('assert')
 const { performance } = require('perf_hooks')
 
-const curveTest = (curveType, name) => {
-  mcl.init(curveType)
-    .then(() => {
-      try {
-        console.log(`name=${name}`)
-        FrTest()
-        G1Test()
-        G2Test()
-        GTTest()
-        FpTest()
-        Fp2Test()
-        memberTest()
-        mulVecTest()
-        serializeTest()
-        IDbasedEncryptionTest()
-        PairingTest()
-        PairingCapiTest()
-        modTest()
-        console.log('all ok')
-        benchAll()
-        mcl._showDebug()
-      } catch (e) {
-        console.log(`TEST FAIL ${e}`)
-        assert(false)
-      }
-    })
+async function curveTest (curveType, name) {
+  await mcl.init(curveType)
+  try {
+    console.log(`name=${name}`)
+    FrTest()
+    G1Test()
+    G2Test()
+    GTTest()
+    FpTest()
+    Fp2Test()
+    memberTest()
+    mulVecTest()
+    serializeTest()
+    IDbasedEncryptionTest()
+    PairingTest()
+    PairingCapiTest()
+    modTest()
+    console.log('all ok')
+    benchAll()
+    mcl._showDebug()
+  } catch (e) {
+    console.log(`TEST FAIL ${e}`)
+    assert(false)
+  }
 }
 
-const stdCurveTest = (curveType, name) => {
-  mcl.init(curveType)
-    .then(() => {
-      try {
-        console.log(`name=${name}`)
-        arithTest()
-      } catch (e) {
-        console.log(`TEST FAIL ${e}`)
-        assert(false)
-      }
-    })
+async function stdCurveTest (curveType, name) {
+  await mcl.init(curveType)
+  try {
+    console.log(`name=${name}`)
+    arithTest()
+  } catch (e) {
+    console.log(`TEST FAIL ${e}`)
+    assert(false)
+  }
 }
 
 function arithTest () {

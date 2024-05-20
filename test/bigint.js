@@ -140,17 +140,10 @@ function addJacobi (P, Q) {
   return [Rx, Ry, Rz]
 }
 
-const curveTest = (curveType, name) => {
-  mcl.init(curveType)
-    .then(() => {
-//      try {
-        console.log(`name=${name}`)
-        benchAll()
-//      } catch (e) {
- //       console.log(`TEST FAIL ${e}`)
-  //      assert(false)
-   //   }
-    })
+async function curveTest (curveType, name) {
+  await mcl.init(curveType)
+  console.log(`name=${name}`)
+  benchAll()
 }
 
 async function curveTestAll () {
