@@ -829,8 +829,6 @@ function _sarrayAllocAndCopy<T extends Common> (v: T[]): number {
 
 const _mulVec = <T extends G1 | G2>(func: (zPos: number, xPos: number, yPos: number, n: number) => void, xVec: T[], yVec: Fr[], Cstr: any): T => {
   const n = xVec.length
-  const xSize = xVec[0].a_.length
-  const ySize = yVec[0].a_.length
   const z = new Cstr()
   const stack = mod.stackSave()
   const zPos = z._salloc()

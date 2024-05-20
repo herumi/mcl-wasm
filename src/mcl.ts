@@ -55,7 +55,7 @@ const addWrappedMethods = (): void => {
     return (x: number, ioMode = 0) => {
       const stack = mod.stackSave()
       const maxBufSize = 4096
-      const pos = mod.stackAlloc(maxBufSize)
+      const pos: number = mod.stackAlloc(maxBufSize)
       const n = func(pos, maxBufSize, x, ioMode)
       if (n > 0) {
         let s = null
@@ -204,7 +204,7 @@ const addWrappedMethods = (): void => {
     }
     mod._freeOrg(pos)
     const s = mod.g_ptr[pos]
-    if (s == 0) {
+    if (s === 0) {
       console.log(`ERR ${pos}`)
     } else {
       delete mod.g_ptr[pos]
