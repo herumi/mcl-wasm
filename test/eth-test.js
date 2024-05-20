@@ -194,7 +194,8 @@ function testVerifyG2 () {
   }
 }
 
-mcl.init(mcl.BLS12_381).then(() => {
+(async() => {
+  await mcl.init(mcl.BLS12_381)
   console.log('ok')
   mcl.setETHserialization(true)
   mcl.setMapToMode(mcl.IRTF)
@@ -213,4 +214,4 @@ mcl.init(mcl.BLS12_381).then(() => {
   testVerifyG1()
   testVerifyG2()
   mcl._showDebug()
-})
+})()

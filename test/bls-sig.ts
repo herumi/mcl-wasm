@@ -1,17 +1,15 @@
 import * as mcl from '../dist'
 import * as assert from 'assert'
 
-const curveTest = (curveType, name) => {
-  mcl.init(curveType)
-    .then(() => {
-      try {
-        console.log(`name=${name}`)
-        blsTest()
-      } catch (e) {
-        console.log(`TEST FAIL ${e}`)
-        assert(false)
-      }
-    })
+async function curveTest (curveType, name) {
+  await mcl.init(curveType)
+  try {
+    console.log(`name=${name}`)
+    blsTest()
+  } catch (e) {
+    console.log(`TEST FAIL ${e}`)
+    assert(false)
+  }
 }
 
 async function curveTestAll() {
