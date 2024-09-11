@@ -69,6 +69,21 @@ async function curveTestAll() {
 
 curveTestAll()
 
+function powTest(Fcstr: any): void {
+  console.log('powTest')
+  const x = new Fcstr()
+  const y = new Fcstr()
+  let z1 = new Fcstr()
+  x.setStr('12345678912345678989')
+  z1.setInt(1)
+  for (let i = 0; i < 100; i++) {
+    y.setInt(i)
+    const z2 = mcl.pow(x, y)
+    assert(z1.isEqual(z2))
+    z1 = mcl.mul(z1, x)
+  }
+}
+
 function FrTest() {
   const a = new mcl.Fr()
   a.setInt(5)
@@ -127,6 +142,7 @@ function FrTest() {
     c.setInt(12)
     assert(mcl.add(a, b).isEqual(c))
   }
+  powTest(mcl.Fr)
 }
 
 function FpTest() {
@@ -173,6 +189,7 @@ function FpTest() {
     c.setInt(12)
     assert(mcl.add(a, b).isEqual(c))
   }
+  powTest(mcl.Fp)
 }
 
 function Fp2Test() {

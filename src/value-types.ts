@@ -906,7 +906,16 @@ export const hashAndMapToG2 = (s: string | Uint8Array): G2 => {
   return x
 }
 
-export const pow = (x: GT, y: Fr): GT => {
+export function pow (x: Fr, y: Fr): Fr
+export function pow (x: Fp, y: Fp): Fp
+export function pow (x: GT, y: Fr): GT
+export function pow (x: Common, y: Common): Common {
+  if (x instanceof Fr && y instanceof Fr) {
+    return x._op2(mod._mclBnFr_pow, y)
+  }
+  if (x instanceof Fp && y instanceof Fp) {
+    return x._op2(mod._mclBnFp_pow, y)
+  }
   if (x instanceof GT && y instanceof Fr) {
     return x._op2(mod._mclBnGT_pow, y)
   }
