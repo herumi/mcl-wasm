@@ -906,15 +906,52 @@ export const hashAndMapToG2 = (s: string | Uint8Array): G2 => {
   return x
 }
 
-export function pow (x: Fr, y: Fr): Fr
-export function pow (x: Fp, y: Fp): Fp
-export function pow (x: GT, y: Fr): GT
-export function pow (x: Common, y: Common): Common {
-  if (x instanceof Fr && y instanceof Fr) {
-    return x._op2(mod._mclBnFr_pow, y)
+const IntToArray = (_x: bigint | number): Uint8Array => {
+  let x = typeof _x === 'number'? BigInt(_x) : _x
+  if (x < 0n) {
+    throw new Error('IntToArray: negative value')
   }
-  if (x instanceof Fp && y instanceof Fp) {
-    return x._op2(mod._mclBnFp_pow, y)
+  if (x === 0n) return new Uint8Array(1)
+  const a = []
+  while (x) {
+    a.push(Number(BigInt.asUintN(8, x)))
+    x >>= 8n
+  }
+  return new Uint8Array(a)
+}
+
+const powArray = (cstr: any, powArray: Function, x: Common, _y: Number | BigInt): Common => {
+  const y = IntToArray(_y.valueOf())
+  const z = new cstr()
+  const stack = mod.stackSave()
+  const zPos = z._salloc()
+  const xPos = x._sallocAndCopy()
+  const yPos = mod.stackAlloc(y.length)
+  mod.HEAP8.set(y, yPos)
+  const r = powArray(zPos, xPos, yPos, y.length)
+  z._save(zPos)
+  mod.stackRestore(stack)
+  if (r < 0) throw new Error('powArray err')
+  return z
+}
+
+export function pow (x: Fr, y: Fr | Number | BigInt): Fr
+export function pow (x: Fp, y: Fp | Number | BigInt): Fp
+export function pow (x: GT, y: Fr): GT
+export function pow (x: Common, y: Common | Number | BigInt): Common {
+  if (x instanceof Fr) {
+    if (y instanceof Fr) {
+      return x._op2(mod._mclBnFr_pow, y)
+    } else if (typeof(y) === 'number' || typeof(y) === 'bigint') {
+      return powArray(Fr, mod._mclBnFr_powArray, x, y)
+    }
+  }
+  if (x instanceof Fp) {
+    if (y instanceof Fp) {
+      return x._op2(mod._mclBnFp_pow, y)
+    } else if (typeof(y) === 'number' || typeof(y) === 'bigint') {
+      return powArray(Fp, mod._mclBnFp_powArray, x, y)
+    }
   }
   if (x instanceof GT && y instanceof Fr) {
     return x._op2(mod._mclBnGT_pow, y)
