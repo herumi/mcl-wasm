@@ -50,6 +50,7 @@ abstract class Common {
   _alloc (): number {
     return mod._malloc(this.a_.length * 4)
   }
+
   /** @internal stack alloc new array */
   _salloc (): number {
     return mod.stackAlloc(this.a_.length * 4)
@@ -61,6 +62,7 @@ abstract class Common {
     mod.HEAP32.set(this.a_, pos / 4)
     return pos
   }
+
   /** @internal stack alloc and copy a_ to mod.HEAP32[pos / 4] */
   _sallocAndCopy (): number {
     const pos = this._salloc()
@@ -827,8 +829,6 @@ function _sarrayAllocAndCopy<T extends Common> (v: T[]): number {
 
 const _mulVec = <T extends G1 | G2>(func: (zPos: number, xPos: number, yPos: number, n: number) => void, xVec: T[], yVec: Fr[], Cstr: any): T => {
   const n = xVec.length
-  const xSize = xVec[0].a_.length
-  const ySize = yVec[0].a_.length
   const z = new Cstr()
   const stack = mod.stackSave()
   const zPos = z._salloc()
@@ -906,7 +906,53 @@ export const hashAndMapToG2 = (s: string | Uint8Array): G2 => {
   return x
 }
 
-export const pow = (x: GT, y: Fr): GT => {
+const IntToArray = (_x: bigint | number): Uint8Array => {
+  let x = typeof _x === 'number'? BigInt(_x) : _x
+  if (x < 0n) {
+    throw new Error('IntToArray: negative value')
+  }
+  if (x === 0n) return new Uint8Array(1)
+  const a = []
+  while (x) {
+    a.push(Number(BigInt.asUintN(8, x)))
+    x >>= 8n
+  }
+  return new Uint8Array(a)
+}
+
+const powArray = (cstr: any, powArray: Function, x: Common, _y: Number | BigInt): Common => {
+  const y = IntToArray(_y.valueOf())
+  const z = new cstr()
+  const stack = mod.stackSave()
+  const zPos = z._salloc()
+  const xPos = x._sallocAndCopy()
+  const yPos = mod.stackAlloc(y.length)
+  mod.HEAP8.set(y, yPos)
+  const r = powArray(zPos, xPos, yPos, y.length)
+  z._save(zPos)
+  mod.stackRestore(stack)
+  if (r < 0) throw new Error('powArray err')
+  return z
+}
+
+export function pow (x: Fr, y: Fr | Number | BigInt): Fr
+export function pow (x: Fp, y: Fp | Number | BigInt): Fp
+export function pow (x: GT, y: Fr): GT
+export function pow (x: Common, y: Common | Number | BigInt): Common {
+  if (x instanceof Fr) {
+    if (y instanceof Fr) {
+      return x._op2(mod._mclBnFr_pow, y)
+    } else if (typeof(y) === 'number' || typeof(y) === 'bigint') {
+      return powArray(Fr, mod._mclBnFr_powArray, x, y)
+    }
+  }
+  if (x instanceof Fp) {
+    if (y instanceof Fp) {
+      return x._op2(mod._mclBnFp_pow, y)
+    } else if (typeof(y) === 'number' || typeof(y) === 'bigint') {
+      return powArray(Fp, mod._mclBnFp_powArray, x, y)
+    }
+  }
   if (x instanceof GT && y instanceof Fr) {
     return x._op2(mod._mclBnGT_pow, y)
   }

@@ -2,45 +2,41 @@ import * as mcl from '../dist'
 import * as assert from 'assert'
 import { performance } from 'perf_hooks'
 
-const curveTest = (curveType, name) => {
-  mcl.init(curveType)
-    .then(() => {
-      try {
-        console.log(`name=${name}`)
-        shareTest()
-        FrTest()
-        G1Test()
-        G2Test()
-        GTTest()
-        FpTest()
-        Fp2Test()
-        mulVecTest()
-        serializeTest()
-        IDbasedEncryptionTest()
-        PairingTest()
-        //        PairingCapiTest()
-        modTest()
-        console.log('all ok')
-        benchAll()
-        mcl._showDebug()
-      } catch (e) {
-        console.log(`TEST FAIL ${e}`)
-        assert(false)
-      }
-    })
+async function curveTest (curveType, name) {
+  await mcl.init(curveType)
+  try {
+    console.log(`name=${name}`)
+    shareTest()
+    FrTest()
+    G1Test()
+    G2Test()
+    GTTest()
+    FpTest()
+    Fp2Test()
+    mulVecTest()
+    serializeTest()
+    IDbasedEncryptionTest()
+    PairingTest()
+    //        PairingCapiTest()
+    modTest()
+    console.log('all ok')
+    benchAll()
+    mcl._showDebug()
+  } catch (e) {
+    console.log(`TEST FAIL ${e}`)
+    assert(false)
+  }
 }
 
-const stdCurveTest = (curveType, name) => {
-  mcl.init(curveType)
-    .then(() => {
-      try {
-        console.log(`name=${name}`)
-        arithTest()
-      } catch (e) {
-        console.log(`TEST FAIL ${e}`)
-        assert(false)
-      }
-    })
+async function stdCurveTest (curveType, name) {
+  await mcl.init(curveType)
+  try {
+    console.log(`name=${name}`)
+    arithTest()
+  } catch (e) {
+    console.log(`TEST FAIL ${e}`)
+    assert(false)
+  }
 }
 
 function arithTest() {
@@ -72,6 +68,38 @@ async function curveTestAll() {
 }
 
 curveTestAll()
+
+function powTest(Fcstr: any): void {
+  console.log('powTest')
+  const x = new Fcstr()
+  const y = new Fcstr()
+  let z1 = new Fcstr()
+  x.setStr('12345678912345678989')
+  z1.setInt(1)
+  for (let i = 0; i < 100; i++) {
+    y.setInt(i)
+    const z2 = mcl.pow(x, y) // Fr
+    assert(z1.isEqual(z2))
+    const z3 = mcl.pow(x, i) // number
+    assert(z1.isEqual(z3))
+    const z4 = mcl.pow(x, BigInt(i)) // bigint
+    assert(z1.isEqual(z4))
+    z1 = mcl.mul(z1, x)
+  }
+  // large pow
+  const one = new Fcstr()
+  one.setInt(1)
+  const negOne = new Fcstr()
+  negOne.setInt(-1)
+  y.a_ = z1.a_.slice()
+  for (let i = 0; i < 100; i++) {
+    z1 = mcl.pow(x, y) // Fr
+    const y2 = mcl.sub(negOne, y) // y-1
+    const z2 = mcl.pow(x, BigInt(y2.getStr()))
+    z1 = mcl.mul(z1, z2)
+    assert(z1.isEqual(one))
+  }
+}
 
 function FrTest() {
   const a = new mcl.Fr()
@@ -131,6 +159,7 @@ function FrTest() {
     c.setInt(12)
     assert(mcl.add(a, b).isEqual(c))
   }
+  powTest(mcl.Fr)
 }
 
 function FpTest() {
@@ -177,6 +206,7 @@ function FpTest() {
     c.setInt(12)
     assert(mcl.add(a, b).isEqual(c))
   }
+  powTest(mcl.Fp)
 }
 
 function Fp2Test() {
