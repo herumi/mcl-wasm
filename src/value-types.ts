@@ -831,6 +831,15 @@ function _sarrayAllocAndCopy<T extends Common> (v: T[]): number {
   return pos
 }
 
+// copy pos to v
+function _saveArray<T extends Common> (v: T[], pos: number): void {
+  if (v.length === 0) throw new Error('zero size array')
+  const size = v[0].a_.length * 4
+  for (let i = 0; i < v.length; i++) {
+    v[i].copyFromMem(pos + size * i)
+  }
+}
+
 const _mulVec = <T extends G1 | G2>(func: (zPos: number, xPos: number, yPos: number, n: number) => void, xVec: T[], yVec: Fr[], Cstr: any): T => {
   const n = xVec.length
   const z = new Cstr()
@@ -859,6 +868,43 @@ export const mulVec = <T extends G1 | G2>(xVec: T[], yVec: Fr[]): T => {
     return _mulVec(mod._mclBnG2_mulVec, xVec, yVec, G2)
   }
   throw new Error('mulVec:mismatch type')
+}
+
+const _invVec = <T extends Fr | Fp | G1 | G2>(func: Function, xVec: T[]): void => {
+  const n = xVec.length
+  const stack = mod.stackSave()
+  const xPos = _sarrayAllocAndCopy(xVec)
+  func(xPos, n)
+  _saveArray(xVec, xPos)
+  mod.stackRestore(stack)
+}
+
+export const invVec = <T extends Fr | Fp>(xVec: T[]): void => {
+  const n = xVec.length
+  if (n === 0) return
+  if (xVec[0] instanceof Fr) {
+    _invVec(mod._mclBnFr_invVec, xVec)
+    return
+  }
+  if (xVec[0] instanceof Fp) {
+    _invVec(mod._mclBnFp_invVec, xVec)
+    return
+  }
+  throw new Error('invVec: bad type')
+}
+
+export const normalizeVec = <T extends G1 | G2>(xVec: T[]): void => {
+  const n = xVec.length
+  if (n === 0) return
+  if (xVec[0] instanceof G1) {
+    _invVec(mod._mclBnG1_normalizeVec, xVec)
+    return
+  }
+  if (xVec[0] instanceof G2) {
+    _invVec(mod._mclBnG2_normalizeVec, xVec)
+    return
+  }
+  throw new Error('normalizeVec: bad type')
 }
 
 export function div (x: Fr, y: Fr): Fr
