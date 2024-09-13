@@ -256,11 +256,11 @@ export class Fp extends IntType {
   }
 
   isOne (): boolean {
-    throw new Error('Fp.isOne is not supported')
+    return this._getter(mod._mclBnFp_isOne) === 1
   }
 
   isZero (): boolean {
-    throw new Error('Fp.isZero is not supported')
+    return this._getter(mod._mclBnFp_isZero) === 1
   }
 
   isEqual (rhs: this): boolean {
@@ -352,7 +352,11 @@ export class Fp2 extends Common {
   }
 
   isZero (): boolean {
-    throw new Error('Fp2.isZero is not supported')
+    return this._getter(mod._mclBnFp2_isZero) === 1
+  }
+
+  isOne (): boolean {
+    return this._getter(mod._mclBnFp2_isOne) === 1
   }
 
   setHashOf (s: string | Uint8Array): void {
