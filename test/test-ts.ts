@@ -101,6 +101,31 @@ function powTest(Fcstr: any): void {
   }
 }
 
+function invVecTest(cstr: any): void {
+  console.log('invVecTest')
+  const n = 10
+  const x = Array(n)
+  const y = Array(n)
+  x[0] = new cstr()
+  x[0].setStr('1232353525205982904')
+  for (let i = 1; i < n; i++) {
+    x[i] = mcl.sqr(x[i-1])
+  }
+  for (let i = 0; i < n; i++) {
+    y[i] = new cstr()
+    y[i].setStr(x[i].getStr())
+  }
+  mcl.invVec(x)
+  for (let i = 0; i < n; i++) {
+    if (x[i].isZero()) {
+      assert(y[i].isZero())
+    } else {
+      const t = mcl.mul(x[i], y[i])
+      assert(t.isOne())
+    }
+  }
+}
+
 function FrTest() {
   const a = new mcl.Fr()
   a.setInt(5)
@@ -160,6 +185,7 @@ function FrTest() {
     assert(mcl.add(a, b).isEqual(c))
   }
   powTest(mcl.Fr)
+  invVecTest(mcl.Fr)
 }
 
 function FpTest() {
@@ -207,6 +233,7 @@ function FpTest() {
     assert(mcl.add(a, b).isEqual(c))
   }
   powTest(mcl.Fp)
+  invVecTest(mcl.Fp)
 }
 
 function Fp2Test() {
@@ -279,6 +306,32 @@ function Fp2Test() {
   assert(mcl.inv(x).isEqual(z))
 }
 
+function normalizeVecTest(cstr: any): void {
+  console.log('normalizeVecTest')
+  const n = 10
+  const P = Array(n)
+  const Q = Array(n)
+  P[0] = new cstr()
+  P[0].setHashOf('abc')
+  for (let i = 1; i < n; i++) {
+    P[i] = mcl.dbl(P[i-1])
+  }
+  P[n/2].clear()
+  for (let i = 0; i < n; i++) {
+    Q[i] = new cstr()
+    Q[i].setStr(P[i].getStr())
+  }
+  mcl.normalizeVec(P)
+  for (let i = 0; i < n; i++) {
+    assert(P[i].getZ().isZero() || P[i].getZ().isOne())
+    if (P[i].getZ().isZero()) {
+      assert(Q[i].isZero())
+    } else {
+      assert(P[i].isEqual(Q[i]))
+    }
+  }
+}
+
 function G1Test() {
   const P = new mcl.G1()
   assert(P.isZero())
@@ -314,6 +367,7 @@ function G1Test() {
   R4.setZ(R1.getZ())
   assert(R4.isValid())
   assert(R1.isEqual(R4))
+  normalizeVecTest(mcl.G1)
 }
 
 function G2Test() {
@@ -351,6 +405,7 @@ function G2Test() {
   R4.setZ(R1.getZ())
   assert(R4.isValid())
   assert(R1.isEqual(R4))
+  normalizeVecTest(mcl.G2)
 }
 
 function GTTest() {
