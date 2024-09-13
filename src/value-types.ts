@@ -159,10 +159,23 @@ abstract class IntType extends Common {
   abstract setByCSPRNG (): void
 }
 
+interface Cloneable {
+  a_: Uint32Array;
+}
+
+const _cloneArray = <T extends Cloneable>(x: T): T=> {
+  const cstr = x.constructor as new () => T
+  const r = new cstr()
+  r.a_ = new Uint32Array(x.a_)
+  return r
+}
+
 export class Fr extends IntType {
   constructor () {
     super(MCLBN_FR_SIZE)
   }
+
+  clone (): Fr { return _cloneArray<Fr>(this) }
 
   setInt (x: number): void {
     this._setter(mod._mclBnFr_setInt32, x)
@@ -234,6 +247,8 @@ export class Fp extends IntType {
   constructor () {
     super(MCLBN_FP_SIZE)
   }
+
+  clone (): Fp { return _cloneArray<Fp>(this) }
 
   setInt (x: number): void {
     this._setter(mod._mclBnFp_setInt32, x)
@@ -316,6 +331,8 @@ export class Fp2 extends Common {
   constructor () {
     super(MCLBN_FP_SIZE * 2)
   }
+
+  clone (): Fp2 { return _cloneArray<Fp2>(this) }
 
   setInt (x: number, y: number): void {
     const v = new Fp()
@@ -414,6 +431,8 @@ export class G1 extends EllipticType {
   constructor () {
     super(MCLBN_G1_SIZE)
   }
+
+  clone (): G1 { return _cloneArray<G1>(this) }
 
   deserialize (s: Uint8Array): void {
     this._setter(mod.mclBnG1_deserialize, s)
@@ -527,6 +546,8 @@ export class G2 extends EllipticType {
     super(MCLBN_G2_SIZE)
   }
 
+  clone (): G2 { return _cloneArray<G2>(this) }
+
   deserialize (s: Uint8Array): void {
     this._setter(mod.mclBnG2_deserialize, s)
   }
@@ -608,6 +629,8 @@ export class GT extends Common {
   constructor () {
     super(MCLBN_GT_SIZE)
   }
+
+  clone (): GT { return _cloneArray<GT>(this) }
 
   setInt (x: number): void {
     this._setter(mod._mclBnGT_setInt32, x)

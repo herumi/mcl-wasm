@@ -112,8 +112,7 @@ function invVecTest(cstr: any): void {
     x[i] = mcl.sqr(x[i-1])
   }
   for (let i = 0; i < n; i++) {
-    y[i] = new cstr()
-    y[i].setStr(x[i].getStr())
+    y[i] = x[i].clone()
   }
   mcl.invVec(x)
   for (let i = 0; i < n; i++) {
@@ -318,8 +317,7 @@ function normalizeVecTest(cstr: any): void {
   }
   P[n/2].clear()
   for (let i = 0; i < n; i++) {
-    Q[i] = new cstr()
-    Q[i].setStr(P[i].getStr())
+    Q[i] = P[i].clone()
   }
   mcl.normalizeVec(P)
   for (let i = 0; i < n; i++) {
