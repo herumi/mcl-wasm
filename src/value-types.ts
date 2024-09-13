@@ -943,14 +943,14 @@ export function pow (x: Common, y: Common | Number | BigInt): Common {
     if (y instanceof Fr) {
       return x._op2(mod._mclBnFr_pow, y)
     } else if (typeof(y) === 'number' || typeof(y) === 'bigint') {
-      return powArray(Fr, mod._mclBnFr_powArray, x, y)
+      return powArray(x.constructor, mod._mclBnFr_powArray, x, y)
     }
   }
   if (x instanceof Fp) {
     if (y instanceof Fp) {
       return x._op2(mod._mclBnFp_pow, y)
     } else if (typeof(y) === 'number' || typeof(y) === 'bigint') {
-      return powArray(Fp, mod._mclBnFp_powArray, x, y)
+      return powArray(x.constructor, mod._mclBnFp_powArray, x, y)
     }
   }
   if (x instanceof GT && y instanceof Fr) {
