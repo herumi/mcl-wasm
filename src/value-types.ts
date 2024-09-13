@@ -163,7 +163,7 @@ interface Cloneable {
   a_: Uint32Array;
 }
 
-const _cloneArray = <T extends Cloneable>(x: T): T=> {
+const _cloneArray = <T extends Cloneable> (x: T): T=> {
   const cstr = x.constructor as new () => T
   const r = new cstr()
   r.a_ = new Uint32Array(x.a_)
@@ -993,9 +993,10 @@ const IntToArray = (_x: bigint | number): Uint8Array => {
   return new Uint8Array(a)
 }
 
-const powArray = (cstr: any, powArray: Function, x: Common, _y: Number | BigInt): Common => {
-  const y = IntToArray(_y.valueOf())
+const _powArray = <T extends Fr | Fp> (powArray: Function, x: T, _y: Number | BigInt): T => {
+  const cstr = x.constructor as new () => T
   const z = new cstr()
+  const y = IntToArray(_y.valueOf())
   const stack = mod.stackSave()
   const zPos = z._salloc()
   const xPos = x._sallocAndCopy()
@@ -1016,14 +1017,14 @@ export function pow (x: Common, y: Common | Number | BigInt): Common {
     if (y instanceof Fr) {
       return x._op2(mod._mclBnFr_pow, y)
     } else if (typeof(y) === 'number' || typeof(y) === 'bigint') {
-      return powArray(x.constructor, mod._mclBnFr_powArray, x, y)
+      return _powArray<Fr>(mod._mclBnFr_powArray, x, y)
     }
   }
   if (x instanceof Fp) {
     if (y instanceof Fp) {
       return x._op2(mod._mclBnFp_pow, y)
     } else if (typeof(y) === 'number' || typeof(y) === 'bigint') {
-      return powArray(x.constructor, mod._mclBnFp_powArray, x, y)
+      return _powArray<Fp>(mod._mclBnFp_powArray, x, y)
     }
   }
   if (x instanceof GT && y instanceof Fr) {
