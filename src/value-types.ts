@@ -159,14 +159,14 @@ abstract class IntType extends Common {
   abstract setByCSPRNG (): void
 }
 
-interface Cloneable {
+interface HasArray {
   a_: Uint32Array;
 }
 
-const _cloneArray = <T extends Cloneable> (x: T): T=> {
+const _cloneArray = <T extends HasArray> (x: T): T=> {
   const cstr = x.constructor as new () => T
   const r = new cstr()
-  r.a_ = new Uint32Array(x.a_)
+  r.a_.set(x.a_)
   return r
 }
 
