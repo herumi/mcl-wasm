@@ -893,38 +893,41 @@ export const mulVec = <T extends G1 | G2>(xVec: T[], yVec: Fr[]): T => {
   throw new Error('mulVec:mismatch type')
 }
 
-const _invVec = <T extends Fr | Fp | G1 | G2>(func: Function, xVec: T[]): void => {
+// for inVec and normalizeVec API
+const _invVecInPlace = <T extends Fr | Fp | G1 | G2>(func: Function, xVec: T[]): void => {
   const n = xVec.length
   const stack = mod.stackSave()
   const xPos = _sarrayAllocAndCopy(xVec)
-  func(xPos, n)
+  func(xPos, xPos, n)
   _saveArray(xVec, xPos)
   mod.stackRestore(stack)
 }
 
-export const invVec = <T extends Fr | Fp>(xVec: T[]): void => {
+export const invVecInPlace = <T extends Fr | Fp>(xVec: T[]): void => {
   const n = xVec.length
   if (n === 0) return
   if (xVec[0] instanceof Fr) {
-    _invVec(mod._mclBnFr_invVec, xVec)
+    _invVecInPlace(mod._mclBnFr_invVec, xVec)
     return
   }
   if (xVec[0] instanceof Fp) {
-    _invVec(mod._mclBnFp_invVec, xVec)
+    _invVecInPlace(mod._mclBnFp_invVec, xVec)
     return
   }
   throw new Error('invVec: bad type')
 }
 
+// faster than normalizing each one individually
+// inplace only
 export const normalizeVec = <T extends G1 | G2>(xVec: T[]): void => {
   const n = xVec.length
   if (n === 0) return
   if (xVec[0] instanceof G1) {
-    _invVec(mod._mclBnG1_normalizeVec, xVec)
+    _invVecInPlace(mod._mclBnG1_normalizeVec, xVec)
     return
   }
   if (xVec[0] instanceof G2) {
-    _invVec(mod._mclBnG2_normalizeVec, xVec)
+    _invVecInPlace(mod._mclBnG2_normalizeVec, xVec)
     return
   }
   throw new Error('normalizeVec: bad type')

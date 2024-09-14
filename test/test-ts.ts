@@ -114,7 +114,7 @@ function invVecTest(cstr: any): void {
   for (let i = 0; i < n; i++) {
     y[i] = x[i].clone()
   }
-  mcl.invVec(x)
+  mcl.invVecInPlace(x)
   for (let i = 0; i < n; i++) {
     if (x[i].isZero()) {
       assert(y[i].isZero())
@@ -184,7 +184,7 @@ function FrTest() {
     assert(mcl.add(a, b).isEqual(c))
   }
   powTest(mcl.Fr)
-  invVecTest(mcl.Fr)
+  invVecInPlaceTest(mcl.Fr)
 }
 
 function FpTest() {
@@ -232,7 +232,7 @@ function FpTest() {
     assert(mcl.add(a, b).isEqual(c))
   }
   powTest(mcl.Fp)
-  invVecTest(mcl.Fp)
+  invVecInPlaceTest(mcl.Fp)
 }
 
 function Fp2Test() {
