@@ -893,13 +893,13 @@ export const mulVec = <T extends G1 | G2>(xVec: T[], yVec: Fr[]): T => {
   throw new Error('mulVec:mismatch type')
 }
 
-// inplace version for inVec and normalizeVec API
-const _invVecInPlace = <T extends Fr | Fp | G1 | G2>(func: Function, xVec: T[]): void => {
+// wrap invVec and normalizeVec API
+const _invVec = <T extends Fr | Fp | G1 | G2>(func: Function, yVec: T[], xVec: T[]): void => {
   const n = xVec.length
   const stack = mod.stackSave()
   const xPos = _sarrayAllocAndCopy(xVec)
   func(xPos, xPos, n)
-  _saveArray(xVec, xPos)
+  _saveArray(yVec, xPos)
   mod.stackRestore(stack)
 }
 
@@ -907,39 +907,28 @@ export const invVecInPlace = <T extends Fr | Fp>(xVec: T[]): void => {
   const n = xVec.length
   if (n === 0) return
   if (xVec[0] instanceof Fr) {
-    _invVecInPlace(mod._mclBnFr_invVec, xVec)
+    _invVec(mod._mclBnFr_invVec, xVec, xVec)
     return
   }
   if (xVec[0] instanceof Fp) {
-    _invVecInPlace(mod._mclBnFp_invVec, xVec)
+    _invVec(mod._mclBnFp_invVec, xVec, xVec)
     return
   }
   throw new Error('invVec: bad type')
 }
 
-// does not change xVec and returns [1/xVec[i]]
-const _invVec = <T extends Fr | Fp>(func: Function, xVec: T[]): T[] => {
-  const n = xVec.length
-  if (n == 0) return []
-  const cstr = xVec[0].constructor as new () => T
-  const yVec = Array.from({length: n}, _ => new cstr())
-  const stack = mod.stackSave()
-  const yPos = mod.stackAlloc(xVec[0].a_.length * 4 * n)
-  const xPos = _sarrayAllocAndCopy(xVec)
-  func(yPos, xPos, n)
-  _saveArray(yVec, yPos)
-  mod.stackRestore(stack)
-  return yVec
-}
-
 export const invVec = <T extends Fr | Fp>(xVec: T[]): T[] => {
   const n = xVec.length
   if (n === 0) return []
+  const cstr = xVec[0].constructor as new () => T
+  const yVec = Array.from({length: n}, _ => new cstr())
   if (xVec[0] instanceof Fr) {
-    return _invVec(mod._mclBnFr_invVec, xVec)
+    _invVec(mod._mclBnFr_invVec, yVec, xVec)
+    return yVec
   }
   if (xVec[0] instanceof Fp) {
-    return _invVec(mod._mclBnFp_invVec, xVec)
+    _invVec(mod._mclBnFp_invVec, yVec, xVec)
+    return yVec
   }
   throw new Error('invVec: bad type')
 }
@@ -950,11 +939,11 @@ export const normalizeVec = <T extends G1 | G2>(xVec: T[]): void => {
   const n = xVec.length
   if (n === 0) return
   if (xVec[0] instanceof G1) {
-    _invVecInPlace(mod._mclBnG1_normalizeVec, xVec)
+    _invVec(mod._mclBnG1_normalizeVec, xVec, xVec)
     return
   }
   if (xVec[0] instanceof G2) {
-    _invVecInPlace(mod._mclBnG2_normalizeVec, xVec)
+    _invVec(mod._mclBnG2_normalizeVec, xVec, xVec)
     return
   }
   throw new Error('normalizeVec: bad type')

@@ -103,7 +103,7 @@ function powTest(Fcstr: any): void {
 
 function invVecTest(cstr: any): void {
   console.log('invVecTest')
-  const n = 10
+  const n = 100
   const x = Array(n)
   const y = Array(n)
   x[0] = new cstr()
@@ -125,6 +125,8 @@ function invVecTest(cstr: any): void {
     }
     assert(z[i].isEqual(x[i]))
   }
+//  let w = x
+//  bench('invVecTime', 100, () => { w = mcl.invVec(w) })
 }
 
 function FrTest() {
