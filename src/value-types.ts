@@ -159,10 +159,23 @@ abstract class IntType extends Common {
   abstract setByCSPRNG (): void
 }
 
+interface HasArray {
+  a_: Uint32Array;
+}
+
+const _cloneArray = <T extends HasArray> (x: T): T=> {
+  const cstr = x.constructor as new () => T
+  const r = new cstr()
+  r.a_.set(x.a_)
+  return r
+}
+
 export class Fr extends IntType {
   constructor () {
     super(MCLBN_FR_SIZE)
   }
+
+  clone (): Fr { return _cloneArray<Fr>(this) }
 
   setInt (x: number): void {
     this._setter(mod._mclBnFr_setInt32, x)
@@ -235,6 +248,8 @@ export class Fp extends IntType {
     super(MCLBN_FP_SIZE)
   }
 
+  clone (): Fp { return _cloneArray<Fp>(this) }
+
   setInt (x: number): void {
     this._setter(mod._mclBnFp_setInt32, x)
   }
@@ -256,11 +271,11 @@ export class Fp extends IntType {
   }
 
   isOne (): boolean {
-    throw new Error('Fp.isOne is not supported')
+    return this._getter(mod._mclBnFp_isOne) === 1
   }
 
   isZero (): boolean {
-    throw new Error('Fp.isZero is not supported')
+    return this._getter(mod._mclBnFp_isZero) === 1
   }
 
   isEqual (rhs: this): boolean {
@@ -317,6 +332,8 @@ export class Fp2 extends Common {
     super(MCLBN_FP_SIZE * 2)
   }
 
+  clone (): Fp2 { return _cloneArray<Fp2>(this) }
+
   setInt (x: number, y: number): void {
     const v = new Fp()
     v.setInt(x)
@@ -352,7 +369,11 @@ export class Fp2 extends Common {
   }
 
   isZero (): boolean {
-    throw new Error('Fp2.isZero is not supported')
+    return this._getter(mod._mclBnFp2_isZero) === 1
+  }
+
+  isOne (): boolean {
+    return this._getter(mod._mclBnFp2_isOne) === 1
   }
 
   setHashOf (s: string | Uint8Array): void {
@@ -410,6 +431,8 @@ export class G1 extends EllipticType {
   constructor () {
     super(MCLBN_G1_SIZE)
   }
+
+  clone (): G1 { return _cloneArray<G1>(this) }
 
   deserialize (s: Uint8Array): void {
     this._setter(mod.mclBnG1_deserialize, s)
@@ -523,6 +546,8 @@ export class G2 extends EllipticType {
     super(MCLBN_G2_SIZE)
   }
 
+  clone (): G2 { return _cloneArray<G2>(this) }
+
   deserialize (s: Uint8Array): void {
     this._setter(mod.mclBnG2_deserialize, s)
   }
@@ -604,6 +629,8 @@ export class GT extends Common {
   constructor () {
     super(MCLBN_GT_SIZE)
   }
+
+  clone (): GT { return _cloneArray<GT>(this) }
 
   setInt (x: number): void {
     this._setter(mod._mclBnGT_setInt32, x)
@@ -827,6 +854,15 @@ function _sarrayAllocAndCopy<T extends Common> (v: T[]): number {
   return pos
 }
 
+// copy pos to v
+function _saveArray<T extends Common> (v: T[], pos: number): void {
+  if (v.length === 0) throw new Error('zero size array')
+  const size = v[0].a_.length * 4
+  for (let i = 0; i < v.length; i++) {
+    v[i].copyFromMem(pos + size * i)
+  }
+}
+
 const _mulVec = <T extends G1 | G2>(func: (zPos: number, xPos: number, yPos: number, n: number) => void, xVec: T[], yVec: Fr[], Cstr: any): T => {
   const n = xVec.length
   const z = new Cstr()
@@ -855,6 +891,62 @@ export const mulVec = <T extends G1 | G2>(xVec: T[], yVec: Fr[]): T => {
     return _mulVec(mod._mclBnG2_mulVec, xVec, yVec, G2)
   }
   throw new Error('mulVec:mismatch type')
+}
+
+// wrap invVec and normalizeVec API
+const _invVec = <T extends Fr | Fp | G1 | G2>(func: Function, yVec: T[], xVec: T[]): void => {
+  const n = xVec.length
+  const stack = mod.stackSave()
+  const xPos = _sarrayAllocAndCopy(xVec)
+  func(xPos, xPos, n)
+  _saveArray(yVec, xPos)
+  mod.stackRestore(stack)
+}
+
+export const invVecInPlace = <T extends Fr | Fp>(xVec: T[]): void => {
+  const n = xVec.length
+  if (n === 0) return
+  if (xVec[0] instanceof Fr) {
+    _invVec(mod._mclBnFr_invVec, xVec, xVec)
+    return
+  }
+  if (xVec[0] instanceof Fp) {
+    _invVec(mod._mclBnFp_invVec, xVec, xVec)
+    return
+  }
+  throw new Error('invVec: bad type')
+}
+
+export const invVec = <T extends Fr | Fp>(xVec: T[]): T[] => {
+  const n = xVec.length
+  if (n === 0) return []
+  const cstr = xVec[0].constructor as new () => T
+  const yVec = Array.from({length: n}, _ => new cstr())
+  if (xVec[0] instanceof Fr) {
+    _invVec(mod._mclBnFr_invVec, yVec, xVec)
+    return yVec
+  }
+  if (xVec[0] instanceof Fp) {
+    _invVec(mod._mclBnFp_invVec, yVec, xVec)
+    return yVec
+  }
+  throw new Error('invVec: bad type')
+}
+
+// faster than normalizing each one individually
+// inplace only
+export const normalizeVec = <T extends G1 | G2>(xVec: T[]): void => {
+  const n = xVec.length
+  if (n === 0) return
+  if (xVec[0] instanceof G1) {
+    _invVec(mod._mclBnG1_normalizeVec, xVec, xVec)
+    return
+  }
+  if (xVec[0] instanceof G2) {
+    _invVec(mod._mclBnG2_normalizeVec, xVec, xVec)
+    return
+  }
+  throw new Error('normalizeVec: bad type')
 }
 
 export function div (x: Fr, y: Fr): Fr
@@ -920,9 +1012,10 @@ const IntToArray = (_x: bigint | number): Uint8Array => {
   return new Uint8Array(a)
 }
 
-const powArray = (cstr: any, powArray: Function, x: Common, _y: Number | BigInt): Common => {
-  const y = IntToArray(_y.valueOf())
+const _powArray = <T extends Fr | Fp> (powArray: Function, x: T, _y: Number | BigInt): T => {
+  const cstr = x.constructor as new () => T
   const z = new cstr()
+  const y = IntToArray(_y.valueOf())
   const stack = mod.stackSave()
   const zPos = z._salloc()
   const xPos = x._sallocAndCopy()
@@ -943,14 +1036,14 @@ export function pow (x: Common, y: Common | Number | BigInt): Common {
     if (y instanceof Fr) {
       return x._op2(mod._mclBnFr_pow, y)
     } else if (typeof(y) === 'number' || typeof(y) === 'bigint') {
-      return powArray(Fr, mod._mclBnFr_powArray, x, y)
+      return _powArray<Fr>(mod._mclBnFr_powArray, x, y)
     }
   }
   if (x instanceof Fp) {
     if (y instanceof Fp) {
       return x._op2(mod._mclBnFp_pow, y)
     } else if (typeof(y) === 'number' || typeof(y) === 'bigint') {
-      return powArray(Fp, mod._mclBnFp_powArray, x, y)
+      return _powArray<Fp>(mod._mclBnFp_powArray, x, y)
     }
   }
   if (x instanceof GT && y instanceof Fr) {

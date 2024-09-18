@@ -13,4 +13,5 @@ jobs:
         node-version: "20"
     - run: npm install -D @types/node
     - run: npm test
+    - run: npm run test-ts
 
