@@ -7,6 +7,7 @@
 see [mcl](https://github.com/herumi/mcl)
 
 ## News
+- 2024/Sep/18 Add batch inversion for Fr and Fp elements, and batch normalization for G1 and G2 points.
 - 2023/Sep/08 improve the performance a little
 - 2023/Aug/17 improve the invMod performance
 - 2023/Jun/10 add share/recover functions of Fr, G1, G2 for secret sharing.
@@ -17,10 +18,6 @@ see [mcl](https://github.com/herumi/mcl)
 - 2021/Jun/22 add index.d.ts
 - 2021/Mar/02 improve performance
 - 2020/Nov/10 setup function has changed.
-- add `mulVec(xVec, yVec)` where xVec is an array of G1 or G2 and yVec is an array of Fr, which returns `sum of xVec[i] yVec[i]`.
-- G1.setHashOf is compatible with [hash-to-curve-09 BLS12381G1_XMD:SHA-256_SSWU_RO_](https://www.ietf.org/id/draft-irtf-cfrg-hash-to-curve-09.html#name-bls12381g1_xmdsha-256_sswu_)
-- support only BN254, ZKSNARK, BLS12-381 to remove mcl_c512.js
-- add mcl.precomputedMillerLoop2 and mcl.precomputedMillerLoop2mixed
 
 ## How to use
 The version `v0.6.0` breaks backward compatibility of the entry point.
