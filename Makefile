@@ -14,6 +14,7 @@ EMCC_OPT+=-DCYBOZU_MINIMUM_EXCEPTION
 EMCC_OPT+=-s ABORTING_MALLOC=0
 EMCC_OPT+=-s STACK_SIZE=1MB
 EMCC_OPT+=-sEXPORTED_FUNCTIONS=_malloc,_free,stackAlloc,stackSave,stackRestore
+EMCC_OPT+=-flto
 
 all: $(MCL_JS)
 
