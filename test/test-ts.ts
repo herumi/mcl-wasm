@@ -129,6 +129,29 @@ function invVecTest(cstr: any): void {
 //  bench('invVecTime', 1000, () => { w = mcl.invVec(w) })
 }
 
+function squareRootTest1 (x, expectBool = undefined): boolean {
+  const [t, y] = mcl.squareRoot(x)
+  if (expectBool !== undefined) {
+    assert(t === expectBool)
+  }
+  if (t) {
+    assert(mcl.sqr(y).isEqual(x))
+  } else {
+    assert(y === null)
+  }
+  return t
+}
+
+function squareRootTest(x: any): void {
+  const n = 100
+  let d = x.clone()
+  for (let i = 0; i < n; i++) {
+    const dd = mcl.sqr(d)
+    squareRootTest1(dd, true)
+    d = dd
+  }
+}
+
 function FrTest() {
   const a = new mcl.Fr()
   a.setInt(5)
@@ -189,6 +212,7 @@ function FrTest() {
   }
   powTest(mcl.Fr)
   invVecTest(mcl.Fr)
+  squareRootTest(a)
 }
 
 function FpTest() {
@@ -237,6 +261,7 @@ function FpTest() {
   }
   powTest(mcl.Fp)
   invVecTest(mcl.Fp)
+  squareRootTest(a)
 }
 
 function Fp2Test() {
@@ -307,6 +332,7 @@ function Fp2Test() {
   a.setInt(-5)
   z.set_b(mcl.div(a, b))
   assert(mcl.inv(x).isEqual(z))
+  squareRootTest(a)
 }
 
 function normalizeVecTest(cstr: any): void {

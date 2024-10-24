@@ -135,6 +135,18 @@ abstract class Common {
     return z
   }
 
+  /** @internal r = func(y, this) and return (true, b) if r = true else (false, null) */
+  _squareRoot (func: (yPos: number, xPos: number) => number): [boolean, any] {
+    const y = new (this.constructor as any)()
+    const stack = mod.stackSave()
+    const xPos = this._sallocAndCopy()
+    const yPos = y._salloc()
+    const r = func(yPos, xPos)
+    y._save(yPos)
+    mod.stackRestore(stack)
+    return r === 0 ? [true, y] : [false, null]
+  }
+
   /** @internal devide Uint32Array a into n and chose the idx-th */
   _getSubArray (idx: number, n: number): Uint32Array {
     const d = this.a_.length / n
@@ -751,6 +763,19 @@ export const inv = <T extends Fp | Fr | GT | Fp2>(x: T): T => {
     return x._op1(mod._mclBnFp2_inv)
   }
   throw new Error('inv:bad type')
+}
+
+export const squareRoot = <T extends Fp | Fr | Fp2>(x: T): [boolean, T] => {
+  if (x instanceof Fp) {
+    return x._squareRoot(mod._mclBnFp_squareRoot)
+  }
+  if (x instanceof Fr) {
+    return x._squareRoot(mod._mclBnFr_squareRoot)
+  }
+  if (x instanceof Fp2) {
+    return x._squareRoot(mod._mclBnFp2_squareRoot)
+  }
+  throw new Error('squareRoot:bad type')
 }
 
 export const normalize = <T extends G1 | G2>(x: T): T => {
