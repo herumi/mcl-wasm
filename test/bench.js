@@ -498,7 +498,7 @@ function bench (label, count, func) {
 
 function benchCapi () {
   console.log('Capi benchmark')
-  const C = 100000
+  const C = 1000000
   const mod = mcl.mod
   {
     let _a = new mcl.Fr()
@@ -568,6 +568,17 @@ function benchCapi () {
   }
 }
 
+function invVecBench (msg, cstr) {
+  const n = 1000
+  let x = Array(n)
+  x[0] = new cstr()
+  x[0].setStr('1232353525205982904')
+  for (let i = 1; i < n; i++) {
+    x[i] = mcl.sqr(x[i-1])
+  }
+  bench(msg, 1000, () => { x = mcl.invVec(x) })
+}
+
 function benchAll () {
   const a = new mcl.Fr()
 
@@ -582,8 +593,8 @@ function benchAll () {
   const e = mcl.pairing(P, Q)
 
   console.log('benchmark')
-  const C = 100
-  const C2 = 10000
+  const C = 1000
+  const C2 = 100000
   bench('Fr::setByCSPRNG', C, () => a.setByCSPRNG())
   bench('pairing', C, () => mcl.pairing(P, Q))
   bench('millerLoop', C, () => mcl.millerLoop(P, Q))
@@ -599,6 +610,8 @@ function benchAll () {
   bench('hashAndMapToG2', C, () => mcl.hashAndMapToG2(msg))
   bench('G1::isValidOrder', C, () => P.isValidOrder())
   bench('G2::isValidOrder', C, () => Q.isValidOrder())
+  invVecBench('Fr::invVec', mcl.Fr)
+  invVecBench('Fp::invVec', mcl.Fp)
 
   {
     const a = new mcl.Fp()
@@ -611,6 +624,8 @@ function benchAll () {
     bench('Fp::mul', C2, () => { b = mcl.mul(b, a) })
     bench('Fp::sqr', C2, () => { b = mcl.sqr(b) })
     bench('Fp::inv', C2, () => { b = mcl.inv(b) })
+    b = mcl.sqr(b)
+    bench('Fp::squareRoot', C, () => { mcl.squareRoot(b) })
   }
   {
     const a = new mcl.Fp2()
@@ -623,6 +638,8 @@ function benchAll () {
     bench('Fp2::mul', C2, () => { b = mcl.mul(b, a) })
     bench('Fp2::sqr', C2, () => { b = mcl.sqr(b) })
     bench('Fp2::inv', C2, () => { b = mcl.inv(b) })
+    b = mcl.sqr(b)
+    bench('Fp2::squareRoot', C, () => { mcl.squareRoot(b) })
   }
   {
     let b = new mcl.Fr()
@@ -633,6 +650,8 @@ function benchAll () {
     bench('Fr::mul', C2, () => { b = mcl.mul(b, a) })
     bench('Fr::sqr', C2, () => { b = mcl.sqr(b) })
     bench('Fr::inv', C2, () => { b = mcl.inv(b) })
+    b = mcl.sqr(b)
+    bench('Fr::squareRoot', C, () => { mcl.squareRoot(b) })
   }
 
   {
