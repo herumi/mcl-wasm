@@ -2,6 +2,7 @@ export enum CurveType {
   BN254 = 0,
   BN_SNARK1 = 4,
   BLS12_381 = 5,
+  BLS12_377 = 8,
 
   SECP224K1 = 101,
   SECP256K1 = 102,
@@ -17,6 +18,7 @@ export const BN381_2 = 2
 export const BN462 = 3
 export const BN_SNARK1 = CurveType.BN_SNARK1
 export const BLS12_381 = CurveType.BLS12_381
+export const BLS12_377 = CurveType.BLS12_377
 export const SECP224K1 = CurveType.SECP224K1
 export const SECP256K1 = CurveType.SECP256K1
 export const SECP384R1 = 103
