@@ -12,7 +12,7 @@ async function curveTest (curveType, name) {
     G2Test()
     GTTest()
     FpTest()
-    Fp2Test()
+    Fp2Test(curveType)
     mulVecTest()
     serializeTest()
     IDbasedEncryptionTest()
@@ -58,7 +58,7 @@ async function curveTestAll() {
   await curveTest(mcl.BN_SNARK1, 'SNARK')
   //  await curveTest(mcl.BN381_1, 'BN381_1')
   await curveTest(mcl.BLS12_381, 'BLS12_381')
-  //  await curveTest(mcl.BN462, 'BN462')
+  await curveTest(mcl.BLS12_377, 'BLS12_377')
 
   await stdCurveTest(mcl.SECP224K1, 'secp224k1')
   await stdCurveTest(mcl.SECP256K1, 'secp256k1')
@@ -264,7 +264,7 @@ function FpTest() {
   squareRootTest(a)
 }
 
-function Fp2Test() {
+function Fp2Test(curveType : number) {
   const x = new mcl.Fp2()
   let xs = x.serialize()
   for (let i = 0; i < xs.length; i++) {
@@ -318,16 +318,17 @@ function Fp2Test() {
   z.setInt(1, -2)
   assert(mcl.sub(x, y).isEqual(z))
   assert(mcl.sub(a, b).isEqual(mcl.neg(mcl.sub(b, a))))
-  // (3 + 5i)(2 + 7i) = (6 - 35) + i(21+10) = -29 + 31i
-  z.setInt(-29, 31)
+  const u = curveType === mcl.BLS12_377 ? 5 : 1
+  // (3 + 5i)(2 + 7i) = (6 - 35u) + i(21+10)
+  z.setInt(6 - 35 * u, 31)
   assert(mcl.mul(x, y).isEqual(z))
   assert(mcl.div(z, x).isEqual(y))
-  // (3 + 5i)^2 = (9 - 25) + 30i = -16 + 30i
-  z.setInt(-16, 30)
+  // (3 + 5i)^2 = (9 - 25u) + 30i
+  z.setInt(9 - 25 * u, 30)
   assert(mcl.sqr(x).isEqual(z))
-  // 1/(3+5i) = (3-5i)/(9+25)
+  // 1/(3+5i) = (3-5i)/(9+25u)
   a.setInt(3)
-  b.setInt(34)
+  b.setInt(9 + 25 * u)
   z.set_a(mcl.div(a, b))
   a.setInt(-5)
   z.set_b(mcl.div(a, b))
