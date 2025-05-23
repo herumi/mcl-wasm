@@ -7,6 +7,8 @@
 see [mcl](https://github.com/herumi/mcl)
 
 ## News
+- 2025/May/23 bump mcl to v3.00
+- 2025/Feb/26 support BLS12_377
 - 2024/Sep/18 Add batch inversion for Fr and Fp elements, and batch normalization for G1 and G2 points.
 - 2023/Sep/08 improve the performance a little
 - 2023/Aug/17 improve the invMod performance
