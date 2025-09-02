@@ -1,0 +1,19 @@
+name: "CodeQL Config"
+
+queries:
+  - uses: security-and-quality
+  - uses: security-extended
+
+paths:
+  - src/mcl/src/**/*.cpp
+  - src/mcl/src/**/*.hpp
+  - src/mcl/include/**/*.h
+  - src/dep.cpp
+
+paths-ignore:
+  - src/mcl_c.js
+  - "**/*.js"
+  - "**/*.ts"
+  - "**/*.wasm"
+
+build-mode: manual

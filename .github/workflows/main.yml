@@ -1,6 +1,9 @@
 name: test
 on: [push]
 
+permissions:
+  contents: read
+
 jobs:
   build:
     name: test
