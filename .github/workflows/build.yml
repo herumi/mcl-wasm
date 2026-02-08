@@ -18,6 +18,8 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: "20"
+    - name: Install pnpm
+      uses: pnpm/action-setup@v4
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - run: |
@@ -39,10 +41,10 @@ jobs:
         cd ..
         git submodule update --init --recursive
         make clean
-        npm install -D @types/node
-        npm run build:mcl_c.js
-        npm run build:browser
-        npm test
+        pnpm install
+        pnpm run build:mcl_c.js
+        pnpm run build:browser
+        pnpm test
         sha256sum src/mcl_c.js browser/mcl.js
         git add -f src/mcl_c.js browser/mcl.js
         changes=$(git diff --staged --numstat | wc -l)
