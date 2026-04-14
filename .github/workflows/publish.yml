@@ -17,7 +17,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           registry-url: 'https://registry.npmjs.org'
       
       - name: Install pnpm
@@ -35,7 +35,6 @@ jobs:
       # Publish with provenance to ensure transparency and security
       # --provenance generates attestations linking the package to the source code and build
       # Requires id-token: write permission and npm Trusted Publishing setup
+      # With Trusted Publishing, no token is needed - authentication via OIDC
       - name: Publish to npm
-        run: pnpm publish --provenance --access public --no-git-checks
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --provenance --access public
