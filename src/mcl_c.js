@@ -198,7 +198,6 @@ function updateMemoryViews() {
   HEAPF64 = new Float64Array(b);
   HEAP64 = new BigInt64Array(b);
   HEAPU64 = new BigUint64Array(b);
-  Module["wasmMemory"] = wasmMemory;
 }
 
 // include: memoryprofiler.js
