@@ -32,7 +32,7 @@ function createModule(opts) {
       }
     }
 
-    // Stack pointer operations (exported wasm functions for performance)
+    // Stack pointer operations (direct wasm exports)
     mod.stackSave = exports.stackSave;
     mod.stackAlloc = exports.stackAlloc;
     mod.stackRestore = exports.stackRestore;

@@ -1,4 +1,4 @@
-import { mod, toHexStr, fromHexStr } from './mcl'
+import { mod, HEAP8, HEAP32, stackSave, stackAlloc, stackRestore, toHexStr, fromHexStr } from './mcl'
 import { MCLBN_FP_SIZE, MCLBN_FR_SIZE, MCLBN_G1_SIZE, MCLBN_G2_SIZE, MCLBN_GT_SIZE } from './constants'
 import getRandomValues from './getRandomValues'
 
@@ -28,12 +28,12 @@ abstract class Common {
 
   // copy to allocated memory
   copyToMem (pos: number): void {
-    mod.HEAP32.set(this.a_, pos / 4)
+    HEAP32.set(this.a_, pos / 4)
   }
 
   // copy from allocated memory
   copyFromMem (pos: number): void {
-    this.a_.set(mod.HEAP32.subarray(pos / 4, pos / 4 + this.a_.length))
+    this.a_.set(HEAP32.subarray(pos / 4, pos / 4 + this.a_.length))
   }
 
   abstract setStr (s: string, base?: number): void
@@ -53,26 +53,26 @@ abstract class Common {
 
   /** @internal stack alloc new array */
   _salloc (): number {
-    return mod.stackAlloc(this.a_.length * 4)
+    return stackAlloc(this.a_.length * 4)
   }
 
-  /** @internal alloc and copy a_ to mod.HEAP32[pos / 4] */
+  /** @internal alloc and copy a_ to HEAP32[pos / 4] */
   _allocAndCopy (): number {
     const pos = this._alloc()
-    mod.HEAP32.set(this.a_, pos / 4)
+    HEAP32.set(this.a_, pos / 4)
     return pos
   }
 
-  /** @internal stack alloc and copy a_ to mod.HEAP32[pos / 4] */
+  /** @internal stack alloc and copy a_ to HEAP32[pos / 4] */
   _sallocAndCopy (): number {
     const pos = this._salloc()
-    mod.HEAP32.set(this.a_, pos / 4)
+    HEAP32.set(this.a_, pos / 4)
     return pos
   }
 
   /** @internal save pos to a_ */
   _save (pos: number): void {
-    this.a_.set(mod.HEAP32.subarray(pos / 4, pos / 4 + this.a_.length))
+    this.a_.set(HEAP32.subarray(pos / 4, pos / 4 + this.a_.length))
   }
 
   /** @internal save and free */
@@ -83,67 +83,67 @@ abstract class Common {
 
   /** @internal set parameter */
   _setter (func: Function, ...params: any[]): void {
-    const stack = mod.stackSave()
+    const stack = stackSave()
     const pos = this._salloc()
     const r = func(pos, ...params)
     this._save(pos)
-    mod.stackRestore(stack)
+    stackRestore(stack)
     if (r !== undefined && r !== 0) throw new Error('_setter err')
   }
 
   /** @internal getter */
   _getter (func: Function, ...params: any[]): any {
-    const stack = mod.stackSave()
+    const stack = stackSave()
     const pos = this._sallocAndCopy()
     const s = func(pos, ...params)
-    mod.stackRestore(stack)
+    stackRestore(stack)
     return s
   }
 
   /** @internal */
   _isEqual (func: (xPos: number, yPos: number) => number, rhs: Common): boolean {
-    const stack = mod.stackSave()
+    const stack = stackSave()
     const xPos = this._sallocAndCopy()
     const yPos = rhs._sallocAndCopy()
     const r = func(xPos, yPos)
-    mod.stackRestore(stack)
+    stackRestore(stack)
     return r === 1
   }
 
   /** @internal func(y, this) and return y */
   _op1 (func: (yPos: number, xPos: number) => void): any {
     const y = new (this.constructor as any)()
-    const stack = mod.stackSave()
+    const stack = stackSave()
     const xPos = this._sallocAndCopy()
     const yPos = y._salloc()
     func(yPos, xPos)
     y._save(yPos)
-    mod.stackRestore(stack)
+    stackRestore(stack)
     return y
   }
 
   /** @internal func(z, this, y) and return z */
   _op2 (func: (zPos: number, xPos: number, yPos: number) => void, y: Common, Cstr: any = null): any {
     const z = Cstr ? new Cstr() : new (this.constructor as any)()
-    const stack = mod.stackSave()
+    const stack = stackSave()
     const xPos = this._sallocAndCopy()
     const yPos = y._sallocAndCopy()
     const zPos = z._salloc()
     func(zPos, xPos, yPos)
     z._save(zPos)
-    mod.stackRestore(stack)
+    stackRestore(stack)
     return z
   }
 
   /** @internal r = func(y, this) and return (true, b) if r = true else (false, null) */
   _squareRoot (func: (yPos: number, xPos: number) => number): [boolean, any] {
     const y = new (this.constructor as any)()
-    const stack = mod.stackSave()
+    const stack = stackSave()
     const xPos = this._sallocAndCopy()
     const yPos = y._salloc()
     const r = func(yPos, xPos)
     y._save(yPos)
-    mod.stackRestore(stack)
+    stackRestore(stack)
     return r === 0 ? [true, y] : [false, null]
   }
 
@@ -318,12 +318,12 @@ export class Fp extends IntType {
 
   mapToG1 (): G1 {
     const y = new G1()
-    const stack = mod.stackSave()
+    const stack = stackSave()
     const xPos = this._sallocAndCopy()
     const yPos = y._salloc()
     mod._mclBnFp_mapToG1(yPos, xPos)
     y._save(yPos)
-    mod.stackRestore(stack)
+    stackRestore(stack)
     return y
   }
 }
@@ -417,12 +417,12 @@ export class Fp2 extends Common {
 
   mapToG2 (): G2 {
     const y = new G2()
-    const stack = mod.stackSave()
+    const stack = stackSave()
     const xPos = this._sallocAndCopy()
     const yPos = y._salloc()
     mod._mclBnFp2_mapToG2(yPos, xPos)
     y._save(yPos)
-    mod.stackRestore(stack)
+    stackRestore(stack)
     return y
   }
 }
@@ -542,11 +542,11 @@ export const verifyOrderG2 = (doVerify: boolean): void => {
 
 export const getBasePointG1 = (): G1 => {
   const x = new G1()
-  const stack = mod.stackSave()
+  const stack = stackSave()
   const xPos = x._salloc()
   mod._mclBnG1_getBasePoint(xPos)
   x._save(xPos)
-  mod.stackRestore(stack)
+  stackRestore(stack)
   if (x.isZero()) {
     throw new Error('not supported for pairing curves')
   }
@@ -695,10 +695,10 @@ export class PrecomputedG2 {
     if (!(Q instanceof G2)) throw new Error('PrecomputedG2:bad type')
     const byteSize = mod._mclBn_getUint64NumToPrecompute() * 8
     this.p = mod._malloc(byteSize) // keep this address
-    const stack = mod.stackSave()
+    const stack = stackSave()
     const Qpos = Q._sallocAndCopy()
     mod._mclBn_precomputeG2(this.p, Qpos)
-    mod.stackRestore(stack)
+    stackRestore(stack)
   }
 
   /*
@@ -872,7 +872,7 @@ export function mul (x: Common, y: Common): Common {
 function _sarrayAllocAndCopy<T extends Common> (v: T[]): number {
   if (v.length === 0) throw new Error('zero size array')
   const size = v[0].a_.length * 4
-  const pos = mod.stackAlloc(size * v.length)
+  const pos = stackAlloc(size * v.length)
   for (let i = 0; i < v.length; i++) {
     v[i].copyToMem(pos + size * i)
   }
@@ -891,13 +891,13 @@ function _saveArray<T extends Common> (v: T[], pos: number): void {
 const _mulVec = <T extends G1 | G2>(func: (zPos: number, xPos: number, yPos: number, n: number) => void, xVec: T[], yVec: Fr[], Cstr: any): T => {
   const n = xVec.length
   const z = new Cstr()
-  const stack = mod.stackSave()
+  const stack = stackSave()
   const zPos = z._salloc()
   const xPos = _sarrayAllocAndCopy(xVec)
   const yPos = _sarrayAllocAndCopy(yVec)
   func(zPos, xPos, yPos, n)
   z._save(zPos)
-  mod.stackRestore(stack)
+  stackRestore(stack)
   return z
 }
 
@@ -921,11 +921,11 @@ export const mulVec = <T extends G1 | G2>(xVec: T[], yVec: Fr[]): T => {
 // wrap invVec and normalizeVec API
 const _invVec = <T extends Fr | Fp | G1 | G2>(func: Function, yVec: T[], xVec: T[]): void => {
   const n = xVec.length
-  const stack = mod.stackSave()
+  const stack = stackSave()
   const xPos = _sarrayAllocAndCopy(xVec)
   func(xPos, xPos, n)
   _saveArray(yVec, xPos)
-  mod.stackRestore(stack)
+  stackRestore(stack)
 }
 
 export const invVecInPlace = <T extends Fr | Fp>(xVec: T[]): void => {
@@ -1041,14 +1041,14 @@ const _powArray = <T extends Fr | Fp> (powArray: Function, x: T, _y: Number | Bi
   const cstr = x.constructor as new () => T
   const z = new cstr()
   const y = IntToArray(_y.valueOf())
-  const stack = mod.stackSave()
+  const stack = stackSave()
   const zPos = z._salloc()
   const xPos = x._sallocAndCopy()
-  const yPos = mod.stackAlloc(y.length)
-  mod.HEAP8.set(y, yPos)
+  const yPos = stackAlloc(y.length)
+  HEAP8.set(y, yPos)
   const r = powArray(zPos, xPos, yPos, y.length)
   z._save(zPos)
-  mod.stackRestore(stack)
+  stackRestore(stack)
   if (r < 0) throw new Error('powArray err')
   return z
 }
@@ -1094,12 +1094,12 @@ export const millerLoop = (P: G1, Q: G2): GT => {
 export const precomputedMillerLoop = (P: G1, Qcoeff: PrecomputedG2): GT => {
   if (!(P instanceof G1 && Qcoeff instanceof PrecomputedG2)) throw new Error('exports.precomputedMillerLoop:bad type')
   const e = new GT()
-  const stack = mod.stackSave()
+  const stack = stackSave()
   const PPos = P._sallocAndCopy()
   const ePos = e._salloc()
   mod._mclBn_precomputedMillerLoop(ePos, PPos, Qcoeff.p)
   e._save(ePos)
-  mod.stackRestore(stack)
+  stackRestore(stack)
   return e
 }
 
@@ -1107,13 +1107,13 @@ export const precomputedMillerLoop = (P: G1, Qcoeff: PrecomputedG2): GT => {
 export const precomputedMillerLoop2 = (P1: G1, Q1coeff: PrecomputedG2, P2: G1, Q2coeff: PrecomputedG2): GT => {
   if (!(P1 instanceof G1 && Q1coeff instanceof PrecomputedG2 && P2 instanceof G1 && Q2coeff instanceof PrecomputedG2)) throw new Error('exports.precomputedMillerLoop2mixed:bad type')
   const e = new GT()
-  const stack = mod.stackSave()
+  const stack = stackSave()
   const P1Pos = P1._sallocAndCopy()
   const P2Pos = P2._sallocAndCopy()
   const ePos = e._salloc()
   mod._mclBn_precomputedMillerLoop2(ePos, P1Pos, Q1coeff.p, P2Pos, Q2coeff.p)
   e._save(ePos)
-  mod.stackRestore(stack)
+  stackRestore(stack)
   return e
 }
 
@@ -1121,14 +1121,14 @@ export const precomputedMillerLoop2 = (P1: G1, Q1coeff: PrecomputedG2, P2: G1, Q
 export const precomputedMillerLoop2mixed = (P1: G1, Q1: G2, P2: G1, Q2coeff: PrecomputedG2): GT => {
   if (!(P1 instanceof G1 && Q1 instanceof G2 && P2 instanceof G1 && Q2coeff instanceof PrecomputedG2)) throw new Error('exports.precomputedMillerLoop2mixed:bad type')
   const e = new GT()
-  const stack = mod.stackSave()
+  const stack = stackSave()
   const P1Pos = P1._sallocAndCopy()
   const Q1Pos = Q1._sallocAndCopy()
   const P2Pos = P2._sallocAndCopy()
   const ePos = e._salloc()
   mod._mclBn_precomputedMillerLoop2mixed(ePos, P1Pos, Q1Pos, P2Pos, Q2coeff.p)
   e._save(ePos)
-  mod.stackRestore(stack)
+  stackRestore(stack)
   return e
 }
 
@@ -1141,13 +1141,13 @@ export const finalExp = (x: GT): GT => {
 
 function _callShare<T extends Common> (CstrT: new() => T, func: Function, vec: T[], id: Fr): T {
   const a = new CstrT()
-  const stack = mod.stackSave()
+  const stack = stackSave()
   const pos = a._salloc()
   const vecPos = _sarrayAllocAndCopy(vec)
   const idPos = id._sallocAndCopy()
   func(pos, vecPos, vec.length, idPos)
   a._save(pos)
-  mod.stackRestore(stack)
+  stackRestore(stack)
   return a
 }
 
@@ -1155,13 +1155,13 @@ function _callRecover<T extends Common> (CstrT: new() => T, func: Function, idVe
   const k = yVec.length
   if (k !== idVec.length) throw new Error('recover:bad length')
   const a = new CstrT()
-  const stack = mod.stackSave()
+  const stack = stackSave()
   const aPos = a._salloc()
   const idVecPos = _sarrayAllocAndCopy(idVec)
   const yVecPos = _sarrayAllocAndCopy(yVec)
   const r: number = func(aPos, idVecPos, yVecPos, k)
   a._save(aPos)
-  mod.stackRestore(stack)
+  stackRestore(stack)
   if (r !== 0) throw new Error('callRecover')
   return a
 }
