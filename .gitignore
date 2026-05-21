@@ -2,5 +2,5 @@ node_modules/
 dist/
 package-lock.json
 src/mcl.wasm
-src/*.o
-src/wasm-stubs/*.o
+*.o
+*.d
