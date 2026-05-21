@@ -9,6 +9,9 @@ paths:
   - src/mcl/src/**/*.hpp
   - src/mcl/include/**/*.h
   - src/dep.cpp
+  - src/dlmalloc.c
+  - src/wasm-stubs/**/*.c
+  - src/wasm-stubs/**/*.h
 
 paths-ignore:
   - src/mcl_c.js
