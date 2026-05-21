@@ -35,6 +35,7 @@ all: $(MCL_JS)
 
 $(MCL_JS): $(WASM) src/glue.js
 	perl -pe 'BEGIN{open F,"-|","base64 -w0 $(WASM)";$$b=<F>;chomp $$b}s/\@\@WASM_BASE64\@\@/$$b/' src/glue.js > $@
+	mkdir -p dist && cp $@ dist/mcl_c.js
 
 $(WASM): $(OBJS)
 	$(LD) -o $@.pre $(OBJS) $(LDFLAGS)
