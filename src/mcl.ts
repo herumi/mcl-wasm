@@ -235,12 +235,8 @@ export let initializedCurveType: CurveType
 
 export const initializeMcl = async (curveType = CurveType.BN254): Promise<void> => {
   mod = await createModule({
-    cryptoGetRandomValues: (p: number, n: number) => {
-      const a = new Uint8Array(n)
+    cryptoGetRandomValues: (a: Uint8Array) => {
       getRandomValues(a)
-      for (let i = 0; i < n; i++) {
-        mod.HEAP8[p + i] = a[i]
-      }
     }
   })
 
