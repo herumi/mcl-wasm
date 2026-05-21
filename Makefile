@@ -23,12 +23,13 @@ LDFLAGS=--no-entry --export-dynamic -z stack-size=1048576
 LDFLAGS+=--export=__stack_pointer
 LDFLAGS+=--export=__wasm_call_ctors
 LDFLAGS+=--export=malloc --export=free
+LDFLAGS+=--export=stackSave --export=stackAlloc --export=stackRestore
 LDFLAGS+=--import-memory
 LDFLAGS+=--allow-undefined
 LDFLAGS+=--undefined=cryptoGetRandomValues
 LDFLAGS+=--lto-O3
 
-OBJS=src/fp.o src/dlmalloc.o src/wasm-stubs/libc.o
+OBJS=src/fp.o src/dlmalloc.o src/wasm-stubs/libc.o src/wasm-stubs/stack.o
 
 all: $(MCL_JS)
 
@@ -56,6 +57,9 @@ src/dlmalloc.o: src/dlmalloc.c
 
 src/wasm-stubs/libc.o: src/wasm-stubs/libc.c
 	$(CC) $(TARGET) -O3 -DNDEBUG -flto -I src/wasm-stubs -c -o $@ $<
+
+src/wasm-stubs/stack.o: src/wasm-stubs/stack.s
+	$(CC) $(TARGET) -c -o $@ $<
 
 clean:
 	rm -f $(OBJS) $(WASM) $(MCL_JS)

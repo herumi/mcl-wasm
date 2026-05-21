@@ -32,11 +32,10 @@ function createModule(opts) {
       }
     }
 
-    // Stack pointer operations
-    var sp = exports.__stack_pointer;
-    mod.stackSave = function() { return sp.value; };
-    mod.stackAlloc = function(n) { sp.value -= n; sp.value &= ~15; return sp.value; };
-    mod.stackRestore = function(v) { sp.value = v; };
+    // Stack pointer operations (exported wasm functions for performance)
+    mod.stackSave = exports.stackSave;
+    mod.stackAlloc = exports.stackAlloc;
+    mod.stackRestore = exports.stackRestore;
 
     // Call global constructors if present
     if (exports.__wasm_call_ctors) exports.__wasm_call_ctors();
