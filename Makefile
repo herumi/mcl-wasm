@@ -16,6 +16,7 @@ CFLAGS+=-DMCL_USE_WEB_CRYPTO_API -DCYBOZU_MINIMUM_EXCEPTION
 CFLAGS+=-DCYBOZU_DONT_USE_EXCEPTION -DCYBOZU_DONT_USE_STRING
 CFLAGS+=-I src/wasm-stubs -I $(MCL_DIR)/include -I $(MCL_DIR)/src
 CFLAGS+=-Wall -Wextra
+CFLAGS+=-MMD -MP
 
 CXXFLAGS=$(CFLAGS) -std=c++03
 
@@ -54,15 +55,18 @@ DLMALLOC_FLAGS+=-Dsize_t=unsigned\ long -Dptrdiff_t=long
 DLMALLOC_FLAGS+=-DMALLOC_ALIGNMENT=16
 
 src/dlmalloc.o: src/dlmalloc.c
-	$(CC) $(TARGET) -O3 -DNDEBUG -flto -I src/wasm-stubs $(DLMALLOC_FLAGS) -c -o $@ $<
+	$(CC) $(TARGET) -O3 -DNDEBUG -flto -MMD -MP -I src/wasm-stubs $(DLMALLOC_FLAGS) -c -o $@ $< -DUSE_LOCKS=0
 
 src/wasm-stubs/libc.o: src/wasm-stubs/libc.c
-	$(CC) $(TARGET) -O3 -DNDEBUG -flto -I src/wasm-stubs -c -o $@ $<
+	$(CC) $(TARGET) -O3 -DNDEBUG -flto -MMD -MP -I src/wasm-stubs -c -o $@ $<
 
 src/wasm-stubs/stack.o: src/wasm-stubs/stack.s
 	$(CC) $(TARGET) -c -o $@ $<
 
+DEPS=$(OBJS:.o=.d)
+-include $(DEPS)
+
 clean:
-	rm -f $(OBJS) $(WASM) $(MCL_JS)
+	rm -f $(OBJS) $(DEPS) $(WASM) $(MCL_JS)
 
 .PHONY: clean all
