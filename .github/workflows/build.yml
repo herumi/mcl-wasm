@@ -22,6 +22,8 @@ jobs:
       uses: pnpm/action-setup@v6
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Install build dependencies
+      run: sudo apt install -y clang-18 lld-18 binaryen
     - run: |
         git pull
         cur=$(git rev-parse --abbrev-ref HEAD)
@@ -32,13 +34,6 @@ jobs:
         fi
         git config user.name github-actions
         git config user.email github-actions@github.com
-        git clone https://github.com/emscripten-core/emsdk.git
-        cd emsdk/
-        ./emsdk install latest
-        ./emsdk activate latest
-        source ./emsdk_env.sh
-        emcc -v
-        cd ..
         git submodule update --init --recursive
         make clean
         pnpm install

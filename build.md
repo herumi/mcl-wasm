@@ -1,7 +1,14 @@
 # Development
 
 ## Build mcl_c.js
-Install emscripten and
+Install the following tools:
+- clang-18, wasm-ld-18: `sudo apt install clang-18 lld-18`
+- wasm-opt (binaryen): `sudo apt install binaryen`
+
+```
+make
+```
+or via pnpm:
 ```
 pnpm run build:mcl_c.js
 ```

@@ -5,6 +5,7 @@ WASM=./src/mcl.wasm
 CC=clang-18
 CXX=clang++-18
 LD=wasm-ld-18
+WASM_OPT?=wasm-opt
 
 TARGET=--target=wasm32-unknown-unknown
 
@@ -35,7 +36,9 @@ $(MCL_JS): $(WASM) src/glue.js
 	perl -pe 'BEGIN{open F,"-|","base64 -w0 $(WASM)";$$b=<F>;chomp $$b}s/\@\@WASM_BASE64\@\@/$$b/' src/glue.js > $@
 
 $(WASM): $(OBJS)
-	$(LD) -o $@ $(OBJS) $(LDFLAGS)
+	$(LD) -o $@.pre $(OBJS) $(LDFLAGS)
+	$(WASM_OPT) -O3 --strip-debug $@.pre -o $@
+	rm $@.pre
 
 src/fp.o: $(MCL_DIR)/src/fp.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
