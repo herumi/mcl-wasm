@@ -11,6 +11,19 @@ export let HEAP32: Int32Array
 export let stackSave: () => number
 export let stackAlloc: (n: number) => number
 export let stackRestore: (v: number) => void
+interface MallocDebugState {
+  enabled: boolean
+  total: number
+  ptr: Record<number, number>
+  his: Array<[number, number]>
+}
+
+export const mallocDebug: MallocDebugState = {
+  enabled: false,
+  total: 0,
+  ptr: {},
+  his: []
+}
 
 export const getMemory = (): { buffer: ArrayBuffer } => mod.wasmMemory
 
@@ -183,57 +196,55 @@ const addWrappedMethods = (): void => {
   mod.mclBnGT_setStr = _wrapInput(mod._mclBnGT_setStr, 1)
   mod.mclBnGT_getStr = _wrapGetStr(mod._mclBnGT_getStr)
 
-  mod.g_his = []
-  mod.g_ptr = {}
-  mod.g_total = 0
   /*
     she libray always uses (malloc,free) in nested pairs.
   */
   const mallocOrg: (size: number) => number = mod._malloc
   const freeOrg: (ptr: number) => void = mod._free
+  mallocDebug.total = 0
   mod._mallocDebug = (size: number): number => {
     const p = mallocOrg(size + 4)
-    mod.HEAP8[p + size] = 0x12
-    mod.HEAP8[p + size + 1] = 0x34
-    mod.HEAP8[p + size + 2] = 0x56
-    mod.HEAP8[p + size + 3] = 0x78
-    mod.g_his.push([p, size])
-    mod.g_ptr[p] = size
-    mod.g_total += size
+    HEAP8[p + size] = 0x12
+    HEAP8[p + size + 1] = 0x34
+    HEAP8[p + size + 2] = 0x56
+    HEAP8[p + size + 3] = 0x78
+    mallocDebug.his.push([p, size])
+    mallocDebug.ptr[p] = size
+    mallocDebug.total += size
     return p
   }
   mod._freeDebug = (pos: number): void => {
-    const ps = mod.g_his.pop()
+    const ps = mallocDebug.his.pop() as [number, number]
     const p = ps[0]
     const size = ps[1]
     if (pos !== p) {
       console.log(`pos=${pos} oldPos=${p}`)
     }
-    const v = mod.HEAP8[p + size] + (mod.HEAP8[p + size + 1] << 8) + (mod.HEAP8[p + size + 2] << 16) + (mod.HEAP8[p + size + 3] << 24)
+    const v = HEAP8[p + size] + (HEAP8[p + size + 1] << 8) + (HEAP8[p + size + 2] << 16) + (HEAP8[p + size + 3] << 24)
     if (v !== 0x78563412) {
       console.log(`ERR=${p} v=${v.toString(16)}`)
     }
     freeOrg(pos)
-    const s = mod.g_ptr[pos]
+    const s = mallocDebug.ptr[pos]
     if (s === 0) {
       console.log(`ERR ${pos}`)
     } else {
-      delete mod.g_ptr[pos]
-      mod.g_total -= s
+      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+      delete mallocDebug.ptr[pos]
+      mallocDebug.total -= s
     }
   }
-  mod.debug = false
-  if (mod.debug) {
+  if (mallocDebug.enabled) {
     mod._malloc = mod._mallocDebug
     mod._free = mod._freeDebug
   }
 }
 
-export const _showDebug = () => {
-  if (mod.debug) {
+export const _showDebug = (): void => {
+  if (mallocDebug.enabled) {
     console.log('malloc DEBUG mode')
-    console.log(`  show total=${mod.g_total}`)
-    console.log(`  g_ptr=${JSON.stringify(mod.g_ptr, null, '\t')}`)
+    console.log(`  show total=${mallocDebug.total}`)
+    console.log(`  g_ptr=${JSON.stringify(mallocDebug.ptr, null, '\t')}`)
   }
 }
 
