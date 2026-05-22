@@ -24,13 +24,15 @@ function createModule(opts) {
     mod.HEAP8 = new Int8Array(memory.buffer);
     mod.HEAP32 = new Int32Array(memory.buffer);
 
-    // Export all wasm functions with _ prefix
-    var exports = instance.exports;
+    // Export mclBn* wasm functions with _ prefix
+    var exports = instance.exports
     for (var name in exports) {
-      if (typeof exports[name] === 'function') {
-        mod['_' + name] = exports[name];
+      if (name.startsWith('mclBn') && typeof exports[name] === 'function') {
+        mod['_' + name] = exports[name]
       }
     }
+    mod['_malloc'] = exports.malloc
+    mod['_free'] = exports.free
 
     // Stack pointer operations (direct wasm exports)
     mod.stackSave = exports.stackSave;
