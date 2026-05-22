@@ -52,7 +52,12 @@
   },
   "standard": {
     "ignore": [
-      "src/mcl_c.js"
+      "src/mcl_c.js",
+      "test/test-ts.js", "test/bls-sig.js",
+      "webpack.config.js",
+      "src/mcl/**",
+      "browser/**",
+      "dist/**"
     ]
   },
   "ts-standard": {

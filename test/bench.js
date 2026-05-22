@@ -480,13 +480,11 @@ function modTest () {
     const b = new mcl.Fr()
     shiftAndSetTest(a, b)
   }
-/* Fp::neg is not yet implemented
   {
     const a = new mcl.Fp()
     const b = new mcl.Fp()
     shiftAndSetTest(a, b)
   }
-*/
 }
 
 function bench (label, count, func) {
@@ -506,7 +504,7 @@ function benchCapi () {
   const mod = mcl.mod
   {
     let _a = new mcl.Fr()
-    let _b = new mcl.Fr()
+    const _b = new mcl.Fr()
     _a.setByCSPRNG()
     _b.setByCSPRNG()
     const a = _a._alloc()
@@ -528,7 +526,7 @@ function benchCapi () {
   }
   {
     let _a = new mcl.Fp()
-    let _b = new mcl.Fp()
+    const _b = new mcl.Fp()
     _a.setByCSPRNG()
     _b.setByCSPRNG()
     const a = _a._alloc()
@@ -550,7 +548,7 @@ function benchCapi () {
   }
   {
     let _a = new mcl.Fp2()
-    let _b = new mcl.Fp2()
+    const _b = new mcl.Fp2()
     _a.setInt(3, 4)
     _b.setInt(-3, 9)
     const a = _a._alloc()
@@ -578,7 +576,7 @@ function invVecBench (msg, cstr) {
   x[0] = new cstr()
   x[0].setStr('1232353525205982904')
   for (let i = 1; i < n; i++) {
-    x[i] = mcl.sqr(x[i-1])
+    x[i] = mcl.sqr(x[i - 1])
   }
   bench(msg, 1000, () => { x = mcl.invVec(x) })
 }
