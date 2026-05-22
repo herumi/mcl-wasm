@@ -34,29 +34,9 @@ jobs:
 
     - name: Build C++ code for CodeQL analysis
       run: |
-        MCL_DIR=./src/mcl
-        # Build with standard clang so CodeQL can trace the compilation
-        clang++ -c -o fp.o $MCL_DIR/src/fp.cpp \
-          -I $MCL_DIR/include -I $MCL_DIR/src -I src/wasm-stubs \
-          -Wall -Wextra -O0 -std=c++03 \
-          -DMCL_SIZEOF_UNIT=4 \
-          -DMCL_MAX_BIT_SIZE=384 \
-          -DMCL_USE_WEB_CRYPTO_API \
-          -DCYBOZU_MINIMUM_EXCEPTION \
-          -DCYBOZU_DONT_USE_EXCEPTION \
-          -DCYBOZU_DONT_USE_STRING \
-          -fno-threadsafe-statics -fno-rtti -fno-exceptions
-        clang -c -o dlmalloc.o src/dlmalloc.c \
-          -I src/wasm-stubs \
-          -O0 \
-          -DLACKS_SYS_TYPES_H -DLACKS_FCNTL_H -DLACKS_UNISTD_H \
-          -DLACKS_SYS_MMAN_H -DLACKS_STRINGS_H -DLACKS_SYS_PARAM_H \
-          -DLACKS_SCHED_H -DLACKS_TIME_H \
-          -DHAVE_MORECORE=1 -DHAVE_MMAP=0 -DNO_MALLOC_STATS=1 \
-          -DMORECORE_CONTIGUOUS=0 \
-          -DMALLOC_ALIGNMENT=16
-        clang -c -o libc.o src/wasm-stubs/libc.c \
-          -I src/wasm-stubs -O0
+        # Reuse the Makefile compile rules so CodeQL sees the same wasm32 flags
+        # as the production build while avoiding the final wasm link/opt steps.
+        make -B src/fp.o src/dlmalloc.o src/wasm-stubs/libc.o CC=clang CXX=clang++
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v3
