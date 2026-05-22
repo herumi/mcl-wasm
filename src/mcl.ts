@@ -12,7 +12,7 @@ export let stackSave: () => number
 export let stackAlloc: (n: number) => number
 export let stackRestore: (v: number) => void
 
-export const getMemory = () => mod.wasmMemory
+export const getMemory = (): { buffer: ArrayBuffer } => mod.wasmMemory
 
 export const ptrToAsciiStr = (pos: number, n: number): string => {
   let s = ''
@@ -56,7 +56,7 @@ export const free = (x: number): void => {
   mod._free(x)
 }
 
-type ToStrFunc = (x: number, ioMode: number) => (string|Uint8Array)
+type ToStrFunc = (x: number, ioMode: number) => (string | Uint8Array)
 
 const addWrappedMethods = (): void => {
   type StringReader = (pos: number, maxBufSize: number, x: number, ioMode: number) => number
@@ -189,8 +189,10 @@ const addWrappedMethods = (): void => {
   /*
     she libray always uses (malloc,free) in nested pairs.
   */
+  const mallocOrg: (size: number) => number = mod._malloc
+  const freeOrg: (ptr: number) => void = mod._free
   mod._mallocDebug = (size: number): number => {
-    const p = mod._mallocOrg(size + 4)
+    const p = mallocOrg(size + 4)
     mod.HEAP8[p + size] = 0x12
     mod.HEAP8[p + size + 1] = 0x34
     mod.HEAP8[p + size + 2] = 0x56
@@ -211,7 +213,7 @@ const addWrappedMethods = (): void => {
     if (v !== 0x78563412) {
       console.log(`ERR=${p} v=${v.toString(16)}`)
     }
-    mod._freeOrg(pos)
+    freeOrg(pos)
     const s = mod.g_ptr[pos]
     if (s === 0) {
       console.log(`ERR ${pos}`)
@@ -220,8 +222,6 @@ const addWrappedMethods = (): void => {
       mod.g_total -= s
     }
   }
-  mod._mallocOrg = mod._malloc
-  mod._freeOrg = mod._free
   mod.debug = false
   if (mod.debug) {
     mod._malloc = mod._mallocDebug

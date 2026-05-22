@@ -172,10 +172,10 @@ abstract class IntType extends Common {
 }
 
 interface HasArray {
-  a_: Uint32Array;
+  a_: Uint32Array
 }
 
-const _cloneArray = <T extends HasArray> (x: T): T=> {
+const _cloneArray = <T extends HasArray> (x: T): T => {
   const cstr = x.constructor as new () => T
   const r = new cstr()
   r.a_.set(x.a_)
@@ -946,7 +946,7 @@ export const invVec = <T extends Fr | Fp>(xVec: T[]): T[] => {
   const n = xVec.length
   if (n === 0) return []
   const cstr = xVec[0].constructor as new () => T
-  const yVec = Array.from({length: n}, _ => new cstr())
+  const yVec = Array.from({ length: n }, _ => new cstr())
   if (xVec[0] instanceof Fr) {
     _invVec(mod._mclBnFr_invVec, yVec, xVec)
     return yVec
@@ -1024,7 +1024,7 @@ export const hashAndMapToG2 = (s: string | Uint8Array): G2 => {
 }
 
 const IntToArray = (_x: bigint | number): Uint8Array => {
-  let x = typeof _x === 'number'? BigInt(_x) : _x
+  let x = typeof _x === 'number' ? BigInt(_x) : _x
   if (x < 0n) {
     throw new Error('IntToArray: negative value')
   }
@@ -1060,14 +1060,14 @@ export function pow (x: Common, y: Common | Number | BigInt): Common {
   if (x instanceof Fr) {
     if (y instanceof Fr) {
       return x._op2(mod._mclBnFr_pow, y)
-    } else if (typeof(y) === 'number' || typeof(y) === 'bigint') {
+    } else if (typeof (y) === 'number' || typeof (y) === 'bigint') {
       return _powArray<Fr>(mod._mclBnFr_powArray, x, y)
     }
   }
   if (x instanceof Fp) {
     if (y instanceof Fp) {
       return x._op2(mod._mclBnFp_pow, y)
-    } else if (typeof(y) === 'number' || typeof(y) === 'bigint') {
+    } else if (typeof (y) === 'number' || typeof (y) === 'bigint') {
       return _powArray<Fp>(mod._mclBnFp_powArray, x, y)
     }
   }
