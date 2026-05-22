@@ -123,8 +123,8 @@ abstract class Common {
   }
 
   /** @internal func(z, this, y) and return z */
-  _op2 (func: (zPos: number, xPos: number, yPos: number) => void, y: Common, Cstr: any = null): any {
-    const z = Cstr ? new Cstr() : new (this.constructor as any)()
+  _op2 (func: (zPos: number, xPos: number, yPos: number) => void, y: Common, Cstr: (new () => Common) | null = null): any {
+    const z = Cstr !== null ? new Cstr() : new (this.constructor as new () => Common)()
     const stack = stackSave()
     const xPos = this._sallocAndCopy()
     const yPos = y._sallocAndCopy()
@@ -176,8 +176,8 @@ interface HasArray {
 }
 
 const _cloneArray = <T extends HasArray> (x: T): T => {
-  const cstr = x.constructor as new () => T
-  const r = new cstr()
+  const Cstr = x.constructor as new () => T
+  const r = new Cstr()
   r.a_.set(x.a_)
   return r
 }
@@ -945,8 +945,8 @@ export const invVecInPlace = <T extends Fr | Fp>(xVec: T[]): void => {
 export const invVec = <T extends Fr | Fp>(xVec: T[]): T[] => {
   const n = xVec.length
   if (n === 0) return []
-  const cstr = xVec[0].constructor as new () => T
-  const yVec = Array.from({ length: n }, _ => new cstr())
+  const Cstr = xVec[0].constructor as new () => T
+  const yVec = Array.from({ length: n }, _ => new Cstr())
   if (xVec[0] instanceof Fr) {
     _invVec(mod._mclBnFr_invVec, yVec, xVec)
     return yVec
@@ -1030,7 +1030,7 @@ const IntToArray = (_x: bigint | number): Uint8Array => {
   }
   if (x === 0n) return new Uint8Array(1)
   const a = []
-  while (x) {
+  while (x !== 0n) {
     a.push(Number(BigInt.asUintN(8, x)))
     x >>= 8n
   }
@@ -1038,8 +1038,8 @@ const IntToArray = (_x: bigint | number): Uint8Array => {
 }
 
 const _powArray = <T extends Fr | Fp> (powArray: Function, x: T, _y: Number | BigInt): T => {
-  const cstr = x.constructor as new () => T
-  const z = new cstr()
+  const Cstr = x.constructor as new () => T
+  const z = new Cstr()
   const y = IntToArray(_y.valueOf())
   const stack = stackSave()
   const zPos = z._salloc()
