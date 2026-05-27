@@ -34,9 +34,8 @@ jobs:
 
     - name: Build C++ code for CodeQL analysis
       run: |
-        # Reuse the Makefile compile rules so CodeQL sees the same wasm32 flags
-        # as the production build while avoiding the final wasm link/opt steps.
-        make -B src/fp.o src/dlmalloc.o src/wasm-stubs/libc.o CC=clang CXX=clang++
+        # Build object files for CodeQL analysis using the wasm Makefile.
+        make -f Makefile.wasm -C src/mcl obj/fp.o obj/dlmalloc.o obj/libc.o CC=clang CXX=clang++ LD=wasm-ld WASM_OPT=wasm-opt
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v4

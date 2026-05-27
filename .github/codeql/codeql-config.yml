@@ -8,10 +8,8 @@ paths:
   - src/mcl/src/**/*.cpp
   - src/mcl/src/**/*.hpp
   - src/mcl/include/**/*.h
-  - src/dep.cpp
-  - src/dlmalloc.c
-  - src/wasm-stubs/**/*.c
-  - src/wasm-stubs/**/*.h
+  - src/mcl/src/wasm/**/*.c
+  - src/mcl/src/wasm/**/*.h
 
 paths-ignore:
   - src/mcl_c.js
