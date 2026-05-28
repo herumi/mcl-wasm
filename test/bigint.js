@@ -102,9 +102,9 @@ function addJacobi (P, Q) {
     r = Qy
   } else {
     r = FpMul(r, Pz)
-    r  = FpMul(r, Qy)
+    r = FpMul(r, Qy)
   }
-  r= FpSub(r, S1)
+  r = FpSub(r, S1)
   if (H === 0) {
     if (r === 0) {
       return dblJacobi(P)
@@ -210,12 +210,11 @@ function benchFp () {
 }
 
 function benchBigFr () {
-
-  let a = BigInt(0) 
-  let b = BigInt(0) 
+  let a = BigInt(0)
+  let b = BigInt(0)
   {
     const ma = new mcl.Fr()
-    let mb = new mcl.Fr()
+    const mb = new mcl.Fr()
     ma.setByCSPRNG()
     mb.setByCSPRNG()
     a = BigInt(ma.getStr())
@@ -230,12 +229,11 @@ function benchBigFr () {
 }
 
 function benchBigFp () {
-
-  let a = BigInt(0) 
-  let b = BigInt(0) 
+  let a = BigInt(0)
+  let b = BigInt(0)
   {
     const ma = new mcl.Fp()
-    let mb = new mcl.Fp()
+    const mb = new mcl.Fp()
     ma.setByCSPRNG()
     mb.setByCSPRNG()
     a = BigInt(ma.getStr())
@@ -249,21 +247,21 @@ function benchBigFp () {
   bench('FpMul', C2, () => { b = FpMul(b, a) })
 }
 
-function putG1(P) {
+function putG1 (P) {
   console.log(`Px=${P.getX().getStr(16)}`)
   console.log(`Py=${P.getY().getStr(16)}`)
   console.log(`Pz=${P.getZ().getStr(16)}`)
-  console.log("")
+  console.log('')
 }
 
 function benchG1 () {
   let P = new mcl.G1()
   P.setHashOf('abc')
-  let Q = new mcl.G1()
+  const Q = new mcl.G1()
   Q.setHashOf('abcd')
   console.log(`P=${P.serializeToHexStr()}`)
-//  P.normalize()
-//  Q.normalize()
+  //  P.normalize()
+  //  Q.normalize()
   putG1(P)
   putG1(Q)
   const Px = BigInt(P.getX().getStr())
@@ -272,14 +270,14 @@ function benchG1 () {
   const Qx = BigInt(Q.getX().getStr())
   const Qy = BigInt(Q.getY().getStr())
   const Qz = BigInt(Q.getZ().getStr())
-  let mR = mcl.add(P, Q)
+  const mR = mcl.add(P, Q)
   putG1(mR)
-  let R = addJacobi([Px,Py,Pz], [Qx,Qy,Qz])
+  let R = addJacobi([Px, Py, Pz], [Qx, Qy, Qz])
   console.log(`Rx=${R[0].toString(16)}`)
   console.log(`Ry=${R[1].toString(16)}`)
   console.log(`Rz=${R[2].toString(16)}`)
   bench('G1add', 1000, () => { P = mcl.add(P, Q) })
-  bench('G1add', 1000, () => { R = addJacobi([Px,Py,Pz],R) })
+  bench('G1add', 1000, () => { R = addJacobi([Px, Py, Pz], R) })
 }
 
 function benchAll () {

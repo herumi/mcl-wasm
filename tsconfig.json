@@ -14,5 +14,5 @@
     "skipLibCheck": true
   },
   "include": ["./src/**/*"],
-  "exclude": ["./src/mcl"]
+  "exclude": ["./src/mcl", "./src/mcl_c.js"]
 }
