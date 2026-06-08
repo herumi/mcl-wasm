@@ -7,6 +7,7 @@
 see [mcl](https://github.com/herumi/mcl)
 
 ## News
+- 2026/Jun/16 change build from emcc to clang
 - 2025/Jun/14 fix wrong performance of G1::deserialize on BN curvers.
 - 2025/May/23 bump mcl to v3.00
 - 2025/Feb/26 support BLS12_377

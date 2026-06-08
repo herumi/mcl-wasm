@@ -2,9 +2,9 @@ name: "CodeQL"
 
 on:
   push:
-    branches: [ "cpp" ]
+    branches: [ "master", "dev" ]
   pull_request:
-    branches: [ "cpp" ]
+    branches: [ "master" ]
 
 jobs:
   analyze:
@@ -27,58 +27,17 @@ jobs:
         submodules: recursive
 
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@v3
+      uses: github/codeql-action/init@v4
       with:
         languages: ${{ matrix.language }}
         config-file: ./.github/codeql/codeql-config.yml
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v6
-      with:
-        node-version: "24"
-
-    - name: Install pnpm
-      uses: pnpm/action-setup@v6
-
-    - name: Install dependencies
-      run: pnpm install
-
-    - name: Setup Emscripten
-      uses: mymindstorm/setup-emsdk@v12
-      with:
-        version: 'latest'
-
-    - name: Build C++ code
+    - name: Build C++ code for CodeQL analysis
       run: |
-        # Set environment variables for the build
-        export MCL_DIR=./src/mcl
-        export MCL_JS=./src/mcl_c.js
-
-        # Build the C++ code using the same commands as in Makefile
-        emcc -o $MCL_JS $MCL_DIR/src/fp.cpp src/dep.cpp \
-          -I $MCL_DIR/include -I $MCL_DIR/src -Wall -Wextra \
-          -O3 -DNDEBUG -std=c++03 \
-          -fno-threadsafe-statics -fno-rtti -fno-stack-protector -fno-exceptions \
-          -DMCL_SIZEOF_UNIT=4 \
-          -s WASM=1 -s NO_EXIT_RUNTIME=1 -s NODEJS_CATCH_EXIT=0 -s NODEJS_CATCH_REJECTION=0 \
-          -s MODULARIZE=1 \
-          -s SINGLE_FILE=1 \
-          --minify 0 \
-          -DCYBOZU_MINIMUM_EXCEPTION \
-          -s ABORTING_MALLOC=0 \
-          -s DISABLE_EXCEPTION_CATCHING=1 \
-          -s STACK_SIZE=1MB \
-          -sEXPORTED_FUNCTIONS=_malloc,_free,stackAlloc,stackSave,stackRestore \
-          -sEXPORTED_RUNTIME_METHODS=HEAP8,HEAP32 \
-          -flto \
-          -DMCL_MAX_BIT_SIZE=384 -DMCL_USE_WEB_CRYPTO_API -DCYBOZU_DONT_USE_EXCEPTION -DCYBOZU_DONT_USE_STRING -fno-exceptions
-
-        # Disable require fs, path (as in Makefile)
-        perl -i -pe 's@(.* = require\(.*)@//\1@' $MCL_JS
-
-        echo "Build completed"
+        # Build object files for CodeQL analysis using the wasm Makefile.
+        make -f Makefile.wasm -C src/mcl obj/fp.o obj/dlmalloc.o obj/libc.o CC=clang CXX=clang++ LD=wasm-ld WASM_OPT=wasm-opt
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v3
+      uses: github/codeql-action/analyze@v4
       with:
         category: "/language:${{matrix.language}}"

@@ -23,12 +23,15 @@ jobs:
       - name: Install pnpm
         uses: pnpm/action-setup@v6
       
+      - name: Install build dependencies
+        run: sudo apt install -y clang-18 lld-18 binaryen
+
       - name: Install dependencies
         run: pnpm install
-      
+
       - name: Run tests
         run: pnpm test
-      
+
       - name: Build package
         run: pnpm run build
       
