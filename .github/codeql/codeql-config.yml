@@ -12,6 +12,7 @@ paths:
   - src/mcl/src/wasm/**/*.h
 
 paths-ignore:
+  - src/mcl/src/wasm/dlmalloc.c
   - src/mcl_c.js
   - "**/*.js"
   - "**/*.ts"
