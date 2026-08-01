@@ -1,6 +1,5 @@
 MCL_DIR?=./src/mcl
-# sudo apt install clang-20 lld-20
-LLVM_VER?=-20
+LLVM_VER?=-18
 STACK_MODE?=0
 
 LIB_DIR=./src
