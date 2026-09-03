@@ -12,7 +12,8 @@
     "lint": "standard --verbose test/test.js; ts-standard --verbose src/*.ts",
     "lint-fix": "standard --fix test/test.js; ts-standard --fix src/*.ts",
     "test-ts": "tsc && tsc test/test-ts.ts && node test/test-ts.js",
-    "test": "tsc && node test/test.js && node test/eth-test.js"
+    "test": "tsc && node test/test.js && node test/eth-test.js",
+    "update-all": "pnpm update && pnpm --dir browser update"
   },
   "types": "dist/index.d.ts",
   "repository": {
