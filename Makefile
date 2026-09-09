@@ -1,5 +1,5 @@
 MCL_DIR?=./src/mcl
-LLVM_VER?=-18
+LLVM_VER?=-21
 STACK_MODE?=0
 
 LIB_DIR=./src
