@@ -120,6 +120,14 @@ function FrTest () {
   assert.equal(mcl.mul(a, mcl.inv(a)).getStr(), '1')
   a.setInt(123459)
   assert(mcl.mul(a, a).isEqual(mcl.sqr(a)))
+  a.setInt(200)
+  assert.equal(mcl.mulUnit(a, 20).getStr(), '4000')
+  assert.equal(mcl.mulUnit(a, 0).getStr(), '0')
+  a.setInt(-3)
+  b.setStr('4294967295') // 0xffffffff; setInt is int32
+  assert(mcl.mulUnit(a, 0xffffffff).isEqual(mcl.mul(a, b)))
+  assert.throws(() => mcl.mulUnit(a, -1))
+  assert.throws(() => mcl.mulUnit(a, 0x100000000))
 
   a.setInt(3)
   assert(!a.isZero())
@@ -177,6 +185,15 @@ function FpTest () {
     assert(mcl.div(c, a).isEqual(b))
     c.setInt(9)
     assert(mcl.sqr(a).isEqual(c))
+  }
+  {
+    const b = new mcl.Fp()
+    a.setInt(-3)
+    b.setStr('4294967295') // 0xffffffff; setInt is int32
+    assert(mcl.mulUnit(a, 0xffffffff).isEqual(mcl.mul(a, b)))
+    b.setInt(-45)
+    assert(mcl.mulUnit(a, 15).isEqual(b))
+    assert(mcl.mulUnit(a, 0).isZero())
   }
 }
 
