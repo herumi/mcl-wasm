@@ -547,6 +547,9 @@ function benchField (name, a, b) {
   bench(`${name}::add`, C, () => mod[`_mclBn${name}_add`](yp, yp, xp), () => { x = mcl.add(x, a) })
   bench(`${name}::sub`, C, () => mod[`_mclBn${name}_sub`](yp, yp, xp), () => { x = mcl.sub(x, a) })
   bench(`${name}::mul`, C, () => mod[`_mclBn${name}_mul`](yp, yp, xp), () => { x = mcl.mul(x, a) })
+  if (name !== 'Fp2') { // mulUnit is defined for Fr and Fp only
+    bench(`${name}::mulUnit`, C, () => mod[`_mclBn${name}_mulUnit`](yp, yp, 100), () => { x = mcl.mulUnit(x, 100) })
+  }
   bench(`${name}::sqr`, C, () => mod[`_mclBn${name}_sqr`](yp, yp), () => { x = mcl.sqr(x) })
   bench(`${name}::inv`, C, () => mod[`_mclBn${name}_inv`](yp, yp), () => { x = mcl.inv(x) })
   bench(`${name}::div`, C, () => mod[`_mclBn${name}_div`](yp, yp, xp), () => { x = mcl.div(x, a) })
