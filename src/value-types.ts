@@ -868,6 +868,35 @@ export function mul (x: Common, y: Common): Common {
   throw new Error('mul:mismatch type')
 }
 
+/*
+  Fr * uint32 ; multiply by a small unsigned integer (0 <= y < 2^32)
+  Fp * uint32
+*/
+export function mulUnit (x: Fr, y: number): Fr
+export function mulUnit (x: Fp, y: number): Fp
+export function mulUnit (x: Fr | Fp, y: number): Fr | Fp {
+  if (!Number.isInteger(y) || y < 0 || y > 0xffffffff) throw new Error(`mulUnit:bad y=${y}`)
+  if (x instanceof Fr) {
+    return _mulUnit(mod._mclBnFr_mulUnit, x, y)
+  }
+  if (x instanceof Fp) {
+    return _mulUnit(mod._mclBnFp_mulUnit, x, y)
+  }
+  throw new Error('mulUnit:mismatch type')
+}
+
+// z = func(x, y) where y is a uint32
+const _mulUnit = <T extends Fr | Fp>(func: (zPos: number, xPos: number, y: number) => void, x: T, y: number): T => {
+  const z = new (x.constructor as new () => T)()
+  const stack = stackSave()
+  const xPos = x._sallocAndCopy()
+  const zPos = z._salloc()
+  func(zPos, xPos, y)
+  z._save(zPos)
+  stackRestore(stack)
+  return z
+}
+
 // stack alloc memory and copy v to it and return the position
 function _sarrayAllocAndCopy<T extends Common> (v: T[]): number {
   if (v.length === 0) throw new Error('zero size array')
