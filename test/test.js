@@ -16,6 +16,7 @@ async function curveTest (curveType, name) {
     memberTest()
     mulVecTest()
     serializeTest()
+    largeStackTest()
     IDbasedEncryptionTest()
     PairingTest()
     PairingCapiTest()
@@ -27,6 +28,25 @@ async function curveTest (curveType, name) {
     console.log(`TEST FAIL ${e}`)
     assert(false)
   }
+}
+
+function largeStackTest () {
+  let thrown = false
+  try {
+    // throw if data size is large
+    new mcl.G1().deserialize(new Uint8Array(2 * 1024 * 1024))
+  } catch (e) {
+    thrown = true
+  }
+  assert(thrown)
+  // the module must still be usable afterwards
+  const a = new mcl.Fr()
+  a.setByCSPRNG()
+  const P = mcl.hashAndMapToG1('abc')
+  const Q = mcl.mul(P, a)
+  const R = new mcl.G1()
+  R.deserialize(Q.serialize())
+  assert.deepEqual(R.serialize(), Q.serialize())
 }
 
 async function stdCurveTest (curveType, name) {
