@@ -23,7 +23,10 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: Install build dependencies
-      run: sudo apt install -y clang-18 lld-18 binaryen
+      run: |
+        wget -qO- https://apt.llvm.org/llvm.sh | sudo bash -s -- 21
+        sudo apt-get update
+        sudo apt-get install -y binaryen
     - run: |
         git pull
         cur=$(git rev-parse --abbrev-ref HEAD)
@@ -37,7 +40,8 @@ jobs:
         git submodule update --init --recursive
         make clean
         pnpm install
-        pnpm run build:mcl_c.js
+        #pnpm run build:mcl_c.js
+        make LLVM_VER=-21
         pnpm run build:browser
         pnpm test
         sha256sum src/mcl_c.js browser/mcl.js
