@@ -35,7 +35,7 @@ jobs:
     - name: Build C++ code for CodeQL analysis
       run: |
         # Build object files for CodeQL analysis using the wasm Makefile.
-        make -f Makefile.wasm -C src/mcl obj/fp.o obj/dlmalloc.o obj/libc.o CC=clang CXX=clang++ LD=wasm-ld WASM_OPT=wasm-opt
+        make -f Makefile.wasm -C src/mcl obj/wasm/fp.o obj/wasm/dlmalloc.o obj/wasm/libc.o CC=clang CXX=clang++ LD=wasm-ld WASM_OPT=wasm-opt
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v4
