@@ -23,7 +23,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: Install build dependencies
-      run: sudo apt install -y clang-18 lld-18 binaryen
+      run: sudo apt install -y clang-21 lld-21 binaryen
     - run: |
         git pull
         cur=$(git rev-parse --abbrev-ref HEAD)
