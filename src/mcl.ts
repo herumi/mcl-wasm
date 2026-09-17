@@ -11,6 +11,25 @@ export let HEAP32: Int32Array
 export let stackSave: () => number
 export let stackAlloc: (n: number) => number
 export let stackRestore: (v: number) => void
+/** @internal shared wrappers defined in glue.js (see src/mcl/src/wasm/glue.js) */
+export let copyToHeap32: (a: Uint32Array, pos: number) => void
+export let copyFromHeap32: (a: Uint32Array, pos: number) => void
+export let salloc: (a: Uint32Array) => number
+export let sallocCopy: (a: Uint32Array) => number
+export let sallocBytes: (buf: Uint8Array) => number
+export let sallocArray: (arr: Uint32Array[]) => number
+export let saveArray: (arr: Uint32Array[], pos: number) => void
+export let callSetter: (func: Function, a: Uint32Array, p1?: any, p2?: any) => void
+export let callGetter: (func: Function, a: Uint32Array, p1?: any, p2?: any) => any
+export let callGetter2: (func: Function, x: Uint32Array, y: Uint32Array, p1?: any) => any
+export let callOp1: (func: Function, y: Uint32Array, x: Uint32Array, p1?: any) => any
+export let callOp2: (func: Function, z: Uint32Array, x: Uint32Array, y: Uint32Array) => any
+export let callShare: (func: Function, y: Uint32Array, vec: Uint32Array[], id: Uint32Array) => any
+export let callRecover: (func: Function, y: Uint32Array, idVec: Uint32Array[], vec: Uint32Array[]) => any
+export let callSetInput: (func: Function, a: Uint32Array, buf: string | Uint8Array, ioMode?: number) => void
+export let callGetStr: (func: Function, a: Uint32Array, ioMode?: number, returnAsStr?: boolean) => any
+export let callDeserialize: (func: Function, a: Uint32Array, buf: Uint8Array) => void
+export let callSerialize: (func: Function, a: Uint32Array) => Uint8Array
 interface MallocDebugState {
   enabled: boolean
   total: number
@@ -69,132 +88,65 @@ export const free = (x: number): void => {
   mod._free(x)
 }
 
-type ToStrFunc = (x: number, ioMode: number) => (string | Uint8Array)
-
 const addWrappedMethods = (): void => {
-  type StringReader = (pos: number, maxBufSize: number, x: number, ioMode: number) => number
-  const _wrapGetStr = (func: StringReader, returnAsStr = true): ToStrFunc => {
-    return (x: number, ioMode = 0) => {
-      const stack = mod.stackSave()
-      const maxBufSize = 4096
-      const pos: number = mod.stackAlloc(maxBufSize)
-      const n = func(pos, maxBufSize, x, ioMode)
-      if (n > 0) {
-        let s = null
-        if (returnAsStr) {
-          s = ptrToAsciiStr(pos, n)
-        } else {
-          s = new Uint8Array(mod.HEAP8.subarray(pos, pos + n))
-        }
-        mod.stackRestore(stack)
-        return s
-      } else {
-        mod.stackRestore(stack)
-        throw new Error(`err gen_str:${x}`)
-      }
-    }
-  }
-
-  const _wrapSerialize = (func: StringReader): ToStrFunc => {
-    return _wrapGetStr(func, false)
-  }
-
-  type StringWriter = (pos: number, maxBufSize: number, x: number) => number
-  const _wrapDeserialize = (func: StringWriter) => {
-    return (x: number, buf: Uint8Array) => {
-      const stack = mod.stackSave()
-      const pos = mod.stackAlloc(buf.length)
-      mod.HEAP8.set(buf, pos)
-      const r = func(x, pos, buf.length)
-      mod.stackRestore(stack)
-      if (r === 0 || r !== buf.length) throw new Error(`err _wrapDeserialize: ${r} != ${buf.length}`)
-    }
-  }
-
-  /*
-    argNum : n
-    func(x0, ..., x_(n-1), buf, ioMode)
-    => func(x0, ..., x_(n-1), pos, buf.length, ioMode)
-  */
-  const _wrapInput = (func: Function, argNum: number) => {
-    return function (...args: any[]) {
-      const buf = args[argNum]
-      const typeStr = Object.prototype.toString.apply(buf)
-      if (!['[object String]', '[object Uint8Array]', '[object Array]'].includes(typeStr)) {
-        throw new Error(`err bad type:"${typeStr}". Use String or Uint8Array.`)
-      }
-      const ioMode = args[argNum + 1] // may undefined
-      const stack = mod.stackSave()
-      const pos = mod.stackAlloc(buf.length)
-      if (typeStr === '[object String]') {
-        asciiStrToPtr(pos, buf)
-      } else {
-        mod.HEAP8.set(buf, pos)
-      }
-      const r: number = func(...args.slice(0, argNum), pos, buf.length, ioMode)
-      mod.stackRestore(stack)
-      if (r !== 0) throw new Error('err _wrapInput')
-    }
-  }
-
   mod.mclBnFr_malloc = () => {
     return mod._malloc(MCLBN_FR_SIZE)
   }
-  mod.mclBnFr_setLittleEndian = _wrapInput(mod._mclBnFr_setLittleEndian, 1)
-  mod.mclBnFr_setLittleEndianMod = _wrapInput(mod._mclBnFr_setLittleEndianMod, 1)
-  mod.mclBnFr_setBigEndianMod = _wrapInput(mod._mclBnFr_setBigEndianMod, 1)
-  mod.mclBnFr_setStr = _wrapInput(mod._mclBnFr_setStr, 1)
-  mod.mclBnFr_getStr = _wrapGetStr(mod._mclBnFr_getStr)
-  mod.mclBnFr_deserialize = _wrapDeserialize(mod._mclBnFr_deserialize)
-  mod.mclBnFr_serialize = _wrapSerialize(mod._mclBnFr_serialize)
-  mod.mclBnFr_setHashOf = _wrapInput(mod._mclBnFr_setHashOf, 1)
+  mod.mclBnFr_setLittleEndian = mod.wrapInput(mod._mclBnFr_setLittleEndian, 1)
+  mod.mclBnFr_setLittleEndianMod = mod.wrapInput(mod._mclBnFr_setLittleEndianMod, 1)
+  mod.mclBnFr_setBigEndianMod = mod.wrapInput(mod._mclBnFr_setBigEndianMod, 1)
+  mod.mclBnFr_setStr = mod.wrapInput(mod._mclBnFr_setStr, 1)
+  mod.mclBnFr_getStr = mod.wrapGetStr(mod._mclBnFr_getStr)
+  mod.mclBnFr_deserialize = mod.wrapDeserialize(mod._mclBnFr_deserialize)
+  mod.mclBnFr_serialize = mod.wrapSerialize(mod._mclBnFr_serialize)
+  mod.mclBnFr_setHashOf = mod.wrapInput(mod._mclBnFr_setHashOf, 1)
   /// ////////////////////////////////////////////////////////////
   mod.mclBnFp_malloc = () => {
     return mod._malloc(MCLBN_FP_SIZE)
   }
-  mod.mclBnFp_setLittleEndian = _wrapInput(mod._mclBnFp_setLittleEndian, 1)
-  mod.mclBnFp_setLittleEndianMod = _wrapInput(mod._mclBnFp_setLittleEndianMod, 1)
-  mod.mclBnFp_setBigEndianMod = _wrapInput(mod._mclBnFp_setBigEndianMod, 1)
-  mod.mclBnFp_setStr = _wrapInput(mod._mclBnFp_setStr, 1)
-  mod.mclBnFp_getStr = _wrapGetStr(mod._mclBnFp_getStr)
-  mod.mclBnFp_deserialize = _wrapDeserialize(mod._mclBnFp_deserialize)
-  mod.mclBnFp_serialize = _wrapSerialize(mod._mclBnFp_serialize)
-  mod.mclBnFp_setHashOf = _wrapInput(mod._mclBnFp_setHashOf, 1)
+  mod.mclBnFp_setLittleEndian = mod.wrapInput(mod._mclBnFp_setLittleEndian, 1)
+  mod.mclBnFp_setLittleEndianMod = mod.wrapInput(mod._mclBnFp_setLittleEndianMod, 1)
+  mod.mclBnFp_setBigEndianMod = mod.wrapInput(mod._mclBnFp_setBigEndianMod, 1)
+  mod.mclBnFp_setStr = mod.wrapInput(mod._mclBnFp_setStr, 1)
+  mod.mclBnFp_getStr = mod.wrapGetStr(mod._mclBnFp_getStr)
+  mod.mclBnFp_deserialize = mod.wrapDeserialize(mod._mclBnFp_deserialize)
+  mod.mclBnFp_serialize = mod.wrapSerialize(mod._mclBnFp_serialize)
+  mod.mclBnFp_setHashOf = mod.wrapInput(mod._mclBnFp_setHashOf, 1)
 
   mod.mclBnFp2_malloc = () => {
     return mod._malloc(MCLBN_FP_SIZE * 2)
   }
-  mod.mclBnFp2_deserialize = _wrapDeserialize(mod._mclBnFp2_deserialize)
-  mod.mclBnFp2_serialize = _wrapSerialize(mod._mclBnFp2_serialize)
+  mod.mclBnFp2_deserialize = mod.wrapDeserialize(mod._mclBnFp2_deserialize)
+  mod.mclBnFp2_serialize = mod.wrapSerialize(mod._mclBnFp2_serialize)
 
   /// ////////////////////////////////////////////////////////////
   mod.mclBnG1_malloc = () => {
     return mod._malloc(MCLBN_G1_SIZE)
   }
-  mod.mclBnG1_setStr = _wrapInput(mod._mclBnG1_setStr, 1)
-  mod.mclBnG1_getStr = _wrapGetStr(mod._mclBnG1_getStr)
-  mod.mclBnG1_deserialize = _wrapDeserialize(mod._mclBnG1_deserialize)
-  mod.mclBnG1_serialize = _wrapSerialize(mod._mclBnG1_serialize)
-  mod.mclBnG1_hashAndMapTo = _wrapInput(mod._mclBnG1_hashAndMapTo, 1)
+  mod.mclBnG1_setStr = mod.wrapInput(mod._mclBnG1_setStr, 1)
+  mod.mclBnG1_getStr = mod.wrapGetStr(mod._mclBnG1_getStr)
+  mod.mclBnG1_deserialize = mod.wrapDeserialize(mod._mclBnG1_deserialize)
+  mod.mclBnG1_serialize = mod.wrapSerialize(mod._mclBnG1_serialize)
+  mod.mclBnG1_hashAndMapTo = mod.wrapInput(mod._mclBnG1_hashAndMapTo, 1)
 
   /// ////////////////////////////////////////////////////////////
   mod.mclBnG2_malloc = () => {
     return mod._malloc(MCLBN_G2_SIZE)
   }
-  mod.mclBnG2_setStr = _wrapInput(mod._mclBnG2_setStr, 1)
-  mod.mclBnG2_getStr = _wrapGetStr(mod._mclBnG2_getStr)
-  mod.mclBnG2_deserialize = _wrapDeserialize(mod._mclBnG2_deserialize)
-  mod.mclBnG2_serialize = _wrapSerialize(mod._mclBnG2_serialize)
-  mod.mclBnG2_hashAndMapTo = _wrapInput(mod._mclBnG2_hashAndMapTo, 1)
+  mod.mclBnG2_setStr = mod.wrapInput(mod._mclBnG2_setStr, 1)
+  mod.mclBnG2_getStr = mod.wrapGetStr(mod._mclBnG2_getStr)
+  mod.mclBnG2_deserialize = mod.wrapDeserialize(mod._mclBnG2_deserialize)
+  mod.mclBnG2_serialize = mod.wrapSerialize(mod._mclBnG2_serialize)
+  mod.mclBnG2_hashAndMapTo = mod.wrapInput(mod._mclBnG2_hashAndMapTo, 1)
 
   /// ////////////////////////////////////////////////////////////
   mod.mclBnGT_malloc = () => {
     return mod._malloc(MCLBN_GT_SIZE)
   }
-  mod.mclBnGT_deserialize = _wrapDeserialize(mod._mclBnGT_deserialize)
-  mod.mclBnGT_serialize = _wrapSerialize(mod._mclBnGT_serialize)
-  mod.mclBnGT_setStr = _wrapInput(mod._mclBnGT_setStr, 1)
-  mod.mclBnGT_getStr = _wrapGetStr(mod._mclBnGT_getStr)
+  mod.mclBnGT_deserialize = mod.wrapDeserialize(mod._mclBnGT_deserialize)
+  mod.mclBnGT_serialize = mod.wrapSerialize(mod._mclBnGT_serialize)
+  mod.mclBnGT_setStr = mod.wrapInput(mod._mclBnGT_setStr, 1)
+  mod.mclBnGT_getStr = mod.wrapGetStr(mod._mclBnGT_getStr)
 
   /*
     she libray always uses (malloc,free) in nested pairs.
@@ -263,6 +215,24 @@ export const initializeMcl = async (curveType = CurveType.BN254): Promise<void> 
   stackSave = mod.stackSave
   stackAlloc = mod.stackAlloc
   stackRestore = mod.stackRestore
+  copyToHeap32 = mod.copyToHeap32
+  copyFromHeap32 = mod.copyFromHeap32
+  salloc = mod.salloc
+  sallocCopy = mod.sallocCopy
+  sallocBytes = mod.sallocBytes
+  sallocArray = mod.sallocArray
+  saveArray = mod.saveArray
+  callSetter = mod.callSetter
+  callGetter = mod.callGetter
+  callGetter2 = mod.callGetter2
+  callOp1 = mod.callOp1
+  callOp2 = mod.callOp2
+  callShare = mod.callShare
+  callRecover = mod.callRecover
+  callSetInput = mod.callSetInput
+  callGetStr = mod.callGetStr
+  callDeserialize = mod.callDeserialize
+  callSerialize = mod.callSerialize
 
   initializedCurveType = curveType
   addWrappedMethods()

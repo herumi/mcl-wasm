@@ -20,7 +20,6 @@ async function curveTest (curveType, name) {
     PairingCapiTest()
     modTest()
     console.log('all ok')
-    benchCapi()
     benchAll()
   } catch (e) {
     console.log(`TEST FAIL ${e}`)
@@ -312,9 +311,6 @@ function PairingTest () {
     e3 = mcl.finalExp(e3)
     assert(e1.isEqual(e2))
     assert(e1.isEqual(e3))
-    const C = 100
-    bench('precomputedMillerLoop2', C, () => mcl.precomputedMillerLoop(P, Q1coeff, P2, Q2coeff))
-    bench('precomputedMillerLoop2mixed', C, () => mcl.precomputedMillerLoop2mixed(P, Q, P2, Q2coeff))
     // call this function to avoid memory leak
     Q2coeff.destroy()
     Q1coeff.destroy()
@@ -487,181 +483,257 @@ function modTest () {
   }
 }
 
-function bench (label, count, func) {
+/*
+  benchmark
+  Each row shows the time of one call (usec) of the C API (Capi) and
+  the TypeScript wrapper (wrapper) for the same function.
+  The wrapper time includes the copy of the operands to the wasm stack
+  and the copy of the result back to the JS side.
+*/
+
+function measure (count, func) {
   const start = performance.now()
   for (let i = 0; i < count; i++) {
     func()
   }
   const end = performance.now()
-  const t = (end - start) / count
-  const roundTime = (Math.round(t * 1e6)) / 1000
-  console.log(label + ' ' + roundTime + ' usec')
+  return (end - start) * 1000 / count // usec
 }
 
-function benchCapi () {
-  console.log('Capi benchmark')
-  const C = 1000000
+const NAME_WIDTH = 32
+const VALUE_WIDTH = 14
+
+function fmtTime (t) {
+  if (t === null) return '-'
+  return t.toFixed(3)
+}
+
+function benchHeader () {
+  console.log('name'.padEnd(NAME_WIDTH) + 'Capi(usec)'.padStart(VALUE_WIDTH) + 'wrapper(usec)'.padStart(VALUE_WIDTH))
+}
+
+// capiFunc or wrapperFunc may be null if not available
+function bench (name, count, capiFunc, wrapperFunc) {
+  const capi = capiFunc ? measure(count, capiFunc) : null
+  const wrapper = wrapperFunc ? measure(count, wrapperFunc) : null
+  console.log(name.padEnd(NAME_WIDTH) + fmtTime(capi).padStart(VALUE_WIDTH) + fmtTime(wrapper).padStart(VALUE_WIDTH))
+}
+
+// copy an array of objects to newly malloc'ed wasm memory
+function allocArray (v) {
+  const size = v[0].a_.length * 4
+  const pos = mcl.mod._malloc(size * v.length)
+  for (let i = 0; i < v.length; i++) {
+    v[i].copyToMem(pos + size * i)
+  }
+  return pos
+}
+
+// copy a Uint8Array to newly malloc'ed wasm memory
+function allocBuf (buf) {
+  const pos = mcl.mod._malloc(buf.length)
+  mcl.mod.HEAP8.set(buf, pos)
+  return pos
+}
+
+// field (Fr, Fp, Fp2) benchmark
+function benchField (name, a, b) {
   const mod = mcl.mod
-  {
-    let _a = new mcl.Fr()
-    const _b = new mcl.Fr()
-    _a.setByCSPRNG()
-    _b.setByCSPRNG()
-    const a = _a._alloc()
-    const b = _b._alloc()
-    _a.copyToMem(a)
-    _b.copyToMem(b)
-    mod._mclBnFr_add(a, a, b)
-    _a = mcl.add(_a, _b)
-    _b.copyFromMem(a)
-    assert(_a.isEqual(_b))
-    console.log('Fr')
-    bench('Fr::add', C, () => { mod._mclBnFr_add(a, a, b) })
-    bench('Fr::sub', C, () => { mod._mclBnFr_sub(a, a, b) })
-    bench('Fr::mul', C, () => { mod._mclBnFr_mul(a, a, b) })
-    bench('Fr::sqr', C, () => { mod._mclBnFr_sqr(a, a) })
-    bench('Fr::div', C, () => { mod._mclBnFr_div(a, a, b) })
-    mcl.free(b)
-    mcl.free(a)
+  const C = 100000
+  const C2 = 1000
+  let x = b
+  const xp = a._allocAndCopy()
+  const yp = b._allocAndCopy()
+  bench(`${name}::add`, C, () => mod[`_mclBn${name}_add`](yp, yp, xp), () => { x = mcl.add(x, a) })
+  bench(`${name}::sub`, C, () => mod[`_mclBn${name}_sub`](yp, yp, xp), () => { x = mcl.sub(x, a) })
+  bench(`${name}::mul`, C, () => mod[`_mclBn${name}_mul`](yp, yp, xp), () => { x = mcl.mul(x, a) })
+  if (name !== 'Fp2') { // mulUnit is defined for Fr and Fp only
+    bench(`${name}::mulUnit`, C, () => mod[`_mclBn${name}_mulUnit`](yp, yp, 100), () => { x = mcl.mulUnit(x, 100) })
   }
-  {
-    let _a = new mcl.Fp()
-    const _b = new mcl.Fp()
-    _a.setByCSPRNG()
-    _b.setByCSPRNG()
-    const a = _a._alloc()
-    const b = _b._alloc()
-    _a.copyToMem(a)
-    _b.copyToMem(b)
-    mod._mclBnFp_add(a, a, b)
-    _a = mcl.add(_a, _b)
-    _b.copyFromMem(a)
-    assert(_a.isEqual(_b))
-    console.log('Fp')
-    bench('Fp::add', C, () => { mod._mclBnFp_add(a, a, b) })
-    bench('Fp::sub', C, () => { mod._mclBnFp_sub(a, a, b) })
-    bench('Fp::mul', C, () => { mod._mclBnFp_mul(a, a, b) })
-    bench('Fp::sqr', C, () => { mod._mclBnFp_sqr(a, a) })
-    bench('Fp::div', C, () => { mod._mclBnFp_div(a, a, b) })
-    mcl.free(b)
-    mcl.free(a)
-  }
-  {
-    let _a = new mcl.Fp2()
-    const _b = new mcl.Fp2()
-    _a.setInt(3, 4)
-    _b.setInt(-3, 9)
-    const a = _a._alloc()
-    const b = _b._alloc()
-    _a.copyToMem(a)
-    _b.copyToMem(b)
-    mod._mclBnFp2_add(a, a, b)
-    _a = mcl.add(_a, _b)
-    _b.copyFromMem(a)
-    assert(_a.isEqual(_b))
-    console.log('Fp2')
-    bench('Fp2::add', C, () => { mod._mclBnFp2_add(a, a, b) })
-    bench('Fp2::sub', C, () => { mod._mclBnFp2_sub(a, a, b) })
-    bench('Fp2::mul', C, () => { mod._mclBnFp2_mul(a, a, b) })
-    bench('Fp2::sqr', C, () => { mod._mclBnFp2_sqr(a, a) })
-    bench('Fp2::div', C, () => { mod._mclBnFp2_div(a, a, b) })
-    mcl.free(b)
-    mcl.free(a)
-  }
+  bench(`${name}::sqr`, C, () => mod[`_mclBn${name}_sqr`](yp, yp), () => { x = mcl.sqr(x) })
+  bench(`${name}::inv`, C, () => mod[`_mclBn${name}_inv`](yp, yp), () => { x = mcl.inv(x) })
+  bench(`${name}::div`, C, () => mod[`_mclBn${name}_div`](yp, yp, xp), () => { x = mcl.div(x, a) })
+  x = mcl.sqr(x)
+  x.copyToMem(xp)
+  bench(`${name}::squareRoot`, C2, () => mod[`_mclBn${name}_squareRoot`](yp, xp), () => { mcl.squareRoot(x) })
+  mcl.free(yp)
+  mcl.free(xp)
 }
 
-function invVecBench (msg, cstr) {
+// setLittleEndianMod for n-byte inputs (n = 32, 48, 64)
+function benchSetMod (name, Cstr) {
+  const mod = mcl.mod
+  const C = 100000
+  const a = new Cstr()
+  const xp = a._alloc()
+  const le = mod[`_mclBn${name}_setLittleEndianMod`];
+  [32, 48, 64].forEach(n => {
+    const buf = new Uint8Array(n)
+    for (let i = 0; i < n; i++) {
+      buf[i] = (i * 37 + 11) & 0xff
+    }
+    const p = allocBuf(buf)
+    bench(`${name}::setLittleEndianMod(${n})`, C, () => le(xp, p, n), () => a.setLittleEndianMod(buf))
+    mcl.free(p)
+  })
+  mcl.free(xp)
+}
+
+function benchInvVec (name, Cstr) {
+  const mod = mcl.mod
   const n = 1000
-  let x = Array(n)
-  x[0] = new cstr()
+  const C = 100
+  const x = Array(n)
+  x[0] = new Cstr()
   x[0].setStr('1232353525205982904')
   for (let i = 1; i < n; i++) {
     x[i] = mcl.sqr(x[i - 1])
   }
-  bench(msg, 1000, () => { x = mcl.invVec(x) })
+  const xp = allocArray(x)
+  const yp = mod._malloc(x[0].a_.length * 4 * n)
+  const inv = mod[`_mclBn${name}_invVec`]
+  bench(`${name}::invVec(${n})`, C, () => inv(yp, xp, n), () => mcl.invVec(x))
+  mcl.free(yp)
+  mcl.free(xp)
+}
+
+// group (G1, G2) benchmark
+function benchGroup (name, Cstr, a) {
+  const mod = mcl.mod
+  const C = 100000
+  const C2 = 1000
+  const msg = 'hello wasm'
+  const msgBuf = new TextEncoder().encode(msg)
+  let P = mcl[`hashAndMapTo${name}`]('abc')
+  const P2 = mcl[`hashAndMapTo${name}`]('abce')
+  const ap = a._allocAndCopy()
+  const pp = P._allocAndCopy()
+  const p2p = P2._allocAndCopy()
+  const zp = new Cstr()._alloc()
+  const msgp = allocBuf(msgBuf)
+  bench(`${name}::add`, C, () => mod[`_mclBn${name}_add`](pp, pp, p2p), () => { P = mcl.add(P, P2) })
+  bench(`${name}::dbl`, C, () => mod[`_mclBn${name}_dbl`](pp, pp), () => { P = mcl.dbl(P) })
+  bench(`${name}::mul`, C2, () => mod[`_mclBn${name}_mul`](pp, pp, ap), () => { P = mcl.mul(P, a) })
+  bench(`${name}::normalize`, C2, () => mod[`_mclBn${name}_normalize`](zp, pp), () => mcl.normalize(P))
+  bench(`${name}::isValidOrder`, C2, () => mod[`_mclBn${name}_isValidOrder`](pp), () => P.isValidOrder())
+  bench(`hashAndMapTo${name}`, C2, () => mod[`_mclBn${name}_hashAndMapTo`](zp, msgp, msgBuf.length), () => mcl[`hashAndMapTo${name}`](msg))
+  mcl.free(msgp)
+  mcl.free(zp)
+  mcl.free(p2p)
+  mcl.free(pp)
+  mcl.free(ap)
+}
+
+function benchMulVec (name, Cstr) {
+  const mod = mcl.mod
+  const n = 100
+  const C = 10
+  const xs = []
+  const gs = []
+  for (let i = 0; i < n; i++) {
+    const x = new mcl.Fr()
+    x.setByCSPRNG()
+    xs.push(x)
+    gs.push(mcl[`hashAndMapTo${name}`]('A' + String(i)))
+  }
+  const gp = allocArray(gs)
+  const xp = allocArray(xs)
+  const zp = new Cstr()._alloc()
+  const mulVec = mod[`_mclBn${name}_mulVec`]
+  bench(`${name}::mulVec(${n})`, C, () => mulVec(zp, gp, xp, n), () => mcl.mulVec(gs, xs))
+  mcl.free(zp)
+  mcl.free(xp)
+  mcl.free(gp)
+}
+
+function benchGT (e) {
+  const mod = mcl.mod
+  const C = 100000
+  const C2 = 1000
+  let x = e
+  const xp = e._allocAndCopy()
+  const yp = e._allocAndCopy()
+  bench('GT::add', C, () => mod._mclBnGT_add(yp, yp, xp), () => { x = mcl.add(x, e) })
+  bench('GT::mul', C, () => mod._mclBnGT_mul(yp, yp, xp), () => { x = mcl.mul(x, e) })
+  bench('GT::sqr', C, () => mod._mclBnGT_sqr(yp, yp), () => { x = mcl.sqr(x) })
+  bench('GT::inv', C2, () => mod._mclBnGT_inv(yp, yp), () => { x = mcl.inv(x) })
+  mcl.free(yp)
+  mcl.free(xp)
+}
+
+function benchPairing (P, Q, P2, Q2) {
+  const mod = mcl.mod
+  const C = 1000
+  const C2 = 100
+  const e = mcl.pairing(P, Q)
+  const Qcoeff = new mcl.PrecomputedG2(Q)
+  const Q2coeff = new mcl.PrecomputedG2(Q2)
+  const pp = P._allocAndCopy()
+  const qp = Q._allocAndCopy()
+  const p2p = P2._allocAndCopy()
+  const q2p = Q2._allocAndCopy()
+  const ep = e._allocAndCopy()
+  const zp = e._alloc()
+  bench('pairing', C, () => mod._mclBn_pairing(zp, pp, qp), () => mcl.pairing(P, Q))
+  bench('millerLoop', C, () => mod._mclBn_millerLoop(zp, pp, qp), () => mcl.millerLoop(P, Q))
+  bench('finalExp', C, () => mod._mclBn_finalExp(zp, ep), () => mcl.finalExp(e))
+  bench('precomputedMillerLoop', C, () => mod._mclBn_precomputedMillerLoop(zp, pp, Qcoeff.p), () => mcl.precomputedMillerLoop(P, Qcoeff))
+  bench('precomputedMillerLoop2', C2, () => mod._mclBn_precomputedMillerLoop2(zp, pp, Qcoeff.p, p2p, Q2coeff.p), () => mcl.precomputedMillerLoop2(P, Qcoeff, P2, Q2coeff))
+  bench('precomputedMillerLoop2mixed', C2, () => mod._mclBn_precomputedMillerLoop2mixed(zp, pp, qp, p2p, Q2coeff.p), () => mcl.precomputedMillerLoop2mixed(P, Q, P2, Q2coeff))
+  mcl.free(zp)
+  mcl.free(ep)
+  mcl.free(q2p)
+  mcl.free(p2p)
+  mcl.free(qp)
+  mcl.free(pp)
+  Q2coeff.destroy()
+  Qcoeff.destroy()
 }
 
 function benchAll () {
-  const a = new mcl.Fr()
-
-  const msg = 'hello wasm'
-
-  a.setByCSPRNG()
-  let P = mcl.hashAndMapToG1('abc')
-  let Q = mcl.hashAndMapToG2('abc')
-  const P2 = mcl.hashAndMapToG1('abce')
-  const Q2 = mcl.hashAndMapToG2('abce')
-  const Qcoeff = new mcl.PrecomputedG2(Q)
-  const e = mcl.pairing(P, Q)
-
   console.log('benchmark')
+  benchHeader()
   const C = 1000
-  const C2 = 100000
-  bench('Fr::setByCSPRNG', C, () => a.setByCSPRNG())
-  bench('pairing', C, () => mcl.pairing(P, Q))
-  bench('millerLoop', C, () => mcl.millerLoop(P, Q))
-  bench('finalExp', C, () => mcl.finalExp(e))
-  bench('precomputedMillerLoop', C, () => mcl.precomputedMillerLoop(P, Qcoeff))
-  bench('G1::add', C2, () => { P = mcl.add(P, P2) })
-  bench('G1::dbl', C2, () => { P = mcl.dbl(P) })
-  bench('G1::mul', C, () => { P = mcl.mul(P, a) })
-  bench('G2::add', C2, () => { Q = mcl.add(Q, Q2) })
-  bench('G2::dbl', C2, () => { Q = mcl.dbl(Q) })
-  bench('G2::mul', C, () => { Q = mcl.mul(Q, a) })
-  bench('hashAndMapToG1', C, () => mcl.hashAndMapToG1(msg))
-  bench('hashAndMapToG2', C, () => mcl.hashAndMapToG2(msg))
-  bench('G1::isValidOrder', C, () => P.isValidOrder())
-  bench('G2::isValidOrder', C, () => Q.isValidOrder())
-  invVecBench('Fr::invVec', mcl.Fr)
-  invVecBench('Fp::invVec', mcl.Fp)
-
   {
-    const a = new mcl.Fp()
-    let b = new mcl.Fp()
+    const a = new mcl.Fr()
+    // no C API of setByCSPRNG in wasm
+    bench('Fr::setByCSPRNG', C, null, () => a.setByCSPRNG())
+  }
+  {
+    const a = new mcl.Fr()
+    const b = new mcl.Fr()
     a.setByCSPRNG()
     b.setByCSPRNG()
-    console.log('Fp')
-    bench('Fp::add', C2, () => { b = mcl.add(b, a) })
-    bench('Fp::sub', C2, () => { b = mcl.sub(b, a) })
-    bench('Fp::mul', C2, () => { b = mcl.mul(b, a) })
-    bench('Fp::sqr', C2, () => { b = mcl.sqr(b) })
-    bench('Fp::inv', C2, () => { b = mcl.inv(b) })
-    b = mcl.sqr(b)
-    bench('Fp::squareRoot', C, () => { mcl.squareRoot(b) })
+    benchField('Fr', a, b)
+    benchSetMod('Fr', mcl.Fr)
+    benchInvVec('Fr', mcl.Fr)
+  }
+  {
+    const a = new mcl.Fp()
+    const b = new mcl.Fp()
+    a.setByCSPRNG()
+    b.setByCSPRNG()
+    benchField('Fp', a, b)
+    benchSetMod('Fp', mcl.Fp)
+    benchInvVec('Fp', mcl.Fp)
   }
   {
     const a = new mcl.Fp2()
-    let b = new mcl.Fp2()
+    const b = new mcl.Fp2()
     a.setInt(3, 4)
     b.setInt(-3, 9)
-    console.log('Fp2')
-    bench('Fp2::add', C2, () => { b = mcl.add(b, a) })
-    bench('Fp2::sub', C2, () => { b = mcl.sub(b, a) })
-    bench('Fp2::mul', C2, () => { b = mcl.mul(b, a) })
-    bench('Fp2::sqr', C2, () => { b = mcl.sqr(b) })
-    bench('Fp2::inv', C2, () => { b = mcl.inv(b) })
-    b = mcl.sqr(b)
-    bench('Fp2::squareRoot', C, () => { mcl.squareRoot(b) })
+    benchField('Fp2', a, b)
   }
-  {
-    let b = new mcl.Fr()
-    b.setByCSPRNG()
-    console.log('Fr')
-    bench('Fr::add', C2, () => { b = mcl.add(b, a) })
-    bench('Fr::sub', C2, () => { b = mcl.sub(b, a) })
-    bench('Fr::mul', C2, () => { b = mcl.mul(b, a) })
-    bench('Fr::sqr', C2, () => { b = mcl.sqr(b) })
-    bench('Fr::inv', C2, () => { b = mcl.inv(b) })
-    b = mcl.sqr(b)
-    bench('Fr::squareRoot', C, () => { mcl.squareRoot(b) })
-  }
-
-  {
-    let e2 = mcl.pairing(P, Q)
-    bench('GT::add', C2, () => { e2 = mcl.add(e2, e) })
-    bench('GT::mul', C2, () => { e2 = mcl.mul(e2, e) })
-    bench('GT::sqr', C2, () => { e2 = mcl.sqr(e2) })
-    bench('GT::inv', C, () => { e2 = mcl.inv(e2) })
-  }
-  Qcoeff.destroy()
+  const a = new mcl.Fr()
+  a.setByCSPRNG()
+  benchGroup('G1', mcl.G1, a)
+  benchMulVec('G1', mcl.G1)
+  benchGroup('G2', mcl.G2, a)
+  benchMulVec('G2', mcl.G2)
+  const P = mcl.hashAndMapToG1('abc')
+  const Q = mcl.hashAndMapToG2('abc')
+  const P2 = mcl.hashAndMapToG1('abce')
+  const Q2 = mcl.hashAndMapToG2('abce')
+  benchGT(mcl.pairing(P, Q))
+  benchPairing(P, Q, P2, Q2)
 }
