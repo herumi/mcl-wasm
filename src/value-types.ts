@@ -1,4 +1,4 @@
-import { mod, HEAP8, HEAP32, stackSave, stackAlloc, stackRestore, toHexStr, fromHexStr } from './mcl'
+import { mod, stackSave, stackRestore, copyToHeap32, copyFromHeap32, salloc, sallocCopy, sallocBytes, sallocArray, saveArray, callSetter, callGetter, callGetter2, callOp1, callOp2, callShare, callRecover, callSetInput, callGetStr, callDeserialize, callSerialize, toHexStr, fromHexStr } from './mcl'
 import { MCLBN_FP_SIZE, MCLBN_FR_SIZE, MCLBN_G1_SIZE, MCLBN_G2_SIZE, MCLBN_GT_SIZE } from './constants'
 import getRandomValues from './getRandomValues'
 
@@ -28,12 +28,12 @@ abstract class Common {
 
   // copy to allocated memory
   copyToMem (pos: number): void {
-    HEAP32.set(this.a_, pos / 4)
+    copyToHeap32(this.a_, pos)
   }
 
   // copy from allocated memory
   copyFromMem (pos: number): void {
-    this.a_.set(HEAP32.subarray(pos / 4, pos / 4 + this.a_.length))
+    copyFromHeap32(this.a_, pos)
   }
 
   abstract setStr (s: string, base?: number): void
@@ -53,26 +53,24 @@ abstract class Common {
 
   /** @internal stack alloc new array */
   _salloc (): number {
-    return stackAlloc(this.a_.length * 4)
+    return salloc(this.a_)
   }
 
   /** @internal alloc and copy a_ to HEAP32[pos / 4] */
   _allocAndCopy (): number {
     const pos = this._alloc()
-    HEAP32.set(this.a_, pos / 4)
+    copyToHeap32(this.a_, pos)
     return pos
   }
 
   /** @internal stack alloc and copy a_ to HEAP32[pos / 4] */
   _sallocAndCopy (): number {
-    const pos = this._salloc()
-    HEAP32.set(this.a_, pos / 4)
-    return pos
+    return sallocCopy(this.a_)
   }
 
   /** @internal save pos to a_ */
   _save (pos: number): void {
-    this.a_.set(HEAP32.subarray(pos / 4, pos / 4 + this.a_.length))
+    copyFromHeap32(this.a_, pos)
   }
 
   /** @internal save and free */
@@ -82,68 +80,58 @@ abstract class Common {
   }
 
   /** @internal set parameter */
-  _setter (func: Function, ...params: any[]): void {
-    const stack = stackSave()
-    const pos = this._salloc()
-    const r = func(pos, ...params)
-    this._save(pos)
-    stackRestore(stack)
-    if (r !== undefined && r !== 0) throw new Error('_setter err')
+  _setter (func: Function, p1?: any, p2?: any): void {
+    callSetter(func, this.a_, p1, p2)
   }
 
   /** @internal getter */
-  _getter (func: Function, ...params: any[]): any {
-    const stack = stackSave()
-    const pos = this._sallocAndCopy()
-    const s = func(pos, ...params)
-    stackRestore(stack)
-    return s
+  _getter (func: Function, p1?: any, p2?: any): any {
+    return callGetter(func, this.a_, p1, p2)
+  }
+
+  /** @internal this = func(buf) ; buf is a string or Uint8Array */
+  _setInput (func: Function, buf: string | Uint8Array, ioMode?: number): void {
+    callSetInput(func, this.a_, buf, ioMode)
+  }
+
+  /** @internal return string of this */
+  _getStr (func: Function, ioMode?: number): string {
+    return callGetStr(func, this.a_, ioMode)
+  }
+
+  /** @internal this = deserialize(buf) */
+  _deserialize (func: Function, buf: Uint8Array): void {
+    callDeserialize(func, this.a_, buf)
+  }
+
+  /** @internal return serialized this */
+  _serialize (func: Function): Uint8Array {
+    return callSerialize(func, this.a_)
   }
 
   /** @internal */
   _isEqual (func: (xPos: number, yPos: number) => number, rhs: Common): boolean {
-    const stack = stackSave()
-    const xPos = this._sallocAndCopy()
-    const yPos = rhs._sallocAndCopy()
-    const r = func(xPos, yPos)
-    stackRestore(stack)
-    return r === 1
+    return callGetter2(func, this.a_, rhs.a_) === 1
   }
 
   /** @internal func(y, this) and return y */
   _op1 (func: (yPos: number, xPos: number) => void): any {
     const y = new (this.constructor as any)()
-    const stack = stackSave()
-    const xPos = this._sallocAndCopy()
-    const yPos = y._salloc()
-    func(yPos, xPos)
-    y._save(yPos)
-    stackRestore(stack)
+    callOp1(func, y.a_, this.a_)
     return y
   }
 
   /** @internal func(z, this, y) and return z */
   _op2 (func: (zPos: number, xPos: number, yPos: number) => void, y: Common, Cstr: (new () => Common) | null = null): any {
     const z = Cstr !== null ? new Cstr() : new (this.constructor as new () => Common)()
-    const stack = stackSave()
-    const xPos = this._sallocAndCopy()
-    const yPos = y._sallocAndCopy()
-    const zPos = z._salloc()
-    func(zPos, xPos, yPos)
-    z._save(zPos)
-    stackRestore(stack)
+    callOp2(func, z.a_, this.a_, y.a_)
     return z
   }
 
   /** @internal r = func(y, this) and return (true, b) if r = true else (false, null) */
   _squareRoot (func: (yPos: number, xPos: number) => number): [boolean, any] {
     const y = new (this.constructor as any)()
-    const stack = stackSave()
-    const xPos = this._sallocAndCopy()
-    const yPos = y._salloc()
-    const r = func(yPos, xPos)
-    y._save(yPos)
-    stackRestore(stack)
+    const r = callOp1(func, y.a_, this.a_)
     return r === 0 ? [true, y] : [false, null]
   }
 
@@ -194,19 +182,19 @@ export class Fr extends IntType {
   }
 
   deserialize (s: Uint8Array): void {
-    this._setter(mod.mclBnFr_deserialize, s)
+    this._deserialize(mod._mclBnFr_deserialize, s)
   }
 
   serialize (): Uint8Array {
-    return this._getter(mod.mclBnFr_serialize)
+    return this._serialize(mod._mclBnFr_serialize)
   }
 
   setStr (s: string, base = 0): void {
-    this._setter(mod.mclBnFr_setStr, s, base)
+    this._setInput(mod._mclBnFr_setStr, s, base)
   }
 
   getStr (base = 0): string {
-    return this._getter(mod.mclBnFr_getStr, base)
+    return this._getStr(mod._mclBnFr_getStr, base)
   }
 
   isZero (): boolean {
@@ -222,15 +210,15 @@ export class Fr extends IntType {
   }
 
   setLittleEndian (a: Uint8Array): void {
-    this._setter(mod.mclBnFr_setLittleEndian, a)
+    this._setInput(mod._mclBnFr_setLittleEndian, a)
   }
 
   setLittleEndianMod (a: Uint8Array): void {
-    this._setter(mod.mclBnFr_setLittleEndianMod, a)
+    this._setInput(mod._mclBnFr_setLittleEndianMod, a)
   }
 
   setBigEndianMod (a: Uint8Array): void {
-    this._setter(mod.mclBnFr_setBigEndianMod, a)
+    this._setInput(mod._mclBnFr_setBigEndianMod, a)
   }
 
   setByCSPRNG (): void {
@@ -240,7 +228,7 @@ export class Fr extends IntType {
   }
 
   setHashOf (s: string | Uint8Array): void {
-    this._setter(mod.mclBnFr_setHashOf, s)
+    this._setInput(mod._mclBnFr_setHashOf, s)
   }
 }
 
@@ -267,19 +255,19 @@ export class Fp extends IntType {
   }
 
   deserialize (s: Uint8Array): void {
-    this._setter(mod.mclBnFp_deserialize, s)
+    this._deserialize(mod._mclBnFp_deserialize, s)
   }
 
   serialize (): Uint8Array {
-    return this._getter(mod.mclBnFp_serialize)
+    return this._serialize(mod._mclBnFp_serialize)
   }
 
   setStr (s: string, base = 0): void {
-    this._setter(mod.mclBnFp_setStr, s, base)
+    this._setInput(mod._mclBnFp_setStr, s, base)
   }
 
   getStr (base = 0): string {
-    return this._getter(mod.mclBnFp_getStr, base)
+    return this._getStr(mod._mclBnFp_getStr, base)
   }
 
   isOne (): boolean {
@@ -295,15 +283,15 @@ export class Fp extends IntType {
   }
 
   setLittleEndian (a: Uint8Array): void {
-    this._setter(mod.mclBnFp_setLittleEndian, a)
+    this._setInput(mod._mclBnFp_setLittleEndian, a)
   }
 
   setLittleEndianMod (a: Uint8Array): void {
-    this._setter(mod.mclBnFp_setLittleEndianMod, a)
+    this._setInput(mod._mclBnFp_setLittleEndianMod, a)
   }
 
   setBigEndianMod (a: Uint8Array): void {
-    this._setter(mod.mclBnFp_setBigEndianMod, a)
+    this._setInput(mod._mclBnFp_setBigEndianMod, a)
   }
 
   setByCSPRNG (): void {
@@ -313,7 +301,7 @@ export class Fp extends IntType {
   }
 
   setHashOf (s: string | Uint8Array): void {
-    this._setter(mod.mclBnFp_setHashOf, s)
+    this._setInput(mod._mclBnFp_setHashOf, s)
   }
 
   mapToG1 (): G1 {
@@ -355,11 +343,11 @@ export class Fp2 extends Common {
   }
 
   deserialize (s: Uint8Array): void {
-    this._setter(mod.mclBnFp2_deserialize, s)
+    this._deserialize(mod._mclBnFp2_deserialize, s)
   }
 
   serialize (): Uint8Array {
-    return this._getter(mod.mclBnFp2_serialize)
+    return this._serialize(mod._mclBnFp2_serialize)
   }
 
   getStr (base = 0): string {
@@ -447,19 +435,19 @@ export class G1 extends EllipticType {
   clone (): G1 { return _cloneArray<G1>(this) }
 
   deserialize (s: Uint8Array): void {
-    this._setter(mod.mclBnG1_deserialize, s)
+    this._deserialize(mod._mclBnG1_deserialize, s)
   }
 
   serialize (): Uint8Array {
-    return this._getter(mod.mclBnG1_serialize)
+    return this._serialize(mod._mclBnG1_serialize)
   }
 
   setStr (s: string, base = 0): void {
-    this._setter(mod.mclBnG1_setStr, s, base)
+    this._setInput(mod._mclBnG1_setStr, s, base)
   }
 
   getStr (base = 0): string {
-    return this._getter(mod.mclBnG1_getStr, base)
+    return this._getStr(mod._mclBnG1_getStr, base)
   }
 
   normalize (): void {
@@ -513,7 +501,7 @@ export class G1 extends EllipticType {
   }
 
   setHashOf (s: string | Uint8Array): void {
-    this._setter(mod.mclBnG1_hashAndMapTo, s)
+    this._setInput(mod._mclBnG1_hashAndMapTo, s)
   }
 }
 
@@ -542,11 +530,7 @@ export const verifyOrderG2 = (doVerify: boolean): void => {
 
 export const getBasePointG1 = (): G1 => {
   const x = new G1()
-  const stack = stackSave()
-  const xPos = x._salloc()
-  mod._mclBnG1_getBasePoint(xPos)
-  x._save(xPos)
-  stackRestore(stack)
+  callSetter(mod._mclBnG1_getBasePoint, x.a_)
   if (x.isZero()) {
     throw new Error('not supported for pairing curves')
   }
@@ -561,19 +545,19 @@ export class G2 extends EllipticType {
   clone (): G2 { return _cloneArray<G2>(this) }
 
   deserialize (s: Uint8Array): void {
-    this._setter(mod.mclBnG2_deserialize, s)
+    this._deserialize(mod._mclBnG2_deserialize, s)
   }
 
   serialize (): Uint8Array {
-    return this._getter(mod.mclBnG2_serialize)
+    return this._serialize(mod._mclBnG2_serialize)
   }
 
   setStr (s: string, base = 0): void {
-    this._setter(mod.mclBnG2_setStr, s, base)
+    this._setInput(mod._mclBnG2_setStr, s, base)
   }
 
   getStr (base = 0): string {
-    return this._getter(mod.mclBnG2_getStr, base)
+    return this._getStr(mod._mclBnG2_getStr, base)
   }
 
   normalize (): void {
@@ -627,7 +611,7 @@ export class G2 extends EllipticType {
   }
 
   setHashOf (s: string | Uint8Array): void {
-    this._setter(mod.mclBnG2_hashAndMapTo, s)
+    this._setInput(mod._mclBnG2_hashAndMapTo, s)
   }
 }
 
@@ -649,19 +633,19 @@ export class GT extends Common {
   }
 
   deserialize (s: Uint8Array): void {
-    this._setter(mod.mclBnGT_deserialize, s)
+    this._deserialize(mod._mclBnGT_deserialize, s)
   }
 
   serialize (): Uint8Array {
-    return this._getter(mod.mclBnGT_serialize)
+    return this._serialize(mod._mclBnGT_serialize)
   }
 
   setStr (s: string, base = 0): void {
-    this._setter(mod.mclBnGT_setStr, s, base)
+    this._setInput(mod._mclBnGT_setStr, s, base)
   }
 
   getStr (base = 0): string {
-    return this._getter(mod.mclBnGT_getStr, base)
+    return this._getStr(mod._mclBnGT_getStr, base)
   }
 
   isZero (): boolean {
@@ -696,9 +680,12 @@ export class PrecomputedG2 {
     const byteSize = mod._mclBn_getUint64NumToPrecompute() * 8
     this.p = mod._malloc(byteSize) // keep this address
     const stack = stackSave()
-    const Qpos = Q._sallocAndCopy()
-    mod._mclBn_precomputeG2(this.p, Qpos)
-    stackRestore(stack)
+    try {
+      const Qpos = sallocCopy(Q.a_)
+      mod._mclBn_precomputeG2(this.p, Qpos)
+    } finally {
+      stackRestore(stack)
+    }
   }
 
   /*
@@ -888,46 +875,27 @@ export function mulUnit (x: Fr | Fp, y: number): Fr | Fp {
 // z = func(x, y) where y is a uint32
 const _mulUnit = <T extends Fr | Fp>(func: (zPos: number, xPos: number, y: number) => void, x: T, y: number): T => {
   const z = new (x.constructor as new () => T)()
-  const stack = stackSave()
-  const xPos = x._sallocAndCopy()
-  const zPos = z._salloc()
-  func(zPos, xPos, y)
-  z._save(zPos)
-  stackRestore(stack)
+  callOp1(func, z.a_, x.a_, y)
   return z
 }
 
-// stack alloc memory and copy v to it and return the position
-function _sarrayAllocAndCopy<T extends Common> (v: T[]): number {
-  if (v.length === 0) throw new Error('zero size array')
-  const size = v[0].a_.length * 4
-  const pos = stackAlloc(size * v.length)
-  for (let i = 0; i < v.length; i++) {
-    v[i].copyToMem(pos + size * i)
-  }
-  return pos
-}
-
-// copy pos to v
-function _saveArray<T extends Common> (v: T[], pos: number): void {
-  if (v.length === 0) throw new Error('zero size array')
-  const size = v[0].a_.length * 4
-  for (let i = 0; i < v.length; i++) {
-    v[i].copyFromMem(pos + size * i)
-  }
-}
+// array of the internal buffers of v (for sallocArray / saveArray)
+const _toArrays = (v: Common[]): Uint32Array[] => v.map(x => x.a_)
 
 const _mulVec = <T extends G1 | G2>(func: (zPos: number, xPos: number, yPos: number, n: number) => void, xVec: T[], yVec: Fr[], Cstr: any): T => {
   const n = xVec.length
   const z = new Cstr()
   const stack = stackSave()
-  const zPos = z._salloc()
-  const xPos = _sarrayAllocAndCopy(xVec)
-  const yPos = _sarrayAllocAndCopy(yVec)
-  func(zPos, xPos, yPos, n)
-  z._save(zPos)
-  stackRestore(stack)
-  return z
+  try {
+    const zPos = salloc(z.a_)
+    const xPos = sallocArray(_toArrays(xVec))
+    const yPos = sallocArray(_toArrays(yVec))
+    func(zPos, xPos, yPos, n)
+    copyFromHeap32(z.a_, zPos)
+    return z
+  } finally {
+    stackRestore(stack)
+  }
 }
 
 /*
@@ -951,10 +919,13 @@ export const mulVec = <T extends G1 | G2>(xVec: T[], yVec: Fr[]): T => {
 const _invVec = <T extends Fr | Fp | G1 | G2>(func: Function, yVec: T[], xVec: T[]): void => {
   const n = xVec.length
   const stack = stackSave()
-  const xPos = _sarrayAllocAndCopy(xVec)
-  func(xPos, xPos, n)
-  _saveArray(yVec, xPos)
-  stackRestore(stack)
+  try {
+    const xPos = sallocArray(_toArrays(xVec))
+    func(xPos, xPos, n)
+    saveArray(_toArrays(yVec), xPos)
+  } finally {
+    stackRestore(stack)
+  }
 }
 
 export const invVecInPlace = <T extends Fr | Fp>(xVec: T[]): void => {
@@ -1071,15 +1042,17 @@ const _powArray = <T extends Fr | Fp> (powArray: Function, x: T, _y: Number | Bi
   const z = new Cstr()
   const y = IntToArray(_y.valueOf())
   const stack = stackSave()
-  const zPos = z._salloc()
-  const xPos = x._sallocAndCopy()
-  const yPos = stackAlloc(y.length)
-  HEAP8.set(y, yPos)
-  const r = powArray(zPos, xPos, yPos, y.length)
-  z._save(zPos)
-  stackRestore(stack)
-  if (r < 0) throw new Error('powArray err')
-  return z
+  try {
+    const zPos = salloc(z.a_)
+    const xPos = sallocCopy(x.a_)
+    const yPos = sallocBytes(y)
+    const r = powArray(zPos, xPos, yPos, y.length)
+    copyFromHeap32(z.a_, zPos)
+    if (r < 0) throw new Error('powArray err')
+    return z
+  } finally {
+    stackRestore(stack)
+  }
 }
 
 export function pow (x: Fr, y: Fr | Number | BigInt): Fr
@@ -1170,13 +1143,7 @@ export const finalExp = (x: GT): GT => {
 
 function _callShare<T extends Common> (CstrT: new() => T, func: Function, vec: T[], id: Fr): T {
   const a = new CstrT()
-  const stack = stackSave()
-  const pos = a._salloc()
-  const vecPos = _sarrayAllocAndCopy(vec)
-  const idPos = id._sallocAndCopy()
-  func(pos, vecPos, vec.length, idPos)
-  a._save(pos)
-  stackRestore(stack)
+  callShare(func, a.a_, _toArrays(vec), id.a_)
   return a
 }
 
@@ -1184,13 +1151,7 @@ function _callRecover<T extends Common> (CstrT: new() => T, func: Function, idVe
   const k = yVec.length
   if (k !== idVec.length) throw new Error('recover:bad length')
   const a = new CstrT()
-  const stack = stackSave()
-  const aPos = a._salloc()
-  const idVecPos = _sarrayAllocAndCopy(idVec)
-  const yVecPos = _sarrayAllocAndCopy(yVec)
-  const r: number = func(aPos, idVecPos, yVecPos, k)
-  a._save(aPos)
-  stackRestore(stack)
+  const r: number = callRecover(func, a.a_, _toArrays(idVec), _toArrays(yVec))
   if (r !== 0) throw new Error('callRecover')
   return a
 }
