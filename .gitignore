@@ -4,3 +4,5 @@ package-lock.json
 src/mcl.wasm
 *.o
 *.d
+test/test-ts.js
+test/bls-sig.js

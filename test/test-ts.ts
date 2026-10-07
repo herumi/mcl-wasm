@@ -39,7 +39,7 @@ async function stdCurveTest (curveType, name) {
   }
 }
 
-function arithTest() {
+function arithTest () {
   const P = mcl.getBasePointG1()
   console.log(`basePoint=${P.getStr(16)}`)
   let Q = mcl.add(P, P) // x2
@@ -52,7 +52,7 @@ function arithTest() {
   assert(R.isEqual(Q))
 }
 
-async function curveTestAll() {
+async function curveTestAll () {
   // can't parallel
   await curveTest(mcl.BN254, 'BN254')
   await curveTest(mcl.BN_SNARK1, 'SNARK')
@@ -69,7 +69,7 @@ async function curveTestAll() {
 
 curveTestAll()
 
-function powTest(Fcstr: any): void {
+function powTest (Fcstr: any): void {
   console.log('powTest')
   const x = new Fcstr()
   const y = new Fcstr()
@@ -101,15 +101,15 @@ function powTest(Fcstr: any): void {
   }
 }
 
-function invVecTest(cstr: any): void {
+function invVecTest (Cstr: any): void {
   console.log('invVecTest')
   const n = 1000
   const x = Array(n)
   const y = Array(n)
-  x[0] = new cstr()
+  x[0] = new Cstr()
   x[0].setStr('1232353525205982904')
   for (let i = 1; i < n; i++) {
-    x[i] = mcl.sqr(x[i-1])
+    x[i] = mcl.sqr(x[i - 1])
   }
   for (let i = 0; i < n; i++) {
     y[i] = x[i].clone()
@@ -142,7 +142,7 @@ function squareRootTest1 (x, expectBool = undefined): boolean {
   return t
 }
 
-function squareRootTest(x: any): void {
+function squareRootTest (x: any): void {
   const n = 100
   let d = x.clone()
   for (let i = 0; i < n; i++) {
@@ -152,7 +152,7 @@ function squareRootTest(x: any): void {
   }
 }
 
-function FrTest() {
+function FrTest () {
   const a = new mcl.Fr()
   a.setInt(5)
   assert.strictEqual(a.getStr(), '5')
@@ -223,7 +223,7 @@ function FrTest() {
   squareRootTest(a)
 }
 
-function FpTest() {
+function FpTest () {
   const a = new mcl.Fp()
   a.setHashOf('abc')
   serializeSubTest(mcl.Fp, a, mcl.deserializeHexStrToFp)
@@ -281,7 +281,7 @@ function FpTest() {
   squareRootTest(a)
 }
 
-function Fp2Test(curveType : number) {
+function Fp2Test (curveType : number) {
   const x = new mcl.Fp2()
   let xs = x.serialize()
   for (let i = 0; i < xs.length; i++) {
@@ -353,17 +353,17 @@ function Fp2Test(curveType : number) {
   squareRootTest(a)
 }
 
-function normalizeVecTest(cstr: any): void {
+function normalizeVecTest (Cstr: any): void {
   console.log('normalizeVecTest')
   const n = 10
   const P = Array(n)
   const Q = Array(n)
-  P[0] = new cstr()
+  P[0] = new Cstr()
   P[0].setHashOf('abc')
   for (let i = 1; i < n; i++) {
-    P[i] = mcl.dbl(P[i-1])
+    P[i] = mcl.dbl(P[i - 1])
   }
-  P[n/2].clear()
+  P[n / 2].clear()
   for (let i = 0; i < n; i++) {
     Q[i] = P[i].clone()
   }
@@ -378,7 +378,7 @@ function normalizeVecTest(cstr: any): void {
   }
 }
 
-function G1Test() {
+function G1Test () {
   const P = new mcl.G1()
   assert(P.isZero())
   P.clear()
@@ -421,7 +421,7 @@ function G1Test() {
   normalizeVecTest(mcl.G1)
 }
 
-function G2Test() {
+function G2Test () {
   const P = new mcl.G2()
   assert(P.isZero())
   P.clear()
@@ -463,7 +463,7 @@ function G2Test() {
   normalizeVecTest(mcl.G2)
 }
 
-function GTTest() {
+function GTTest () {
   const P = new mcl.G1()
   const Q = new mcl.G2()
   P.setHashOf('abc')
@@ -481,7 +481,7 @@ function GTTest() {
   assert(y.isEqual(z))
 }
 
-function PairingTest() {
+function PairingTest () {
   const a = new mcl.Fr()
   const b = new mcl.Fr()
 
@@ -536,7 +536,7 @@ function PairingTest() {
   }
 }
 
-function mulVecGeneric(Cstr, xVec, yVec) {
+function mulVecGeneric (Cstr, xVec, yVec) {
   let z = new Cstr()
   for (let i = 0; i < xVec.length; i++) {
     z = mcl.add(z, mcl.mul(xVec[i], yVec[i]))
@@ -544,7 +544,7 @@ function mulVecGeneric(Cstr, xVec, yVec) {
   return z
 }
 
-function mulVecTest() {
+function mulVecTest () {
   [1, 2, 3, 15, 30, 100].forEach(n => {
     const xs:mcl.Fr[] = []
     const g1s:mcl.G1[] = []
@@ -573,7 +573,7 @@ function mulVecTest() {
 }
 
 // Enc(m) = [r P, m + h(e(r mpk, H(id)))]
-function IDenc(id:string, P: mcl.G1, mpk: mcl.G1, m: mcl.Fr):[mcl.G1, mcl.Fr] {
+function IDenc (id:string, P: mcl.G1, mpk: mcl.G1, m: mcl.Fr):[mcl.G1, mcl.Fr] {
   const r = new mcl.Fr()
   r.setByCSPRNG()
   const Q = mcl.hashAndMapToG2(id)
@@ -582,13 +582,13 @@ function IDenc(id:string, P: mcl.G1, mpk: mcl.G1, m: mcl.Fr):[mcl.G1, mcl.Fr] {
 }
 
 // Dec([U, v]) = v - h(e(U, sk))
-function IDdec(c:[mcl.G1, mcl.Fr], sk: mcl.G2):mcl.Fr {
+function IDdec (c:[mcl.G1, mcl.Fr], sk: mcl.G2):mcl.Fr {
   const [U, v] = c
   const e = mcl.pairing(U, sk)
   return mcl.sub(v, mcl.hashToFr(e.serialize()))
 }
 
-function IDbasedEncryptionTest() {
+function IDbasedEncryptionTest () {
   // system parameter
   const P = mcl.hashAndMapToG1('1')
   /*
@@ -656,7 +656,7 @@ function PairingCapiTest () {
 }
 */
 
-function serializeSubTest(Cstr, x, newDeserializeHexStr) {
+function serializeSubTest (Cstr, x, newDeserializeHexStr) {
   const y = new Cstr()
   y.deserialize(x.serialize())
   assert(y.isEqual(x))
@@ -668,7 +668,7 @@ function serializeSubTest(Cstr, x, newDeserializeHexStr) {
   assert(z.isEqual(x))
 }
 
-function serializeTest() {
+function serializeTest () {
   const a = new mcl.Fr()
   a.setStr('12345678')
   serializeSubTest(mcl.Fr, a, mcl.deserializeHexStrToFr)
@@ -680,7 +680,7 @@ function serializeTest() {
   serializeSubTest(mcl.GT, e, mcl.deserializeHexStrToGT)
 }
 
-function shiftAndSetTest(a, b) {
+function shiftAndSetTest (a, b) {
   a.setStr('1')
   a = mcl.neg(a)
   const s = Array.from(a.serialize())
@@ -691,22 +691,13 @@ function shiftAndSetTest(a, b) {
   b.setStr('65530')
   assert(a.isEqual(b))
 }
-function modTest() {
-  {
-    const a = new mcl.Fr()
-    const b = new mcl.Fr()
-    shiftAndSetTest(a, b)
-  }
+function modTest () {
+  const a = new mcl.Fr()
+  const b = new mcl.Fr()
+  shiftAndSetTest(a, b)
 }
 
-function put(msg:string, x:(mcl.Fr|mcl.G1|mcl.G2)[]){
-  console.log(msg)
-  for (let i = 0; i < x.length; i++){
-    console.log(x[i].getStr())
-  }
-}
-
-function shareTest() {
+function shareTest () {
   console.log('shareTest')
   const k = 3 // fixed for test of recover loop
   const n = 10
@@ -733,14 +724,14 @@ function shareTest() {
     sk.setByCSPRNG()
     cg2.push(mcl.hashAndMapToG2(sk.getStr()))
   }
-  //put('cfr', cfr)
+  // put('cfr', cfr)
   // setup id
   for (let i = 0; i < n; i++) {
     const id = new mcl.Fr()
     id.setByCSPRNG()
     ids.push(id)
   }
-  //put('ids', ids)
+  // put('ids', ids)
   // share
   for (let i = 0; i < n; i++) {
     sfr.push(mcl.shareFr(cfr, ids[i]))
@@ -753,13 +744,13 @@ function shareTest() {
   const g2Str = cg2[0].getStr()
 
   assert.strictEqual(k, 3)
-  for (let i = 0; i < n; i++){
+  for (let i = 0; i < n; i++) {
     for (let j = i + 1; j < n; j++) {
       for (let m = j + 1; m < n; m++) {
         const idVec = [ids[i], ids[j], ids[m]]
-        //put('idVec', idVec)
+        // put('idVec', idVec)
         const rVec = [sfr[i], sfr[j], sfr[m]]
-        //put('rVec', rVec)
+        // put('rVec', rVec)
         const g1Vec = [sg1[i], sg1[j], sg1[m]]
         const g2Vec = [sg2[i], sg2[j], sg2[m]]
         assert.strictEqual(frStr, mcl.recoverFr(idVec, rVec).getStr())
@@ -770,8 +761,7 @@ function shareTest() {
   }
 }
 
-
-function bench(label:string, count:number, func:Function) {
+function bench (label:string, count:number, func:Function) {
   const start = performance.now()
   for (let i = 0; i < count; i++) {
     func()
@@ -782,7 +772,7 @@ function bench(label:string, count:number, func:Function) {
   console.log(label + ' ' + roundTime)
 }
 
-function benchAll() {
+function benchAll () {
   const a = new mcl.Fr()
 
   const msg = 'hello wasm'

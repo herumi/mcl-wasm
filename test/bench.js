@@ -27,30 +27,6 @@ async function curveTest (curveType, name) {
   }
 }
 
-async function stdCurveTest (curveType, name) {
-  await mcl.init(curveType)
-  try {
-    console.log(`name=${name}`)
-    arithTest()
-  } catch (e) {
-    console.log(`TEST FAIL ${e}`)
-    assert(false)
-  }
-}
-
-function arithTest () {
-  const P = mcl.getBasePointG1()
-  console.log(`basePoint=${P.getStr(16)}`)
-  let Q = mcl.add(P, P) // x2
-  Q = mcl.add(Q, Q) // x4
-  Q = mcl.add(Q, Q) // x8
-  Q = mcl.add(Q, P) // x9
-  const r = new mcl.Fr()
-  r.setStr('9')
-  const R = mcl.mul(P, r)
-  assert(R.isEqual(Q))
-}
-
 async function curveTestAll () {
   await curveTest(mcl.BLS12_381, 'BLS12_381')
 }

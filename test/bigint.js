@@ -1,6 +1,5 @@
 'use strict'
 const mcl = require('../dist/index.js')
-const assert = require('assert')
 const { performance } = require('perf_hooks')
 
 const g_r = BigInt('0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001')
@@ -26,10 +25,6 @@ function FrSub (x, y) {
 
 function FrMul (x, y) {
   return BigInt((x * y) % g_r)
-}
-
-function FrSqr (x) {
-  return BigInt((x * x) % g_r)
 }
 
 function FpAdd (x, y) {
@@ -107,7 +102,7 @@ function addJacobi (P, Q) {
   r = FpSub(r, S1)
   if (H === 0) {
     if (r === 0) {
-      return dblJacobi(P)
+      throw new Error('dblJacobi is not implemented')
     } else {
       return [BigInt(0), BigInt(0), BigInt(0)]
     }
