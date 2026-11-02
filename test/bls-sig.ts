@@ -12,7 +12,7 @@ async function curveTest (curveType, name) {
   }
 }
 
-async function curveTestAll() {
+async function curveTestAll () {
   // can't parallel
   await curveTest(mcl.BN_SNARK1, 'SNARK')
 }
@@ -40,19 +40,19 @@ const verify = (pub: mcl.G2, sig: mcl.G1, msg: string | Uint8Array): boolean => 
   const h = mcl.hashAndMapToG1(msg)
   const opti:number = 2
   switch (opti) {
-  default: {
-      const e1 = mcl.pairing(h, pub)
-      const e2 = mcl.pairing(sig, g_gen)
-      return e1.isEqual(e2)
-    }
-  case 1: {
+    case 1: {
       const e1 = mcl.millerLoop(h, pub)
       const e2 = mcl.millerLoop(sig, g_neg_gen)
       return mcl.finalExp(mcl.mul(e1, e2)).isOne()
     }
-  case 2: {
+    case 2: {
       const e = mcl.precomputedMillerLoop2mixed(h, pub, sig, g_Q2coeff)
       return mcl.finalExp(e).isOne()
+    }
+    default: {
+      const e1 = mcl.pairing(h, pub)
+      const e2 = mcl.pairing(sig, g_gen)
+      return e1.isEqual(e2)
     }
   }
 }
@@ -79,5 +79,5 @@ const blsTest = () => {
   console.log(`sig=${sig.serializeToHexStr()}`)
   console.log(`h=${h.serializeToHexStr()}`)
   console.log(`verify ok=${verify(pub, sig, msg)}`)
-  console.log(`verify ng=${verify(pub, sig, msg+'a')}`)
+  console.log(`verify ng=${verify(pub, sig, msg + 'a')}`)
 }
