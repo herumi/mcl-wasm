@@ -22,12 +22,12 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v6
+      uses: actions/checkout@v6.1.0
       with:
         submodules: recursive
 
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@v4
+      uses: github/codeql-action/init@v4.39.1
       with:
         languages: ${{ matrix.language }}
         config-file: ./.github/codeql/codeql-config.yml
@@ -38,6 +38,6 @@ jobs:
         make -f Makefile.wasm -C src/mcl obj/wasm/fp.o obj/wasm/dlmalloc.o obj/wasm/libc.o CC=clang CXX=clang++ LD=wasm-ld WASM_OPT=wasm-opt
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v4
+      uses: github/codeql-action/analyze@v4.39.1
       with:
         category: "/language:${{matrix.language}}"
