@@ -7,24 +7,10 @@
 see [mcl](https://github.com/herumi/mcl)
 
 ## News
-- 2026/Nov/06 bump mcl to v4.41. mulVec (MSM) is about 1.8x faster for n=1024 on both G1 and G2.
+- 2026/Nov/06 v2.6.0: bump mcl to v4.42. mulVec (MSM) is about 2.4x faster for n=1024 on both G1 and G2.
 - 2026/Oct/02 improve the performance of finalExp by about 20% and pairing by about 10%.
 - 2026/Sep/17 add mulUnit. stack pointer is now always restored.
 - 2026/Jun/16 change build from emcc to clang
-- 2025/Jun/14 fix wrong performance of G1::deserialize on BN curvers.
-- 2025/May/23 bump mcl to v3.00
-- 2025/Feb/26 support BLS12_377
-- 2024/Sep/18 Add batch inversion for Fr and Fp elements, and batch normalization for G1 and G2 points.
-- 2023/Sep/08 improve the performance a little
-- 2023/Aug/17 improve the invMod performance
-- 2023/Jun/10 add share/recover functions of Fr, G1, G2 for secret sharing.
-- 2022/May/08 fix get{X,Y,Z} and get\_{a,b}.
-- 2021/Dec/15 rewritten by TypeScript (Thanks to asa-taka)
-- 2021/Nov/11 unify index.js of Node.js and browser (Thanks to Futa HIRAKOBA)
-- 2021/Aug/28 improve performance of `{G1,G2}::isValidOrder()`
-- 2021/Jun/22 add index.d.ts
-- 2021/Mar/02 improve performance
-- 2020/Nov/10 setup function has changed.
 
 ## How to use
 The version `v0.6.0` breaks backward compatibility of the entry point.
@@ -119,7 +105,21 @@ http://opensource.org/licenses/BSD-3-Clause
 
 # History
 
-2019/Jan/31 add Fp.mapToG1
+- 2025/Jun/14 fix wrong performance of G1::deserialize on BN curvers.
+- 2025/May/23 bump mcl to v3.00
+- 2025/Feb/26 support BLS12_377
+- 2024/Sep/18 Add batch inversion for Fr and Fp elements, and batch normalization for G1 and G2 points.
+- 2023/Sep/08 improve the performance a little
+- 2023/Aug/17 improve the invMod performance
+- 2023/Jun/10 add share/recover functions of Fr, G1, G2 for secret sharing.
+- 2022/May/08 fix get{X,Y,Z} and get\_{a,b}.
+- 2021/Dec/15 rewritten by TypeScript (Thanks to asa-taka)
+- 2021/Nov/11 unify index.js of Node.js and browser (Thanks to Futa HIRAKOBA)
+- 2021/Aug/28 improve performance of `{G1,G2}::isValidOrder()`
+- 2021/Jun/22 add index.d.ts
+- 2021/Mar/02 improve performance
+- 2020/Nov/10 setup function has changed.
+- 2019/Jan/31 add Fp.mapToG1
 
 # Author
 
