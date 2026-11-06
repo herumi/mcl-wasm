@@ -600,9 +600,8 @@ function benchGroup (name, Cstr, a) {
   mcl.free(ap)
 }
 
-function benchMulVec (name, Cstr) {
+function benchMulVec (name, Cstr, n) {
   const mod = mcl.mod
-  const n = 100
   const C = 10
   const xs = []
   const gs = []
@@ -703,9 +702,11 @@ function benchAll () {
   const a = new mcl.Fr()
   a.setByCSPRNG()
   benchGroup('G1', mcl.G1, a)
-  benchMulVec('G1', mcl.G1)
+  benchMulVec('G1', mcl.G1, 100) // bucket (generic)
+  benchMulVec('G1', mcl.G1, 1024) // batch affine
   benchGroup('G2', mcl.G2, a)
-  benchMulVec('G2', mcl.G2)
+  benchMulVec('G2', mcl.G2, 100)
+  benchMulVec('G2', mcl.G2, 1024)
   const P = mcl.hashAndMapToG1('abc')
   const Q = mcl.hashAndMapToG2('abc')
   const P2 = mcl.hashAndMapToG1('abce')

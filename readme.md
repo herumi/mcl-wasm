@@ -7,6 +7,7 @@
 see [mcl](https://github.com/herumi/mcl)
 
 ## News
+- 2026/Nov/06 bump mcl to v4.41. mulVec (MSM) is about 1.8x faster for n=1024 on both G1 and G2.
 - 2026/Oct/02 improve the performance of finalExp by about 20% and pairing by about 10%.
 - 2026/Sep/17 add mulUnit. stack pointer is now always restored.
 - 2026/Jun/16 change build from emcc to clang
